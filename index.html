@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gabriel Barber Studio</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+    }
+    .font-display { font-family: 'Bebas Neue', sans-serif; }
+    .font-body { font-family: 'DM Sans', sans-serif; }
+    .gold-gradient { 
+      background: linear-gradient(135deg, #c9a84c, #f0d78c, #c9a84c); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    .stripe-bg {
+      background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(201,168,76,0.03) 35px, rgba(201,168,76,0.03) 70px);
+    }
+    .fade-in { 
+      animation: fadeIn 0.6s ease-out forwards; 
+      opacity: 0; 
+    }
+    @keyframes fadeIn { 
+      to { opacity: 1; } 
+    }
+    .slide-up { 
+      animation: slideUp 0.5s ease-out forwards; 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    @keyframes slideUp { 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    input, select { 
+      transition: border-color 0.2s; 
+    }
+    input:focus, select:focus { 
+      border-color: #c9a84c !important; 
+      outline: none; 
+      box-shadow: 0 0 0 2px rgba(201,168,76,0.2); 
+    }
+    .time-btn { 
+      transition: all 0.15s; 
+    }
+    .time-btn:hover { 
+      background: #c9a84c; 
+      color: #1a1a1a; 
+    }
+    .time-btn.selected { 
+      background: #c9a84c; 
+      color: #1a1a1a; 
+      font-weight: 600; 
+    }
+    .toast-enter { 
+      animation: toastIn 0.3s ease-out; 
+    }
+    @keyframes toastIn { 
+      from { transform: translateY(-20px); opacity: 0; } 
+      to { transform: translateY(0); opacity: 1; } 
+    }
+    .booking-card { 
+      transition: all 0.2s; 
+    }
+    .booking-card:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3); 
+    }
+    .service-card {
+      animation: slideInUp 0.6s ease-out backwards;
+    }
+    .service-card:nth-child(1) { animation-delay: 0.1s; }
+    .service-card:nth-child(2) { animation-delay: 0.2s; }
+    .service-card:nth-child(3) { animation-delay: 0.3s; }
+    .service-card:nth-child(4) { animation-delay: 0.4s; }
+    .service-card:nth-child(5) { animation-delay: 0.5s; }
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .logo-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+    .pulse-gold {
+      animation: pulseGold 2s ease-in-out infinite;
+    }
+    @keyframes pulseGold {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(201, 168, 76, 0); }
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1a1a; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    * { box-sizing: border-box; }
+    .logo-container {
+      display: inline-block;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full font-body" style="background:#111; color:#e5e5e5;">
+  <div id="app" class="h-full overflow-auto stripe-bg">
+   <!-- Toast -->
+   <div id="toast" class="fixed top-4 right-4 z-50 hidden"></div><!-- Nav -->
+   <nav class="sticky top-0 z-40 border-b border-neutral-800/60" style="background:rgba(17,17,17,0.92); backdrop-filter:blur(12px);">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+     <div class="text-xl font-display" style="color:#c9a84c;">
+      <span id="nav-title">Gabriel Barber Studio</span>
+     </div>
+     <div class="flex gap-1">
+      <button onclick="showSection('home')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="home">Início</button> <button onclick="showSection('booking')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="booking">Agendar</button> <button onclick="showSection('contact')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="contact">Contato</button> <button onclick="showSection('appointments')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="appointments">Meus Horários</button>
+     </div>
+    </div>
+   </nav><!-- HOME SECTION -->
+   <section id="sec-home" class="fade-in">
+    <div class="max-w-5xl mx-auto px-4 pt-6 pb-12 text-center">
+     <div class="flex items-center justify-center mb-2">
+      <div class="logo-container logo-float"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" style="width:300px; height:300px; object-fit:contain;" loading="lazy" onerror="console.error('Logo failed to load:', this.src); this.style.display='none';">
+      </div>
+     </div>
+     <p class="text-lg text-neutral-400 mb-6" id="hero-subtitle">A melhor barbearia da região</p>
+     <h2 class="font-display text-4xl mb-8 text-center gold-gradient">Nossos Serviços</h2>
+     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); transition: all 0.3s;" onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'"><i data-lucide="scissors" style="width:32px; height:32px; color:#c9a84c; margin:0 auto 12px;"></i>
+       <h3 class="font-semibold text-lg mb-2">Corte na Tesoura</h3>
+       <p class="text-neutral-400 text-sm mb-3">Corte moderno e preciso</p>
+       <p class="font-display text-2xl" style="color:#c9a84c;">R$ 30,00</p>
+      </div>
+      <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); transition: all 0.3s;" onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'"><i data-lucide="zap" style="width:32px; height:32px; color:#c9a84c; margin:0 auto 12px;"></i>
+       <h3 class="font-semibold text-lg mb-2">Máquina + Tesoura</h3>
+       <p class="text-neutral-400 text-sm mb-3">Combinado máquina e tesoura</p>
+       <p class="font-display text-2xl" style="color:#c9a84c;">R$ 30,00</p>
+      </div>
+      <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); transition: all 0.3s;" onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'">
+       <img src="https://i.imgur.com/AeimsaS.png" alt="Barba" style="width:60px; height:60px; margin:0 auto 12px; object-fit:contain;" loading="lazy" onerror="console.error('Image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';">
+       <h3 class="font-semibold text-lg mb-2">Barba</h3>
+       <p class="text-neutral-400 text-sm mb-3">Tratamento e design de barba</p>
+       <p class="font-display text-2xl" style="color:#c9a84c;">R$ 25,00</p>
+      </div>
+      <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); transition: all 0.3s;" onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'"><i data-lucide="sparkles" style="width:32px; height:32px; color:#c9a84c; margin:0 auto 12px;"></i>
+       <h3 class="font-semibold text-lg mb-2">Pezinho</h3>
+       <p class="text-neutral-400 text-sm mb-3">Acabamento e design</p>
+       <p class="font-display text-2xl" style="color:#c9a84c;">R$ 10,00</p>
+      </div>
+     </div>
+     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); transition: all 0.3s; lg:col-span-2;" onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'"><i data-lucide="crown" style="width:32px; height:32px; color:#c9a84c; margin:0 auto 12px;"></i>
+       <h3 class="font-semibold text-lg mb-2">Cabelo e Barba</h3>
+       <p class="text-neutral-400 text-sm mb-3">Pacote completo</p>
+       <p class="font-display text-2xl" style="color:#c9a84c;">R$ 50,00</p>
+      </div>
+     </div><button onclick="showSection('booking')" class="px-8 py-3 rounded-lg font-semibold text-lg transition hover:opacity-90 pulse-gold" style="background:#c9a84c; color:#1a1a1a;">Agendar Corte</button>
+    </div>
+   </section>
+   <section id="sec-contact" class="hidden fade-in">
+    <div class="max-w-5xl mx-auto px-4 pt-16 pb-12 text-center">
+     <h1 class="font-display text-6xl md:text-7xl mb-4 gold-gradient" style="font-size:72px; line-height:1.2;">Entre em Contato</h1>
+     <p class="text-lg text-neutral-400 mb-16">Visite-nos ou fale conosco através dos canais disponíveis</p>
+     <div class="grid md:grid-cols-3 gap-8 mb-16">
+      <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <i data-lucide="message-circle" style="width:48px; height:48px; color:#c9a84c; margin:0 auto 16px;"></i> <h3 class="font-semibold text-2xl mb-3">WhatsApp</h3><p class="text-neutral-400 text-lg mb-2">(22) 99703-5391</p><p class="text-neutral-500 text-sm">Clique para enviar uma mensagem</p></a> <a href="https://instagram.com/gabrielbarber" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <i data-lucide="instagram" style="width:48px; height:48px; color:#c9a84c; margin:0 auto 16px;"></i> <h3 class="font-semibold text-2xl mb-3">Instagram</h3><p class="text-neutral-400 text-lg mb-2">@gabrielbarber</p><p class="text-neutral-500 text-sm">Siga nosso perfil</p></a>
+      <div class="p-8 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+       <i data-lucide="map-pin" style="width:48px; height:48px; color:#c9a84c; margin:0 auto 16px;"></i>
+       <h3 class="font-semibold text-2xl mb-3">Endereço</h3>
+       <p class="text-neutral-400 text-lg">R. Luís Isaltino de Oliveira, 65</p>
+       <p class="text-neutral-400 text-lg">Pq Flamboyant - Campos dos Goytacazes - RJ</p>
+       <p class="text-neutral-400 text-lg">28015-170 (Loja 2)</p>
+      </div>
+     </div>
+     <div class="mt-12 p-8 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+      <h2 class="font-display text-3xl mb-6 gold-gradient">Horários de Funcionamento</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+       <div>
+        <h3 class="font-semibold text-lg mb-3 flex items-center gap-2"><i data-lucide="calendar" style="width:20px; height:20px; color:#c9a84c;"></i> Segunda a Sexta</h3>
+        <p class="text-neutral-400 text-lg">08:00 - 21:00</p>
+       </div>
+       <div>
+        <h3 class="font-semibold text-lg mb-3 flex items-center gap-2"><i data-lucide="calendar" style="width:20px; height:20px; color:#c9a84c;"></i> Sábado</h3>
+        <p class="text-neutral-400 text-lg">08:00 - 12:00</p>
+       </div>
+      </div>
+      <p class="text-neutral-500 text-sm mt-6">Domingo: Fechado</p>
+     </div>
+    </div>
+   </section><!-- BOOKING SECTION -->
+   <section id="sec-booking" class="hidden">
+    <div class="max-w-2xl mx-auto px-4 pt-12 pb-20">
+     <h2 class="font-display text-4xl mb-12 text-center gold-gradient">Agende seu Horário</h2>
+     <form id="bookingForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
+      <div>
+       <label class="block text-sm font-semibold mb-2">Seu Nome</label> <input type="text" id="name" placeholder="João Silva" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      </div>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Telefone</label> <input type="tel" id="phone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      </div>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Serviço</label> <select id="service" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required> <option value="">Selecione um serviço</option> <option value="Corte na Tesoura">Corte na Tesoura - R$ 30,00</option> <option value="Máquina + Tesoura">Máquina + Tesoura - R$ 30,00</option> <option value="Barba">Barba - R$ 25,00</option> <option value="Pezinho">Pezinho - R$ 10,00</option> <option value="Cabelo e Barba">Cabelo e Barba - R$ 50,00</option> </select>
+      </div>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Data</label> <input type="date" id="date" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required onchange="renderTimeSlots()">
+      </div>
+      <div>
+       <label class="block text-sm font-semibold mb-3">Horário</label>
+       <div class="grid grid-cols-4 gap-2" id="timeSlots"></div>
+      </div><button type="submit" class="w-full py-3 rounded-lg font-semibold text-lg transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Confirmar Agendamento</button>
+     </form>
+    </div>
+   </section><!-- APPOINTMENTS SECTION -->
+   <section id="sec-appointments" class="hidden">
+    <div class="max-w-3xl mx-auto px-4 pt-12 pb-20">
+     <h2 class="font-display text-4xl mb-12 text-center gold-gradient">Meus Horários</h2>
+     <div id="appointmentsList" class="space-y-4">
+      <p class="text-center text-neutral-400">Nenhum agendamento ainda</p>
+     </div>
+    </div>
+   </section>
+  </div>
+  <script>
+    let currentData = [];
+    let config = {};
+    const defaultConfig = {
+      studio_name: "Gabriel Barber Studio",
+      hero_title: "Estilo e Precisão",
+      hero_subtitle: "A melhor barbearia de Campos dos Goytacazes"
+    };
+
+    const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
+
+    // Initialize Element SDK
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: (newConfig) => {
+        config = newConfig;
+        document.getElementById('hero-title').textContent = config.hero_title || defaultConfig.hero_title;
+        document.getElementById('hero-subtitle').textContent = config.hero_subtitle || defaultConfig.hero_subtitle;
+        document.getElementById('nav-title').textContent = config.studio_name || defaultConfig.studio_name;
+      },
+      mapToCapabilities: () => ({
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      }),
+      mapToEditPanelValues: (cfg) => new Map([
+        ['studio_name', cfg.studio_name || defaultConfig.studio_name],
+        ['hero_title', cfg.hero_title || defaultConfig.hero_title],
+        ['hero_subtitle', cfg.hero_subtitle || defaultConfig.hero_subtitle]
+      ])
+    });
+
+    // Initialize Data SDK
+    const dataHandler = {
+      onDataChanged: (data) => {
+        currentData = data;
+        renderAppointments();
+      }
+    };
+
+    window.dataSdk.init(dataHandler);
+
+    function showSection(section) {
+      document.querySelectorAll('[id^="sec-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('sec-' + section).classList.remove('hidden');
+      
+      document.querySelectorAll('.nav-link').forEach(el => {
+        if (el.dataset.section === section) {
+          el.style.background = 'rgba(201,168,76,0.15)';
+        } else {
+          el.style.background = 'transparent';
+        }
+      });
+    }
+
+    function renderTimeSlots() {
+      const container = document.getElementById('timeSlots');
+      container.innerHTML = '';
+      
+      // Get booked times for the selected date
+      const selectedDate = document.getElementById('date').value;
+      const bookedTimes = currentData
+        .filter(apt => apt.date === selectedDate)
+        .map(apt => apt.time);
+      
+      timeSlots.forEach(time => {
+        const isBooked = bookedTimes.includes(time);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = time;
+        btn.className = 'time-btn px-3 py-2 rounded text-sm border';
+        btn.style.borderColor = 'rgba(201,168,76,0.3)';
+        btn.disabled = isBooked;
+        
+        if (isBooked) {
+          btn.style.color = '#666';
+          btn.style.background = '#2a2a2a';
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+          btn.textContent = time + ' (indisponível)';
+        } else {
+          btn.style.color = '#e5e5e5';
+          btn.style.background = '#1a1a1a';
+          btn.style.cursor = 'pointer';
+          btn.onclick = (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.time-btn').forEach(b => {
+              if (!b.disabled) {
+                b.style.background = '#1a1a1a';
+                b.style.color = '#e5e5e5';
+                b.classList.remove('selected');
+              }
+            });
+            btn.classList.add('selected');
+            document.getElementById('time').value = time;
+          };
+        }
+        container.appendChild(btn);
+      });
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const service = document.getElementById('service').value;
+      const date = document.getElementById('date').value;
+      const timeValue = document.getElementById('time');
+      
+      if (!timeValue.value) {
+        showToast('Selecione um horário', 'error');
+        return;
+      }
+
+      if (currentData.length >= 999) {
+        showToast('Limite de agendamentos atingido', 'error');
+        return;
+      }
+
+      const result = await window.dataSdk.create({
+        id: Date.now().toString(),
+        name,
+        phone,
+        service,
+        date,
+        time: timeValue.value,
+        status: 'confirmado',
+        createdAt: new Date().toISOString()
+      });
+
+      if (result.isOk) {
+        showToast('Agendamento confirmado!', 'success');
+        document.getElementById('bookingForm').reset();
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('time').value = '';
+        setTimeout(() => showSection('appointments'), 1500);
+      } else {
+        showToast('Erro ao confirmar agendamento', 'error');
+      }
+    });
+
+    function renderAppointments() {
+      const container = document.getElementById('appointmentsList');
+      
+      if (currentData.length === 0) {
+        container.innerHTML = '<p class="text-center text-neutral-400">Nenhum agendamento ainda</p>';
+        return;
+      }
+
+      container.innerHTML = currentData.map(apt => `
+        <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">${apt.name}</h3>
+              <p class="text-sm text-neutral-400">${apt.phone}</p>
+            </div>
+            <button onclick="deleteAppointment('${apt.__backendId}')" class="text-neutral-400 hover:text-red-400 transition">
+              <i data-lucide="trash-2" style="width:20px; height:20px;"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-neutral-500">Serviço:</span>
+              <p class="font-semibold">${apt.service}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Data:</span>
+              <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Horário:</span>
+              <p class="font-semibold">${apt.time}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Status:</span>
+              <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      lucide.createIcons();
+    }
+
+    async function deleteAppointment(id) {
+      const apt = currentData.find(a => a.__backendId === id);
+      if (apt) {
+        const result = await window.dataSdk.delete(apt);
+        if (result.isOk) {
+          showToast('Agendamento cancelado', 'success');
+        }
+      }
+    }
+
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      const bgColor = type === 'error' ? '#dc2626' : '#16a34a';
+      toast.innerHTML = `<div class="toast-enter px-4 py-3 rounded-lg text-white font-semibold" style="background:${bgColor};">${message}</div>`;
+      toast.classList.remove('hidden');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Initialize hidden time input
+    document.getElementById('bookingForm').insertAdjacentHTML('beforeend', '<input type="hidden" id="time">');
+
+    // Render time slots on page load
+    renderTimeSlots();
+    lucide.createIcons();
+    showSection('home');
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ed6e2b49616646c',t:'MTc3NjM4MTI1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
