@@ -148,26 +148,6 @@
      </div>
     </div>
    </nav><!-- HOME SECTION -->
-   <section id="sec-login" class="hidden fade-in">
-  <div class="max-w-md mx-auto px-4 pt-20 text-center">
-
-    <h2 class="font-display text-4xl mb-6 gold-gradient">
-      Entrar
-    </h2>
-
-    <input type="tel" id="loginPhone"
-      placeholder="Digite seu telefone"
-      class="w-full px-4 py-3 rounded-lg mb-4"
-      style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;">
-
-    <button onclick="login()"
-      class="w-full py-3 rounded-lg font-semibold"
-      style="background:#c9a84c; color:#1a1a1a;">
-      Entrar
-    </button>
-
-  </div>
-</section>
    <section id="sec-home" class="fade-in">
     <div class="max-w-5xl mx-auto px-4 pt-6 pb-12">
      <div class="flex flex-col items-center justify-center text-center py-12"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float" style="width:200px; height:200px; object-fit:contain; margin-bottom:24px; display:block;" loading="lazy" onerror="console.error('Hero logo failed to load:', this.src);">
@@ -308,22 +288,6 @@
     const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
 
     // Initialize Element SDK
-
-   function login() {
-  const phone = document.getElementById('loginPhone').value;
-
-  if (!phone) {
-    showToast('Digite seu telefone', 'error');
-    return;
-  }
-
-  // salva "usuário logado"
-  localStorage.setItem('userPhone', phone);
-
-  showToast('Login realizado!', 'success');
-
-  showSection('appointments');
-}
     window.elementSdk.init({
       defaultConfig,
       onConfigChange: (newConfig) => {
@@ -356,44 +320,26 @@
 
     window.dataSdk.init(dataHandler);
 
-   function showSection(section) {
+    function showSection(section) {
+      document.querySelectorAll('[id^="sec-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('sec-' + section).classList.remove('hidden');
+      
+      document.querySelectorAll('.nav-link').forEach(el => {
+        if (el.dataset.section === section) {
+          el.style.background = 'rgba(201,168,76,0.15)';
+        } else {
+          el.style.background = 'transparent';
+        }
+      });
 
-  // 🔒 PROTEGE A TELA DO CLIENTE
-  if (section === 'myappointments') {
-    const user = localStorage.getItem('userPhone');
-
-    if (!user) {
-      showToast('Faça login primeiro', 'error');
-      section = 'login';
+      // Show/hide logout button
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (section === 'myappointments' && localStorage.getItem('userPhone')) {
+        logoutBtn.classList.remove('hidden');
+      } else {
+        logoutBtn.classList.add('hidden');
+      }
     }
-  }
-
-  // troca de telas
-  document.querySelectorAll('[id^="sec-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById('sec-' + section).classList.remove('hidden');
-
-  // destaque do menu
-  document.querySelectorAll('.nav-link').forEach(el => {
-    if (el.dataset.section === section) {
-      el.style.background = 'rgba(201,168,76,0.15)';
-    } else {
-      el.style.background = 'transparent';
-    }
-  });
-
-  // 🔥 MOSTRA BOTÃO DE SAIR SÓ QUANDO LOGADO
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (section === 'myappointments' && localStorage.getItem('userPhone')) {
-    logoutBtn.classList.remove('hidden');
-  } else {
-    logoutBtn.classList.add('hidden');
-  }
-
-  // 🔥 FORÇA ATUALIZAR OS AGENDAMENTOS DO USUÁRIO
-  if (section === 'myappointments') {
-    renderUserAppointments();
-  }
-}
 
     function logout() {
       localStorage.removeItem('userPhone');
