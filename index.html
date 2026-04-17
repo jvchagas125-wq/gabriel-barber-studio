@@ -133,58 +133,59 @@
   <style>body { box-sizing: border-box; }</style>
  </head>
  <body class="h-full font-body" style="background:#111; color:#e5e5e5;">
-  <div id="app" class="h-full overflow-auto stripe-bg"><!-- Toast -->
+  <div id="app" class="h-full overflow-auto stripe-bg">
+   <!-- Toast -->
    <div id="toast" class="fixed top-4 right-4 z-50 hidden"></div><!-- Nav -->
    <nav class="sticky top-0 z-40 border-b border-neutral-800/60" style="background:rgba(17,17,17,0.92); backdrop-filter:blur(12px);">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-     <div class="flex items-center gap-2">
-      <img src="https://i.imgur.com/bmEuklI.png" alt="Logo Gabriel Barber" style="width:32px; height:32px; object-fit:contain;" loading="lazy" onerror="console.error('Nav logo failed to load:', this.src);">
-      <div class="text-xl font-display" style="color:#c9a84c;"><span id="nav-title">Gabriel Barber Studio</span>
+     <div class="flex items-center gap-2"><img src="https://i.imgur.com/bmEuklI.png" alt="Logo Gabriel Barber" style="width:32px; height:32px; object-fit:contain;" loading="lazy" onerror="console.error('Nav logo failed to load:', this.src);">
+      <div class="text-xl font-display" style="color:#c9a84c;">
+       <span id="nav-title">Gabriel Barber Studio</span>
       </div>
      </div>
-     <div class="flex gap-1"><button onclick="showSection('home')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="home">Início</button> <button onclick="showSection('booking')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="booking">Agendar</button> <button onclick="showSection('contact')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="contact">Contato</button> <button onclick="showSection('appointments')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="appointments">Meus Horários</button>
+     <div class="flex gap-1">
+      <button onclick="showSection('home')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="home">Início</button> <button onclick="showSection('booking')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="booking">Agendar</button> <button onclick="showSection('contact')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="contact">Contato</button> <button onclick="showSection('myappointments')" class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" data-section="myappointments">Meus Horários</button> <button id="logoutBtn" onclick="logout()" class="px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition hidden">Sair</button>
      </div>
     </div>
    </nav><!-- HOME SECTION -->
    <section id="sec-home" class="fade-in">
     <div class="max-w-5xl mx-auto px-4 pt-6 pb-12">
-     <div class="flex flex-col items-center justify-center text-center py-12">
-      <img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float" style="width:200px; height:200px; object-fit:contain; margin-bottom:24px; display:block;" loading="lazy" onerror="console.error('Hero logo failed to load:', this.src);">
+     <div class="flex flex-col items-center justify-center text-center py-12"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float" style="width:200px; height:200px; object-fit:contain; margin-bottom:24px; display:block;" loading="lazy" onerror="console.error('Hero logo failed to load:', this.src);">
       <p class="text-xl md:text-2xl text-neutral-400" id="hero-subtitle">A melhor barbearia de Campos dos Goytacazes</p>
      </div>
      <div class="mt-16 mb-12">
       <h2 class="font-display text-4xl mb-12 text-center gold-gradient">Nossos Serviços</h2>
       <div class="grid md:grid-cols-3 gap-6">
-       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/3ZT8O7P.png" alt="Corte na Tesoura" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Tesoura image failed to load:', this.src);">
+       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+        <img src="https://i.imgur.com/3ZT8O7P.png" alt="Corte na Tesoura" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Tesoura image failed to load:', this.src);">
         <h3 class="font-semibold text-xl mb-2">Corte na Tesoura</h3>
         <p class="text-neutral-400 mb-3">Técnica clássica com acabamento perfeito</p>
         <p class="font-display text-2xl" style="color:#c9a84c;">R$ 30,00</p>
        </div>
-       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
-        <img src="https://i.imgur.com/IZXmGmw.png" alt="Máquina + Tesoura" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Máquina + Tesoura image failed to load:', this.src);">
+       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/IZXmGmw.png" alt="Máquina + Tesoura" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Máquina + Tesoura image failed to load:', this.src);">
         <h3 class="font-semibold text-xl mb-2">Máquina + Tesoura</h3>
         <p class="text-neutral-400 mb-3">Combinação perfeita para um visual moderno</p>
         <p class="font-display text-2xl" style="color:#c9a84c;">R$ 30,00</p>
        </div>
-       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
-        <img src="https://i.imgur.com/AeimsaS.png" alt="Barba" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Barba image failed to load:', this.src);">
+       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/AeimsaS.png" alt="Barba" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Barba image failed to load:', this.src);">
         <h3 class="font-semibold text-xl mb-2">Barba</h3>
         <p class="text-neutral-400 mb-3">Alinhamento e modelagem profissional</p>
         <p class="font-display text-2xl" style="color:#c9a84c;">R$ 25,00</p>
        </div>
-       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/tPULAD0.png" alt="Pezinho" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Pezinho image failed to load:', this.src);">
+       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+        <img src="https://i.imgur.com/tPULAD0.png" alt="Pezinho" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Pezinho image failed to load:', this.src);">
         <h3 class="font-semibold text-xl mb-2">Pezinho</h3>
         <p class="text-neutral-400 mb-3">Acabamento nas laterais e nuca</p>
         <p class="font-display text-2xl" style="color:#c9a84c;">R$ 10,00</p>
        </div>
-       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
-        <img src="https://i.imgur.com/3OpNuNJ.png" alt="Cabelo e Barba" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Cabelo e Barba image failed to load:', this.src);">
+       <div class="service-card p-6 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/3OpNuNJ.png" alt="Cabelo e Barba" style="width:48px; height:48px; margin:0 auto 12px; display:block; object-fit:contain;" loading="lazy" onerror="console.error('Cabelo e Barba image failed to load:', this.src);">
         <h3 class="font-semibold text-xl mb-2">Cabelo e Barba</h3>
         <p class="text-neutral-400 mb-3">Pacote completo para uma transformação total</p>
         <p class="font-display text-2xl" style="color:#c9a84c;">R$ 50,00</p>
        </div>
       </div>
-      <div class="mt-12 text-center"><button onclick="showSection('booking')" class="px-8 py-3 rounded-lg font-semibold text-lg transition hover:opacity-90 pulse-gold" style="background:#c9a84c; color:#1a1a1a;">Agendar Corte</button>
+      <div class="mt-12 text-center">
+       <button onclick="showSection('booking')" class="px-8 py-3 rounded-lg font-semibold text-lg transition hover:opacity-90 pulse-gold" style="background:#c9a84c; color:#1a1a1a;">Agendar Corte</button>
       </div>
      </div>
     </div>
@@ -193,8 +194,10 @@
     <div class="max-w-5xl mx-auto px-4 pt-16 pb-12 text-center">
      <h1 class="font-display text-6xl md:text-7xl mb-4 gold-gradient" style="font-size:72px; line-height:1.2;">Entre em Contato</h1>
      <p class="text-lg text-neutral-400 mb-16">Visite-nos ou fale conosco através dos canais disponíveis</p>
-     <div class="grid md:grid-cols-3 gap-8 mb-16"><a href="https://wa.me/5522997035391" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('WhatsApp image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';"> <h3 class="font-semibold text-2xl mb-3">WhatsApp</h3><p class="text-neutral-400 text-lg mb-2">(22) 99703-5391</p><p class="text-neutral-500 text-sm">Clique para enviar uma mensagem</p></a> <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('Instagram image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';"> <h3 class="font-semibold text-2xl mb-3">Instagram</h3><p class="text-neutral-400 text-lg mb-2">@gabriel.bstudio</p><p class="text-neutral-500 text-sm">Siga nosso perfil</p></a>
-      <div class="p-8 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereço" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('Endereço image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';">
+     <div class="grid md:grid-cols-3 gap-8 mb-16">
+      <a href="https://wa.me/5522997035391" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('WhatsApp image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';"> <h3 class="font-semibold text-2xl mb-3">WhatsApp</h3><p class="text-neutral-400 text-lg mb-2">(22) 99703-5391</p><p class="text-neutral-500 text-sm">Clique para enviar uma mensagem</p></a> <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener noreferrer" class="p-8 rounded-lg text-center transition transform hover:scale-105" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); cursor:pointer;"> <img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('Instagram image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';"> <h3 class="font-semibold text-2xl mb-3">Instagram</h3><p class="text-neutral-400 text-lg mb-2">@gabriel.bstudio</p><p class="text-neutral-500 text-sm">Siga nosso perfil</p></a>
+      <div class="p-8 rounded-lg text-center" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+       <img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereço" style="width:48px; height:48px; margin:0 auto 16px; object-fit:contain;" loading="lazy" onerror="console.error('Endereço image failed to load:', this.src); this.parentElement.style.background='#e5e5e5';">
        <h3 class="font-semibold text-2xl mb-3">Endereço</h3>
        <p class="text-neutral-400 text-lg">R. Luís Isaltino de Oliveira, 65</p>
        <p class="text-neutral-400 text-lg">Pq Flamboyant - Campos dos Goytacazes - RJ</p>
@@ -221,15 +224,20 @@
     <div class="max-w-2xl mx-auto px-4 pt-12 pb-20">
      <h2 class="font-display text-4xl mb-12 text-center gold-gradient">Agende seu Horário</h2>
      <form id="bookingForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
-      <div><label class="block text-sm font-semibold mb-2">Seu Nome</label> <input type="text" id="name" placeholder="João Silva" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Seu Nome</label> <input type="text" id="name" placeholder="João Silva" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
       </div>
-      <div><label class="block text-sm font-semibold mb-2">Telefone</label> <input type="tel" id="phone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Telefone</label> <input type="tel" id="phone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
       </div>
-      <div><label class="block text-sm font-semibold mb-2">Serviço</label> <select id="service" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required> <option value="">Selecione um serviço</option> <option value="Corte na Tesoura">Corte na Tesoura - R$ 30,00</option> <option value="Máquina + Tesoura">Máquina + Tesoura - R$ 30,00</option> <option value="Barba">Barba - R$ 25,00</option> <option value="Pezinho">Pezinho - R$ 10,00</option> <option value="Cabelo e Barba">Cabelo e Barba - R$ 50,00</option> </select>
+      <div>
+       <label class="block text-sm font-semibold mb-2">Serviço</label> <select id="service" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required> <option value="">Selecione um serviço</option> <option value="Corte na Tesoura">Corte na Tesoura - R$ 30,00</option> <option value="Máquina + Tesoura">Máquina + Tesoura - R$ 30,00</option> <option value="Barba">Barba - R$ 25,00</option> <option value="Pezinho">Pezinho - R$ 10,00</option> <option value="Cabelo e Barba">Cabelo e Barba - R$ 50,00</option> </select>
       </div>
-      <div><label class="block text-sm font-semibold mb-2">Data</label> <input type="date" id="date" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required onchange="renderTimeSlots()">
+      <div>
+       <label class="block text-sm font-semibold mb-2">Data</label> <input type="date" id="date" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required onchange="renderTimeSlots()">
       </div>
-      <div><label class="block text-sm font-semibold mb-3">Horário</label>
+      <div>
+       <label class="block text-sm font-semibold mb-3">Horário</label>
        <div class="grid grid-cols-4 gap-2" id="timeSlots"></div>
       </div><button type="submit" class="w-full py-3 rounded-lg font-semibold text-lg transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Confirmar Agendamento</button>
      </form>
@@ -241,6 +249,30 @@
      <div id="appointmentsList" class="space-y-4">
       <p class="text-center text-neutral-400">Nenhum agendamento ainda</p>
      </div>
+    </div>
+   </section><!-- MY APPOINTMENTS SECTION (after login) -->
+   <section id="sec-myappointments" class="hidden">
+    <div class="max-w-3xl mx-auto px-4 pt-12 pb-20">
+     <div class="flex items-center justify-between mb-12">
+      <h2 class="font-display text-4xl gold-gradient">Meus Horários</h2>
+      <div class="text-sm text-neutral-400"><span id="userPhoneDisplay"></span>
+      </div>
+     </div>
+     <div id="myAppointmentsList" class="space-y-4">
+      <p class="text-center text-neutral-400">Carregando agendamentos...</p>
+     </div>
+    </div>
+   </section><!-- LOGIN SECTION -->
+   <section id="sec-login" class="hidden">
+    <div class="max-w-md mx-auto px-4 pt-24 pb-20">
+     <div class="text-center mb-12"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float mx-auto" style="width:120px; height:120px; object-fit:contain; margin-bottom:24px;" loading="lazy" onerror="console.error('Login logo failed to load:', this.src);">
+      <h2 class="font-display text-4xl gold-gradient mb-2">Meus Horários</h2>
+      <p class="text-neutral-400">Digite seu telefone para visualizar seus agendamentos</p>
+     </div>
+     <form id="loginForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
+      <div><label class="block text-sm font-semibold mb-2">Telefone</label> <input type="tel" id="loginPhone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      </div><button type="submit" class="w-full py-3 rounded-lg font-semibold text-lg transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Acessar Meus Horários</button>
+     </form><button onclick="showSection('home')" class="w-full mt-4 py-3 rounded-lg font-semibold text-lg transition hover:bg-neutral-800" style="border:1px solid rgba(201,168,76,0.3);">Voltar</button>
     </div>
    </section>
   </div>
@@ -282,6 +314,7 @@
       onDataChanged: (data) => {
         currentData = data;
         renderAppointments();
+        renderUserAppointments();
       }
     };
 
@@ -298,6 +331,21 @@
           el.style.background = 'transparent';
         }
       });
+
+      // Show/hide logout button
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (section === 'myappointments' && localStorage.getItem('userPhone')) {
+        logoutBtn.classList.remove('hidden');
+      } else {
+        logoutBtn.classList.add('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('userPhone');
+      document.getElementById('logoutBtn').classList.add('hidden');
+      showSection('home');
+      showToast('Você saiu da sua conta', 'success');
     }
 
     function renderTimeSlots() {
@@ -389,6 +437,74 @@
       }
     });
 
+    // Handle login form
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('loginPhone').value;
+      localStorage.setItem('userPhone', phone);
+      document.getElementById('userPhoneDisplay').textContent = phone;
+      renderUserAppointments();
+      showSection('myappointments');
+      document.getElementById('loginForm').reset();
+    });
+
+    function renderUserAppointments() {
+      const userPhone = localStorage.getItem('userPhone');
+      const container = document.getElementById('myAppointmentsList');
+      
+      if (!userPhone) {
+        showSection('login');
+        return;
+      }
+
+      const userApts = currentData.filter(apt => apt.phone === userPhone);
+      
+      if (userApts.length === 0) {
+        container.innerHTML = '<div class="text-center py-8"><p class="text-neutral-400 mb-4">Você não tem agendamentos</p><button onclick="showSection(\'booking\')" class="px-6 py-2 rounded-lg font-semibold transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Fazer um Agendamento</button></div>';
+        return;
+      }
+
+      container.innerHTML = userApts.map(apt => `
+        <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">${apt.service}</h3>
+              <p class="text-sm text-neutral-400">${apt.name}</p>
+            </div>
+            <button onclick="deleteUserAppointment('${apt.__backendId}')" class="text-neutral-400 hover:text-red-400 transition">
+              <i data-lucide="trash-2" style="width:20px; height:20px;"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span class="text-neutral-500">Data:</span>
+              <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Horário:</span>
+              <p class="font-semibold">${apt.time}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Status:</span>
+              <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      lucide.createIcons();
+    }
+
+    async function deleteUserAppointment(id) {
+      const apt = currentData.find(a => a.__backendId === id);
+      if (apt) {
+        const result = await window.dataSdk.delete(apt);
+        if (result.isOk) {
+          showToast('Agendamento cancelado', 'success');
+        }
+      }
+    }
+
     function renderAppointments() {
       const container = document.getElementById('appointmentsList');
       
@@ -456,10 +572,16 @@
     // Initialize hidden time input
     document.getElementById('bookingForm').insertAdjacentHTML('beforeend', '<input type="hidden" id="time">');
 
+    // Check if user is already logged in
+    const savedPhone = localStorage.getItem('userPhone');
+    if (savedPhone) {
+      document.getElementById('userPhoneDisplay').textContent = savedPhone;
+    }
+
     // Render time slots on page load
     renderTimeSlots();
     lucide.createIcons();
     showSection('home');
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ed7adbf31dde0e3',t:'MTc3NjM4OTU3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ed7b30b2230e0e3',t:'MTc3NjM4OTc5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
