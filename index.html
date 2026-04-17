@@ -202,54 +202,18 @@
     <div class="max-w-2xl mx-auto px-4 pt-12 pb-20">
      <h2 class="font-display text-4xl mb-12 text-center gold-gradient">Agende seu Horário</h2>
      <form id="bookingForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
-
-  <div>
-    <label class="block text-sm font-semibold mb-2">Seu Nome</label>
-    <input type="text" id="name" required class="w-full px-4 py-2 rounded-lg"
-      style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;">
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold mb-2">Telefone</label>
-    <input type="tel" id="phone" required class="w-full px-4 py-2 rounded-lg"
-      style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;">
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold mb-2">Serviço</label>
-    <select id="service" required class="w-full px-4 py-2 rounded-lg"
-      style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;">
-      <option value="">Selecione</option>
-      <option value="Corte na Tesoura">Corte na Tesoura</option>
-      <option value="Máquina + Tesoura">Máquina + Tesoura</option>
-      <option value="Barba">Barba</option>
-      <option value="Pezinho">Pezinho</option>
-      <option value="Cabelo e Barba">Cabelo e Barba</option>
-    </select>
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold mb-2">Data</label>
-    <input type="date" id="date" required onchange="renderTimeSlots()"
-      class="w-full px-4 py-2 rounded-lg"
-      style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;">
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold mb-3">Horário</label>
-    <div class="grid grid-cols-4 gap-2" id="timeSlots"></div>
-  </div>
-
-  <!-- 🔥 IMPORTANTE -->
-  <input type="hidden" id="time">
-
-  <button type="submit"
-    class="w-full py-3 rounded-lg font-semibold text-lg"
-    style="background:#c9a84c; color:#1a1a1a;">
-    Confirmar Agendamento
-  </button>
-
-</form>
+      <div><label class="block text-sm font-semibold mb-2">Seu Nome</label> <input type="text" id="name" placeholder="João Silva" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      </div>
+      <div><label class="block text-sm font-semibold mb-2">Telefone</label> <input type="tel" id="phone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required>
+      </div>
+      <div><label class="block text-sm font-semibold mb-2">Serviço</label> <select id="service" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required> <option value="">Selecione um serviço</option> <option value="Corte na Tesoura">Corte na Tesoura - R$ 30,00</option> <option value="Máquina + Tesoura">Máquina + Tesoura - R$ 30,00</option> <option value="Barba">Barba - R$ 25,00</option> <option value="Pezinho">Pezinho - R$ 10,00</option> <option value="Cabelo e Barba">Cabelo e Barba - R$ 50,00</option> </select>
+      </div>
+      <div><label class="block text-sm font-semibold mb-2">Data</label> <input type="date" id="date" class="w-full px-4 py-2 rounded-lg" style="background:#1a1a1a; border:1px solid rgba(201,168,76,0.3); color:#e5e5e5;" required onchange="renderTimeSlots()">
+      </div>
+      <div><label class="block text-sm font-semibold mb-3">Horário</label>
+       <div class="grid grid-cols-4 gap-2" id="timeSlots"></div>
+      </div><button type="submit" class="w-full py-3 rounded-lg font-semibold text-lg transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Confirmar Agendamento</button>
+     </form>
     </div>
    </section><!-- APPOINTMENTS SECTION -->
    <section id="sec-appointments" class="hidden">
@@ -362,53 +326,47 @@
         container.appendChild(btn);
       });
     }
-function renderAppointments() {
-  const container = document.getElementById('appointmentsList');
 
-  if (!currentData || currentData.length === 0) {
-    container.innerHTML = '<p class="text-center text-neutral-400">Nenhum agendamento ainda</p>';
-    return;
-  }
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const service = document.getElementById('service').value;
+      const date = document.getElementById('date').value;
+      const timeValue = document.getElementById('time');
+      
+      if (!timeValue.value) {
+        showToast('Selecione um horário', 'error');
+        return;
+      }
 
-  container.innerHTML = currentData.map(apt => `
-    <div class="booking-card p-6 rounded-lg"
-      style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+      if (currentData.length >= 999) {
+        showToast('Limite de agendamentos atingido', 'error');
+        return;
+      }
 
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h3 class="text-lg font-semibold">${apt.name || '-'}</h3>
-          <p class="text-sm text-neutral-400">${apt.phone || '-'}</p>
-        </div>
-      </div>
+      const result = await window.dataSdk.create({
+        id: Date.now().toString(),
+        name,
+        phone,
+        service,
+        date,
+        time: timeValue.value,
+        status: 'confirmado',
+        createdAt: new Date().toISOString()
+      });
 
-      <div class="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <span class="text-neutral-500">Serviço:</span>
-          <p class="font-semibold">${apt.service || '-'}</p>
-        </div>
-
-        <div>
-          <span class="text-neutral-500">Data:</span>
-          <p class="font-semibold">${apt.date ? new Date(apt.date).toLocaleDateString('pt-BR') : '-'}</p>
-        </div>
-
-        <div>
-          <span class="text-neutral-500">Horário:</span>
-          <p class="font-semibold">${apt.time || '-'}</p>
-        </div>
-
-        <div>
-          <span class="text-neutral-500">Status:</span>
-          <p class="font-semibold" style="color:#c9a84c;">
-            ${apt.status || 'confirmado'}
-          </p>
-        </div>
-      </div>
-
-    </div>
-  `).join('');
-}
-   
+      if (result.isOk) {
+        showToast('Agendamento confirmado!', 'success');
+        document.getElementById('bookingForm').reset();
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('time').value = '';
+        setTimeout(() => showSection('appointments'), 1500);
+      } else {
+        showToast('Erro ao confirmar agendamento', 'error');
+      }
+    });
 
     function renderAppointments() {
       const container = document.getElementById('appointmentsList');
@@ -449,7 +407,6 @@ function renderAppointments() {
           </div>
         </div>
       `).join('');
-    }
       
       lucide.createIcons();
     }
