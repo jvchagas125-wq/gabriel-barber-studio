@@ -362,49 +362,53 @@
         container.appendChild(btn);
       });
     }
+function renderAppointments() {
+  const container = document.getElementById('appointmentsList');
 
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
-  const service = document.getElementById('service').value;
-  const date = document.getElementById('date').value;
-  const time = document.getElementById('time').value;
-
-  if (!time) {
-    showToast('Selecione um horário', 'error');
+  if (!currentData || currentData.length === 0) {
+    container.innerHTML = '<p class="text-center text-neutral-400">Nenhum agendamento ainda</p>';
     return;
   }
 
-  const result = await window.dataSdk.create({
-    id: Date.now().toString(),
-    name,
-    phone,
-    service,
-    date,
-    time,
-    status: 'confirmado',
-    createdAt: new Date().toISOString()
-  });
+  container.innerHTML = currentData.map(apt => `
+    <div class="booking-card p-6 rounded-lg"
+      style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
 
-  if (result.isOk) {
-    showToast('Agendamento confirmado!', 'success');
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 class="text-lg font-semibold">${apt.name || '-'}</h3>
+          <p class="text-sm text-neutral-400">${apt.phone || '-'}</p>
+        </div>
+      </div>
 
-    // limpa formulário
-    document.getElementById('bookingForm').reset();
-    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('time').value = '';
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span class="text-neutral-500">Serviço:</span>
+          <p class="font-semibold">${apt.service || '-'}</p>
+        </div>
 
-    // 🔥 REDIRECIONA DIRETO
-    setTimeout(() => {
-      showSection('appointments');
-    }, 1000);
+        <div>
+          <span class="text-neutral-500">Data:</span>
+          <p class="font-semibold">${apt.date ? new Date(apt.date).toLocaleDateString('pt-BR') : '-'}</p>
+        </div>
 
-  } else {
-    showToast('Erro ao confirmar agendamento', 'error');
-  }
-});
+        <div>
+          <span class="text-neutral-500">Horário:</span>
+          <p class="font-semibold">${apt.time || '-'}</p>
+        </div>
+
+        <div>
+          <span class="text-neutral-500">Status:</span>
+          <p class="font-semibold" style="color:#c9a84c;">
+            ${apt.status || 'confirmado'}
+          </p>
+        </div>
+      </div>
+
+    </div>
+  `).join('');
+}
+   
 
     function renderAppointments() {
       const container = document.getElementById('appointmentsList');
