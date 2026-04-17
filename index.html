@@ -140,7 +140,6 @@
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
      <div class="flex items-center gap-2"><img src="https://i.imgur.com/bmEuklI.png" alt="Logo Gabriel Barber" style="width:32px; height:32px; object-fit:contain;" loading="lazy" onerror="console.error('Nav logo failed to load:', this.src);">
       <div class="text-xl font-display" style="color:#c9a84c;">
-       <span id="nav-title">Gabriel Barber Studio</span>
       </div>
      </div>
      <div class="flex gap-1">
@@ -267,11 +266,6 @@
     <div class="max-w-md mx-auto px-4 pt-24 pb-20">
      <div class="text-center mb-12"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float mx-auto" style="width:120px; height:120px; object-fit:contain; margin-bottom:24px;" loading="lazy" onerror="console.error('Login logo failed to load:', this.src);">
       <h2 class="font-display text-4xl gold-gradient mb-2">Meus Horários</h2>
-      <button onclick="handleMyAppointments()" 
-      class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" 
-      data-section="myappointments">
-       Meus Horários
-       </button>
       <p class="text-neutral-400">Digite seu telefone para visualizar seus agendamentos</p>
      </div>
      <form id="loginForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
@@ -282,14 +276,6 @@
    </section>
   </div>
   <script>
-   function ensureUserLogged() {
-  const userPhone = localStorage.getItem('userPhone');
-  if (!userPhone) {
-    showSection('login');
-    return false;
-  }
-  return true;
-}
     let currentData = [];
     let config = {};
     const defaultConfig = {
@@ -344,18 +330,7 @@
           el.style.background = 'transparent';
         }
       });
-function handleMyAppointments() {
-  const userPhone = localStorage.getItem('userPhone');
 
-  if (!userPhone) {
-    showSection('login');
-    return;
-  }
-
-  document.getElementById('userPhoneDisplay').textContent = userPhone;
-  renderUserAppointments();
-  showSection('myappointments');
-}
       // Show/hide logout button
       const logoutBtn = document.getElementById('logoutBtn');
       if (section === 'myappointments' && localStorage.getItem('userPhone')) {
@@ -417,53 +392,49 @@ function handleMyAppointments() {
         container.appendChild(btn);
       });
     }
-document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
-  const service = document.getElementById('service').value;
-  const date = document.getElementById('date').value;
-  const timeValue = document.getElementById('time');
 
-  if (!timeValue.value) {
-    showToast('Selecione um horário', 'error');
-    return;
-  }
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const service = document.getElementById('service').value;
+      const date = document.getElementById('date').value;
+      const timeValue = document.getElementById('time');
+      
+      if (!timeValue.value) {
+        showToast('Selecione um horário', 'error');
+        return;
+      }
 
-  const result = await window.dataSdk.create({
-    id: Date.now().toString(),
-    name,
-    phone,
-    service,
-    date,
-    time: timeValue.value,
-    status: 'confirmado',
-    createdAt: new Date().toISOString()
-  });
+      if (currentData.length >= 999) {
+        showToast('Limite de agendamentos atingido', 'error');
+        return;
+      }
 
-  if (result.isOk) {
-    showToast('Agendamento confirmado!', 'success');
+      const result = await window.dataSdk.create({
+        id: Date.now().toString(),
+        name,
+        phone,
+        service,
+        date,
+        time: timeValue.value,
+        status: 'confirmado',
+        createdAt: new Date().toISOString()
+      });
 
-    // 🔥 SALVA USUÁRIO AUTOMATICAMENTE
-    localStorage.setItem('userPhone', phone);
-    document.getElementById('userPhoneDisplay').textContent = phone;
-
-    document.getElementById('bookingForm').reset();
-    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('time').value = '';
-
-    // 🔥 FORÇA ATUALIZAÇÃO E VAI PRA TELA CERTA
-    setTimeout(() => {
-      renderUserAppointments();
-      showSection('myappointments');
-    }, 500);
-
-  } else {
-    showToast('Erro ao confirmar agendamento', 'error');
-  }
-});
-    
+      if (result.isOk) {
+        showToast('Agendamento confirmado!', 'success');
+        document.getElementById('bookingForm').reset();
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('time').value = '';
+        setTimeout(() => {
+          showSection('appointments');
+        }, 1500);
+      } else {
+        showToast('Erro ao confirmar agendamento', 'error');
+      }
+    });
 
     // Handle login form
     document.getElementById('loginForm').addEventListener('submit', (e) => {
@@ -477,55 +448,50 @@ document.getElementById('bookingForm').addEventListener('submit', async (e) => {
     });
 
     function renderUserAppointments() {
-  const userPhone = localStorage.getItem('userPhone');
-  const container = document.getElementById('myAppointmentsList');
+      const userPhone = localStorage.getItem('userPhone');
+      const container = document.getElementById('myAppointmentsList');
+      
+      if (!userPhone) {
+        showSection('login');
+        return;
+      }
 
-  if (!userPhone) {
-    container.innerHTML = '<p class="text-center text-neutral-400">Faça login para ver seus horários</p>';
-    return;
-  }
+      const userApts = currentData.filter(apt => apt.phone === userPhone);
+      
+      if (userApts.length === 0) {
+        container.innerHTML = '<div class="text-center py-8"><p class="text-neutral-400 mb-4">Você não tem agendamentos</p><button onclick="showSection(\'booking\')" class="px-6 py-2 rounded-lg font-semibold transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Fazer um Agendamento</button></div>';
+        return;
+      }
 
-  const userApts = currentData.filter(apt => apt.phone === userPhone);
-
-  if (userApts.length === 0) {
-    container.innerHTML = `
-      <div class="text-center py-8">
-        <p class="text-neutral-400 mb-4">Você não tem agendamentos</p>
-        <button onclick="showSection('booking')" 
-          class="px-6 py-2 rounded-lg font-semibold"
-          style="background:#c9a84c; color:#1a1a1a;">
-          Fazer um Agendamento
-        </button>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = userApts.map(apt => `
-    <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h3 class="text-lg font-semibold">${apt.service}</h3>
-          <p class="text-sm text-neutral-400">${apt.name}</p>
+      container.innerHTML = userApts.map(apt => `
+        <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">${apt.service}</h3>
+              <p class="text-sm text-neutral-400">${apt.name}</p>
+            </div>
+            <button onclick="deleteUserAppointment('${apt.__backendId}')" class="text-neutral-400 hover:text-red-400 transition">
+              <i data-lucide="trash-2" style="width:20px; height:20px;"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span class="text-neutral-500">Data:</span>
+              <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Horário:</span>
+              <p class="font-semibold">${apt.time}</p>
+            </div>
+            <div>
+              <span class="text-neutral-500">Status:</span>
+              <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 text-sm">
-        <div>
-          <span class="text-neutral-500">Data:</span>
-          <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
-        </div>
-        <div>
-          <span class="text-neutral-500">Horário:</span>
-          <p class="font-semibold">${apt.time}</p>
-        </div>
-        <div>
-          <span class="text-neutral-500">Status:</span>
-          <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
+      `).join('');
+      
+      lucide.createIcons();
     }
 
     async function deleteUserAppointment(id) {
