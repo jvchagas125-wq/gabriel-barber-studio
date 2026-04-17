@@ -417,57 +417,53 @@ function handleMyAppointments() {
         container.appendChild(btn);
       });
     }
+document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const service = document.getElementById('service').value;
+  const date = document.getElementById('date').value;
+  const timeValue = document.getElementById('time');
 
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
-      const service = document.getElementById('service').value;
-      const date = document.getElementById('date').value;
-      const timeValue = document.getElementById('time');
-      
-      if (!timeValue.value) {
-        showToast('Selecione um horário', 'error');
-        return;
-      }
+  if (!timeValue.value) {
+    showToast('Selecione um horário', 'error');
+    return;
+  }
 
-      if (currentData.length >= 999) {
-        showToast('Limite de agendamentos atingido', 'error');
-        return;
-      }
+  const result = await window.dataSdk.create({
+    id: Date.now().toString(),
+    name,
+    phone,
+    service,
+    date,
+    time: timeValue.value,
+    status: 'confirmado',
+    createdAt: new Date().toISOString()
+  });
 
-      const result = await window.dataSdk.create({
-        id: Date.now().toString(),
-        name,
-        phone,
-        service,
-        date,
-        time: timeValue.value,
-        status: 'confirmado',
-        createdAt: new Date().toISOString()
-      });
+  if (result.isOk) {
+    showToast('Agendamento confirmado!', 'success');
 
-   if (result.isOk) {
-  showToast('Agendamento confirmado!', 'success');
+    // 🔥 SALVA USUÁRIO AUTOMATICAMENTE
+    localStorage.setItem('userPhone', phone);
+    document.getElementById('userPhoneDisplay').textContent = phone;
 
-  // salva telefone
-  localStorage.setItem('userPhone', phone);
-  document.getElementById('userPhoneDisplay').textContent = phone;
+    document.getElementById('bookingForm').reset();
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('time').value = '';
 
-  document.getElementById('bookingForm').reset();
-  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('time').value = '';
+    // 🔥 FORÇA ATUALIZAÇÃO E VAI PRA TELA CERTA
+    setTimeout(() => {
+      renderUserAppointments();
+      showSection('myappointments');
+    }, 500);
 
-  // ⚠️ ESPERA um pouco pra garantir que o dataSdk atualizou
-  setTimeout(() => {
-    renderUserAppointments(); // força render
-    showSection('myappointments'); // vai pra tela certa
-  }, 500);
-} else {
-        showToast('Erro ao confirmar agendamento', 'error');
-      }
-    });
+  } else {
+    showToast('Erro ao confirmar agendamento', 'error');
+  }
+});
+    
 
     // Handle login form
     document.getElementById('loginForm').addEventListener('submit', (e) => {
@@ -481,50 +477,55 @@ function handleMyAppointments() {
     });
 
     function renderUserAppointments() {
-      const userPhone = localStorage.getItem('userPhone');
-      const container = document.getElementById('myAppointmentsList');
-      
-      if (!userPhone) {
-        showSection('login');
-        return;
-      }
+  const userPhone = localStorage.getItem('userPhone');
+  const container = document.getElementById('myAppointmentsList');
 
-      const userApts = currentData.filter(apt => apt.phone === userPhone);
-      
-      if (userApts.length === 0) {
-        container.innerHTML = '<div class="text-center py-8"><p class="text-neutral-400 mb-4">Você não tem agendamentos</p><button onclick="showSection(\'booking\')" class="px-6 py-2 rounded-lg font-semibold transition hover:opacity-90" style="background:#c9a84c; color:#1a1a1a;">Fazer um Agendamento</button></div>';
-        return;
-      }
+  if (!userPhone) {
+    container.innerHTML = '<p class="text-center text-neutral-400">Faça login para ver seus horários</p>';
+    return;
+  }
 
-      container.innerHTML = userApts.map(apt => `
-        <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-lg font-semibold">${apt.service}</h3>
-              <p class="text-sm text-neutral-400">${apt.name}</p>
-            </div>
-            <button onclick="deleteUserAppointment('${apt.__backendId}')" class="text-neutral-400 hover:text-red-400 transition">
-              <i data-lucide="trash-2" style="width:20px; height:20px;"></i>
-            </button>
-          </div>
-          <div class="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span class="text-neutral-500">Data:</span>
-              <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
-            </div>
-            <div>
-              <span class="text-neutral-500">Horário:</span>
-              <p class="font-semibold">${apt.time}</p>
-            </div>
-            <div>
-              <span class="text-neutral-500">Status:</span>
-              <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
-            </div>
-          </div>
+  const userApts = currentData.filter(apt => apt.phone === userPhone);
+
+  if (userApts.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <p class="text-neutral-400 mb-4">Você não tem agendamentos</p>
+        <button onclick="showSection('booking')" 
+          class="px-6 py-2 rounded-lg font-semibold"
+          style="background:#c9a84c; color:#1a1a1a;">
+          Fazer um Agendamento
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = userApts.map(apt => `
+    <div class="booking-card p-6 rounded-lg" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2);">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 class="text-lg font-semibold">${apt.service}</h3>
+          <p class="text-sm text-neutral-400">${apt.name}</p>
         </div>
-      `).join('');
-      
-      lucide.createIcons();
+      </div>
+      <div class="grid grid-cols-3 gap-4 text-sm">
+        <div>
+          <span class="text-neutral-500">Data:</span>
+          <p class="font-semibold">${new Date(apt.date).toLocaleDateString('pt-BR')}</p>
+        </div>
+        <div>
+          <span class="text-neutral-500">Horário:</span>
+          <p class="font-semibold">${apt.time}</p>
+        </div>
+        <div>
+          <span class="text-neutral-500">Status:</span>
+          <p class="font-semibold" style="color:#c9a84c;">${apt.status}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
     }
 
     async function deleteUserAppointment(id) {
