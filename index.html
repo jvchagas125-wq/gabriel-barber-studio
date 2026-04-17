@@ -267,6 +267,11 @@
     <div class="max-w-md mx-auto px-4 pt-24 pb-20">
      <div class="text-center mb-12"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo Gabriel Barber" class="logo-float mx-auto" style="width:120px; height:120px; object-fit:contain; margin-bottom:24px;" loading="lazy" onerror="console.error('Login logo failed to load:', this.src);">
       <h2 class="font-display text-4xl gold-gradient mb-2">Meus Horários</h2>
+      <button onclick="handleMyAppointments()" 
+      class="nav-link px-3 py-1.5 rounded text-sm hover:bg-neutral-800 transition" 
+      data-section="myappointments">
+       Meus Horários
+       </button>
       <p class="text-neutral-400">Digite seu telefone para visualizar seus agendamentos</p>
      </div>
      <form id="loginForm" class="space-y-6" style="background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); padding:24px; border-radius:12px;">
@@ -277,6 +282,14 @@
    </section>
   </div>
   <script>
+   function ensureUserLogged() {
+  const userPhone = localStorage.getItem('userPhone');
+  if (!userPhone) {
+    showSection('login');
+    return false;
+  }
+  return true;
+}
     let currentData = [];
     let config = {};
     const defaultConfig = {
@@ -331,7 +344,18 @@
           el.style.background = 'transparent';
         }
       });
+function handleMyAppointments() {
+  const userPhone = localStorage.getItem('userPhone');
 
+  if (!userPhone) {
+    showSection('login');
+    return;
+  }
+
+  document.getElementById('userPhoneDisplay').textContent = userPhone;
+  renderUserAppointments();
+  showSection('myappointments');
+}
       // Show/hide logout button
       const logoutBtn = document.getElementById('logoutBtn');
       if (section === 'myappointments' && localStorage.getItem('userPhone')) {
@@ -424,19 +448,22 @@
         createdAt: new Date().toISOString()
       });
 
-     if (result.isOk) {
+   if (result.isOk) {
   showToast('Agendamento confirmado!', 'success');
 
-  // SALVA O TELEFONE DO CLIENTE
+  // salva telefone
   localStorage.setItem('userPhone', phone);
+  document.getElementById('userPhoneDisplay').textContent = phone;
 
   document.getElementById('bookingForm').reset();
   document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('time').value = '';
 
+  // ⚠️ ESPERA um pouco pra garantir que o dataSdk atualizou
   setTimeout(() => {
-    showSection('myappointments'); // AGORA VAI PRA TELA CERTA
-  }, 1500);
+    renderUserAppointments(); // força render
+    showSection('myappointments'); // vai pra tela certa
+  }, 500);
 } else {
         showToast('Erro ao confirmar agendamento', 'error');
       }
