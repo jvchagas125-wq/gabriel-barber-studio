@@ -364,45 +364,47 @@
     }
 
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
-      const service = document.getElementById('service').value;
-      const date = document.getElementById('date').value;
-      const timeValue = document.getElementById('time');
-      
-      if (!timeValue.value) {
-        showToast('Selecione um horário', 'error');
-        return;
-      }
+  e.preventDefault();
 
-      if (currentData.length >= 999) {
-        showToast('Limite de agendamentos atingido', 'error');
-        return;
-      }
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const service = document.getElementById('service').value;
+  const date = document.getElementById('date').value;
+  const time = document.getElementById('time').value;
 
-      const result = await window.dataSdk.create({
-        id: Date.now().toString(),
-        name,
-        phone,
-        service,
-        date,
-        time: timeValue.value,
-        status: 'confirmado',
-        createdAt: new Date().toISOString()
-      });
+  if (!time) {
+    showToast('Selecione um horário', 'error');
+    return;
+  }
 
-      if (result.isOk) {
-        showToast('Agendamento confirmado!', 'success');
-        document.getElementById('bookingForm').reset();
-        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-        document.getElementById('time').value = '';
-        setTimeout(() => showSection('appointments'), 1500);
-      } else {
-        showToast('Erro ao confirmar agendamento', 'error');
-      }
-    });
+  const result = await window.dataSdk.create({
+    id: Date.now().toString(),
+    name,
+    phone,
+    service,
+    date,
+    time,
+    status: 'confirmado',
+    createdAt: new Date().toISOString()
+  });
+
+  if (result.isOk) {
+    showToast('Agendamento confirmado!', 'success');
+
+    // limpa formulário
+    document.getElementById('bookingForm').reset();
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('time').value = '';
+
+    // 🔥 REDIRECIONA DIRETO
+    setTimeout(() => {
+      showSection('appointments');
+    }, 1000);
+
+  } else {
+    showToast('Erro ao confirmar agendamento', 'error');
+  }
+});
 
     function renderAppointments() {
       const container = document.getElementById('appointmentsList');
