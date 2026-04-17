@@ -424,16 +424,20 @@
         createdAt: new Date().toISOString()
       });
 
-      if (result.isOk) {
-        localStorage.setItem('userPhone', phone);
-        showToast('Agendamento confirmado!', 'success');
-        document.getElementById('bookingForm').reset();
-        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-        document.getElementById('time').value = '';
-        setTimeout(() => {
-          showSection('myappointments');
-        }, 1500);
-      } else {
+     if (result.isOk) {
+  showToast('Agendamento confirmado!', 'success');
+
+  // SALVA O TELEFONE DO CLIENTE
+  localStorage.setItem('userPhone', phone);
+
+  document.getElementById('bookingForm').reset();
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('time').value = '';
+
+  setTimeout(() => {
+    showSection('myappointments'); // AGORA VAI PRA TELA CERTA
+  }, 1500);
+} else {
         showToast('Erro ao confirmar agendamento', 'error');
       }
     });
