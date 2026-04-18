@@ -245,6 +245,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBuqPBQocq7gFFnbtD8VoMB6kTu1I3R_9w",
@@ -257,6 +258,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
   const COL = "appointments";
 
   const TIME_SLOTS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00"];
@@ -293,26 +295,35 @@
   });
   document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
 
-  window.doLogin = function(){
+  window.doLogin = async function(){
     const raw=document.getElementById("login-phone").value;
     const digits=raw.replace(/\D/g,"");
     const errEl=document.getElementById("login-error");
     if(digits.length<10){ errEl.textContent="Digite um numero valido com DDD."; errEl.style.display="block"; return; }
     errEl.style.display="none";
     const formatted=formatPhone(raw);
-    loggedPhone=formatted;
-    localStorage.setItem("gbs_phone",formatted);
-    document.getElementById("login-screen").style.display="none";
-    document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
-    document.getElementById("f-phone").value=formatted;
-    subscribeAll();
+    try {
+      // Login anônimo no Firebase — gera token seguro sem expor dados
+      if(!auth.currentUser) await signInAnonymously(auth);
+      loggedPhone=formatted;
+      localStorage.setItem("gbs_phone",formatted);
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
+      document.getElementById("f-phone").value=formatted;
+      subscribeAll();
+    } catch(err){
+      console.error(err);
+      errEl.textContent="Erro ao autenticar. Tente novamente.";
+      errEl.style.display="block";
+    }
   };
 
-  window.doLogout = function(){
+  window.doLogout = async function(){
     if(!confirm("Deseja sair da sua conta?")) return;
     loggedPhone=null; localStorage.removeItem("gbs_phone");
     document.getElementById("login-phone").value="";
     document.getElementById("login-screen").style.display="flex";
+    try { await auth.signOut(); } catch(e){}
   };
 
   function subscribeAll(){
@@ -435,12 +446,23 @@
   window.addEventListener("DOMContentLoaded",()=>{
     setMinDate();
     const hideLoading = () => { document.getElementById("app-loading").style.display="none"; };
-    const safetyTimer = setTimeout(hideLoading, 6000);
-    const saved=localStorage.getItem("gbs_phone");
-    hideLoading(); clearTimeout(safetyTimer);
-    if(saved){ loggedPhone=saved; document.getElementById("nav-phone-display").textContent=maskPhone(saved); document.getElementById("f-phone").value=saved; subscribeAll(); }
-    else { document.getElementById("login-screen").style.display="flex"; }
-    showSection("home");
+
+    onAuthStateChanged(auth, user => {
+      hideLoading();
+      const saved=localStorage.getItem("gbs_phone");
+      if(user && saved){
+        loggedPhone=saved;
+        document.getElementById("nav-phone-display").textContent=maskPhone(saved);
+        document.getElementById("f-phone").value=saved;
+        subscribeAll();
+      } else {
+        document.getElementById("login-screen").style.display="flex";
+      }
+      showSection("home");
+    });
+
+    // Timeout de segurança caso o Auth demore
+    setTimeout(hideLoading, 6000);
   });
 </script>
 </body>
