@@ -176,6 +176,25 @@
   <div class="page" style="max-width:640px;">
     <h2 class="section-title gold-gradient">Agende seu Horario</h2>
     <div id="confirmBox"><div class="confirm-icon">checkmark</div><div class="confirm-title">Agendamento confirmado!</div><div class="confirm-details" id="confirmDetails"></div></div>
+
+    <!-- Modal: segundo agendamento -->
+    <div id="secondBookingModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;animation:fadeIn .3s ease-out;">
+      <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+        <div style="font-size:28px;text-align:center;margin-bottom:12px;">⚠️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;margin-bottom:10px;color:#f0d78c;">Agendamento ja existente</div>
+        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Ja existe um agendamento ativo neste numero de telefone. Deseja confirmar um segundo agendamento?</p>
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+          <button onclick="declineSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.35);background:none;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(220,38,38,.1)'" onmouseout="this.style.background='none'">Nao</button>
+          <button onclick="acceptSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sim</button>
+        </div>
+        <!-- Campo de justificativa (oculto inicialmente) -->
+        <div id="justifySection" style="display:none;animation:slideUp .3s ease-out;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Por que precisa de um segundo agendamento?</label>
+          <textarea id="justifyText" rows="3" placeholder="Ex: preciso cortar o cabelo e a barba em dias separados..." style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;resize:vertical;transition:border-color .2s;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+          <button onclick="confirmSecondBooking()" style="width:100%;margin-top:12px;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">Confirmar Agendamento</button>
+        </div>
+      </div>
+    </div>
     <div class="booking-card">
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
@@ -323,6 +342,26 @@
     });
   };
 
+  // Armazena os dados do agendamento pendente enquanto aguarda confirmação
+  let pendingBooking = null;
+
+  async function doSaveBooking(name, phone, service, date, time, justification){
+    const btn=document.getElementById("submit-btn");
+    btn.disabled=true; btn.textContent="Confirmando...";
+    try {
+      const data = { name, phone, service, date, time, status:"Confirmado", createdAt:new Date().toISOString() };
+      if(justification) data.justification = justification;
+      await addDoc(collection(db,COL), data);
+      const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+      document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
+      document.getElementById("confirmBox").classList.add("show");
+      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value="";
+      renderSlots(); showToast("Agendamento confirmado!","success");
+      setTimeout(()=>showSection("appointments"),2200);
+    } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
+    finally { btn.disabled=false; btn.textContent="Confirmar Agendamento"; }
+  }
+
   window.submitBooking = async function(){
     const name=document.getElementById("f-name").value.trim();
     const phone=document.getElementById("f-phone").value;
@@ -334,18 +373,38 @@
     if(!date){ showToast("Selecione uma data","error"); return; }
     if(!time){ showToast("Selecione um horario","error"); return; }
     if(allAppointments.some(a=>a.date===date&&a.time===time)){ showToast("Esse horario foi reservado. Escolha outro.","error"); renderSlots(); return; }
-    const btn=document.getElementById("submit-btn");
-    btn.disabled=true; btn.textContent="Confirmando...";
-    try {
-      await addDoc(collection(db,COL),{ name,phone,service,date,time,status:"Confirmado",createdAt:new Date().toISOString() });
-      const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
-      document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
-      document.getElementById("confirmBox").classList.add("show");
-      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value="";
-      renderSlots(); showToast("Agendamento confirmado!","success");
-      setTimeout(()=>showSection("appointments"),2200);
-    } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
-    finally { btn.disabled=false; btn.textContent="Confirmar Agendamento"; }
+
+    // Verifica se já existe agendamento futuro neste telefone
+    const today=getTodayStr();
+    const hasExisting = allAppointments.some(a=>a.phone===phone && a.date>=today);
+    if(hasExisting){
+      pendingBooking = { name, phone, service, date, time };
+      const modal = document.getElementById("secondBookingModal");
+      document.getElementById("justifySection").style.display="none";
+      document.getElementById("justifyText").value="";
+      modal.style.display="flex";
+      return;
+    }
+
+    await doSaveBooking(name, phone, service, date, time, null);
+  };
+
+  window.declineSecondBooking = function(){
+    document.getElementById("secondBookingModal").style.display="none";
+    pendingBooking = null;
+  };
+
+  window.acceptSecondBooking = function(){
+    document.getElementById("justifySection").style.display="block";
+  };
+
+  window.confirmSecondBooking = async function(){
+    const justify = document.getElementById("justifyText").value.trim();
+    if(!justify){ showToast("Por favor, informe a justificativa","error"); return; }
+    document.getElementById("secondBookingModal").style.display="none";
+    const { name, phone, service, date, time } = pendingBooking;
+    pendingBooking = null;
+    await doSaveBooking(name, phone, service, date, time, justify);
   };
 
   async function renderAppointments(){
