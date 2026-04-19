@@ -516,23 +516,27 @@
   const COL = "appointments";
 
   // ===== HORÁRIOS =====
-  // Duração dos serviços em slots de 30min
+  // Duração dos serviços em slots de 15min
+  // Slots bloqueados por serviço (duração + 5min intervalo, em slots de 15min)
+  // Cabelo: 45min serviço + 5min intervalo = 50min → 4 slots (60min, arredondado para cima)
+  // Cabelo & Barba: 70min + 5min = 75min → 5 slots
+  // Demais: 15min + 5min = 20min → 2 slots (30min, arredondado para cima)
   const SERVICE_SLOTS = {
-    'Cabelo':        2, // 45min → ocupa 2 slots (slot escolhido + próximo)
-    'Cabelo & Barba':3, // 75min → ocupa 3 slots
-    'Barba':         1,
-    'Pezinho':       1,
-    'Raspar Cabeca': 1,
-    'Sobrancelha':   1,
+    'Cabelo':        4, // 60min bloqueados
+    'Cabelo & Barba':5, // 75min bloqueados
+    'Barba':         2, // 30min bloqueados
+    'Pezinho':       2,
+    'Raspar Cabeca': 2,
+    'Sobrancelha':   2,
   };
 
-  // Gera slots de 30 em 30 min entre inicio e fim (exclusive fim)
+  // Gera slots de 15 em 15 min entre inicio e fim (exclusive fim)
   function makeSlots(startH, startM, endH, endM){
     const slots=[];
     let h=startH, m=startM;
     while(h<endH||(h===endH&&m<endM)){
       slots.push(pad(h)+':'+pad(m));
-      m+=30; if(m>=60){m=0;h++;}
+      m+=15; if(m>=60){m=0;h++;}
     }
     return slots;
   }
@@ -563,6 +567,16 @@
     if(idx<0) return [];
     return all.slice(idx+1, idx+extraCount);
   }
+
+  // Duração em minutos para exibição no botão
+  const SERVICE_DURATION = {
+    'Cabelo':        45,
+    'Cabelo & Barba':70,
+    'Barba':         15,
+    'Pezinho':       15,
+    'Raspar Cabeca': 15,
+    'Sobrancelha':   15,
+  };
 
   let loggedPhone = null;
   let allAppointments = [];
@@ -817,8 +831,8 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        // Mostra o slot + os extras que serão reservados
-        btn.textContent=extraCount>0?(time+' + '+extraCount*30+'min'):time;
+        const dur=SERVICE_DURATION[service]||15;
+        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
         btn.onclick=()=>{
           document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
@@ -967,7 +981,8 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        btn.textContent=extraCount>0?(time+' + '+extraCount*30+'min'):time;
+        const dur=SERVICE_DURATION[service]||15;
+        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
         btn.onclick=()=>{
           document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
           btn.classList.add('selected');
