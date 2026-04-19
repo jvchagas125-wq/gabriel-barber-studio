@@ -57,6 +57,9 @@
     .service-card img{width:56px;height:56px;object-fit:contain;margin:0 auto 12px;display:block}
     .service-card h3{font-weight:600;font-size:15px;margin-bottom:6px} .service-card p{color:var(--text-muted);font-size:13px;margin-bottom:10px}
     .service-price{font-family:"Bebas Neue",sans-serif;font-size:24px;color:var(--gold)}
+    .service-features{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:4px}
+    .service-features li{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+    .service-features li::before{content:"·";color:var(--gold);font-size:16px;line-height:1;flex-shrink:0}
     @keyframes slideInUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
     .service-card:nth-child(1){animation-delay:.05s}.service-card:nth-child(2){animation-delay:.1s}.service-card:nth-child(3){animation-delay:.15s}.service-card:nth-child(4){animation-delay:.2s}.service-card:nth-child(5){animation-delay:.25s}
     .cta-btn{display:inline-block;padding:14px 36px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:17px;cursor:pointer;transition:opacity .2s;animation:pulseGold 2s ease-in-out infinite}
@@ -207,13 +210,71 @@
     </div>
     <h2 class="section-title gold-gradient">Nossos Servicos</h2>
     <div class="services-grid">
-      <div class="service-card"><img src="https://i.imgur.com/3ZT8O7P.png" alt="Tesoura" onerror="this.style.display='none'"><h3>Corte na Tesoura</h3><p>Corte moderno e preciso</p><div class="service-price">R$ 30,00</div></div>
-      <div class="service-card"><img src="https://i.imgur.com/IZXmGmw.png" alt="Maquina e Tesoura" onerror="this.style.display='none'"><h3>Maquina + Tesoura</h3><p>Combinado maquina e tesoura</p><div class="service-price">R$ 30,00</div></div>
-      <div class="service-card"><img src="https://i.imgur.com/AeimsaS.png" alt="Barba" onerror="this.style.display='none'"><h3>Barba</h3><p>Tratamento e design de barba</p><div class="service-price">R$ 25,00</div></div>
-      <div class="service-card"><img src="https://i.imgur.com/tPULAD0.png" alt="Pezinho" onerror="this.style.display='none'"><h3>Pezinho</h3><p>Acabamento e design</p><div class="service-price">R$ 10,00</div></div>
-    </div>
-    <div style="display:flex;justify-content:center;margin-top:20px;">
-      <div class="service-card" style="width:220px;animation-delay:.25s;"><img src="https://i.imgur.com/3OpNuNJ.png" alt="Cabelo e Barba" onerror="this.style.display='none'"><h3>Cabelo e Barba</h3><p>Pacote completo</p><div class="service-price">R$ 50,00</div></div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/3ZT8O7P.png" alt="Cabelo" onerror="this.style.display='none'">
+        <h3>Cabelo</h3>
+        <ul class="service-features">
+          <li>Cortes so com Maquina</li>
+          <li>Cortes so com Tesoura</li>
+          <li>Maquina + Tesoura</li>
+          <li>Incluso em planos</li>
+        </ul>
+        <div class="service-price">R$ 30,00</div>
+      </div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/AeimsaS.png" alt="Barba" onerror="this.style.display='none'">
+        <h3>Barba</h3>
+        <ul class="service-features">
+          <li>Raspado</li>
+          <li>Navalhado</li>
+          <li>Barboterapia</li>
+          <li>Entre outros...</li>
+        </ul>
+        <div class="service-price">R$ 25,00</div>
+      </div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/tPULAD0.png" alt="Pezinho" onerror="this.style.display='none'">
+        <h3>Pezinho</h3>
+        <ul class="service-features">
+          <li>Acabamento</li>
+          <li>Navalhado</li>
+        </ul>
+        <div class="service-price">R$ 15,00</div>
+      </div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/3OpNuNJ.png" alt="Cabelo e Barba" onerror="this.style.display='none'">
+        <h3>Cabelo &amp; Barba</h3>
+        <ul class="service-features">
+          <li>Pacote com desconto</li>
+          <li>Incluso em planos</li>
+        </ul>
+        <div class="service-price">R$ 50,00</div>
+      </div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/IZXmGmw.png" alt="Raspar Cabeca" onerror="this.style.display='none'">
+        <h3>Raspar Cabeca</h3>
+        <ul class="service-features">
+          <li>Curto</li>
+          <li>Zero</li>
+          <li>Navalhado</li>
+        </ul>
+        <div class="service-price">R$ 20,00</div>
+      </div>
+
+      <div class="service-card">
+        <img src="https://i.imgur.com/tPULAD0.png" alt="Sobrancelha" onerror="this.style.display='none'">
+        <h3>Sobrancelha</h3>
+        <ul class="service-features">
+          <li>Navalhada</li>
+        </ul>
+        <div class="service-price">R$ 15,00</div>
+      </div>
+
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
   </div>
@@ -248,11 +309,12 @@
       <div class="form-group"><label class="form-label">Servico</label>
         <select class="form-input" id="f-service">
           <option value="">Selecione um servico</option>
-          <option value="Corte na Tesoura">Corte na Tesoura - R$ 30,00</option>
-          <option value="Maquina + Tesoura">Maquina + Tesoura - R$ 30,00</option>
+          <option value="Cabelo">Cabelo - R$ 30,00</option>
           <option value="Barba">Barba - R$ 25,00</option>
-          <option value="Pezinho">Pezinho - R$ 10,00</option>
-          <option value="Cabelo e Barba">Cabelo e Barba - R$ 50,00</option>
+          <option value="Pezinho">Pezinho - R$ 15,00</option>
+          <option value="Cabelo & Barba">Cabelo &amp; Barba - R$ 50,00</option>
+          <option value="Raspar Cabeca">Raspar Cabeca - R$ 20,00</option>
+          <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()"></div>
@@ -413,11 +475,12 @@
       <div class="form-group"><label class="form-label">Servico</label>
         <select class="form-input" id="vip-f-service">
           <option value="">Selecione um servico</option>
-          <option value="Corte na Tesoura">Corte na Tesoura</option>
-          <option value="Maquina + Tesoura">Maquina + Tesoura</option>
+          <option value="Cabelo">Cabelo</option>
           <option value="Barba">Barba</option>
           <option value="Pezinho">Pezinho</option>
-          <option value="Cabelo e Barba">Cabelo e Barba</option>
+          <option value="Cabelo & Barba">Cabelo &amp; Barba</option>
+          <option value="Raspar Cabeca">Raspar Cabeca</option>
+          <option value="Sobrancelha">Sobrancelha</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()"></div>
