@@ -305,7 +305,7 @@
           <li>1 Cabelo &amp; Barba por mês</li>
           <li>1 Limpeza de Sobrancelha por mês</li>
         </ul>
-        <a class="plan-btn" href="https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=088faf9bd4814ffb84b415736cfb1f80" target="_blank" rel="noopener" onclick="setPendingPlan('LumberJack','R$80/mês')">Assinar agora</a>
+        <button class="plan-btn" onclick="openPlanModal('LumberJack','R$80/mes','088faf9bd4814ffb84b415736cfb1f80')">Assinar agora</button>
       </div>
 
       <!-- Plano 2: Ontheruler -->
@@ -317,7 +317,7 @@
           <li>2 Cabelo &amp; Barba por mês</li>
           <li>2 Limpezas de Sobrancelha por mês</li>
         </ul>
-        <a class="plan-btn" href="https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=694d9ae32b03435b85f961ac3d4b2428" target="_blank" rel="noopener" onclick="setPendingPlan('Ontheruler','R$90/mês')">Assinar agora</a>
+        <button class="plan-btn" onclick="openPlanModal('Ontheruler','R$90/mes','694d9ae32b03435b85f961ac3d4b2428')">Assinar agora</button>
       </div>
 
       <!-- Plano 3: Linedup -->
@@ -330,7 +330,7 @@
           <li>1 Corte por semana</li>
           <li>4 cortes por mês inclusos</li>
         </ul>
-        <a class="plan-btn" href="https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=35515cb8289947f6a21fbe00747e2986" target="_blank" rel="noopener" onclick="setPendingPlan('Linedup','R$125/mês')">Assinar agora</a>
+        <button class="plan-btn" onclick="openPlanModal('Linedup','R$125/mes','35515cb8289947f6a21fbe00747e2986')">Assinar agora</button>
       </div>
 
       <!-- Plano 4: Gentleman -->
@@ -343,7 +343,7 @@
           <li>1 Sobrancelha por semana (4/mês)</li>
           <li>1 Limpeza de Pele por mês</li>
         </ul>
-        <a class="plan-btn" href="https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=e398fc94b6a84ce28276f5675e1c981f" target="_blank" rel="noopener" onclick="setPendingPlan('Gentleman','R$200/mês')">Assinar agora</a>
+        <button class="plan-btn" onclick="openPlanModal('Gentleman','R$200/mes','e398fc94b6a84ce28276f5675e1c981f')">Assinar agora</button>
       </div>
 
     </div>
@@ -353,25 +353,35 @@
       <p><strong>Obs. 1:</strong> As vantagens das assinaturas nao sao acumulativas. O estabelecimento nao se responsabiliza pelo nao aproveitamento do servico/beneficio contratado em conformidade com o plano.</p>
       <p><strong>Obs. 2:</strong> Os valores poderao passar por reajuste semestral ou anual com aviso previo ao contratante.</p>
     </div>
-
-    <!-- Botão para ativar modo VIP após pagamento -->
-    <div style="text-align:center;margin-top:36px;padding:24px;background:rgba(201,168,76,0.05);border:1px dashed rgba(201,168,76,0.2);border-radius:12px;">
-      <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;">Ja realizou o pagamento? Ative seu acesso VIP abaixo.</p>
-      <button class="cta-btn" style="font-size:14px;padding:11px 28px;animation:none;" onclick="showVipActivation()">Ativar minha assinatura ✦</button>
-    </div>
   </div>
 </div>
 
-<!-- Modal ativação VIP -->
-<div id="vipModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;">
-  <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
-    <div style="text-align:center;font-size:36px;margin-bottom:12px;">👑</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;text-align:center;margin-bottom:6px;">Ativar Assinatura VIP</div>
-    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:24px;line-height:1.6;">Digite o email que voce usou para pagar no Mercado Pago. Vamos verificar sua assinatura automaticamente.</p>
-    <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Email do Mercado Pago</label>
-    <input id="mp-email-input" type="email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:16px;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-    <button id="verify-email-btn" onclick="verifyMpEmail()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#111;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;">Verificar assinatura</button>
-    <button onclick="document.getElementById('vipModal').style.display='none'" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:none;color:#666;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
+<!-- Modal: email antes de ir ao MP -->
+<div id="planModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+    <div style="text-align:center;font-size:32px;margin-bottom:10px;">✉️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-align:center;margin-bottom:6px;">Antes de prosseguir</div>
+    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Informe o email que voce vai usar para pagar no Mercado Pago.</p>
+    <p style="text-align:center;color:#666;font-size:12px;margin-bottom:22px;">Assim que o pagamento for confirmado, seu acesso VIP sera ativado <strong style="color:#c9a84c;">automaticamente</strong>.</p>
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
+      <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">Plano selecionado</span>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#c9a84c;margin-top:2px;" id="plan-modal-name"></div>
+    </div>
+    <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Seu email do Mercado Pago</label>
+    <input id="plan-email-input" type="email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:16px;transition:border-color .2s;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+    <button id="plan-proceed-btn" onclick="proceedToPlan()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#111;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:opacity .2s;">Continuar para pagamento →</button>
+    <button onclick="document.getElementById('planModal').style.display='none'" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:none;color:#666;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal aguardando pagamento -->
+<div id="waitingModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:36px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);text-align:center;">
+    <div style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:#c9a84c;animation:spin .7s linear infinite;margin:0 auto 20px;"></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:8px;">Aguardando pagamento...</div>
+    <p style="color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Finalize o pagamento no Mercado Pago. Assim que for confirmado, esta tela fechara automaticamente e seu acesso VIP sera ativado.</p>
+    <p style="color:#555;font-size:12px;margin-top:16px;">Isso pode levar alguns instantes.</p>
+    <button onclick="cancelWaiting()" style="margin-top:20px;padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:none;color:#555;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
   </div>
 </div>
 
@@ -466,7 +476,16 @@
     'Gentleman':  ['1 Corte por semana (4/mes)','1 Sobrancelha por semana (4/mes)','1 Limpeza de Pele por mes'],
   };
 
-  let vipUnsubscribe = null; // listener Firestore para assinatura em tempo real
+  const MP_LINKS = {
+    '088faf9bd4814ffb84b415736cfb1f80': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=088faf9bd4814ffb84b415736cfb1f80',
+    '694d9ae32b03435b85f961ac3d4b2428': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=694d9ae32b03435b85f961ac3d4b2428',
+    '35515cb8289947f6a21fbe00747e2986': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=35515cb8289947f6a21fbe00747e2986',
+    'e398fc94b6a84ce28276f5675e1c981f': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=e398fc94b6a84ce28276f5675e1c981f',
+  };
+
+  let vipUnsubscribe = null;
+  let pendingPlanId = null;
+  let waitingUnsubscribe = null;
 
   function applyVipMode(sub){
     document.getElementById('vip-plan-display').textContent = 'Plano '+sub.planName+' — '+sub.planPrice;
@@ -481,29 +500,35 @@
     document.getElementById('nav-plans-btn').style.display = '';
   }
 
-  // Escuta assinatura em tempo real no Firestore pelo email do MP
-  function listenSubscription(mpEmail){
+  // Escuta assinatura em tempo real no Firestore pelo telefone do cliente
+  function listenSubscription(phone){
     if(vipUnsubscribe) vipUnsubscribe();
     const q = query(
       collection(db,'subscriptions'),
-      where('payerEmail','==', mpEmail.toLowerCase()),
+      where('phone','==', phone),
       where('status','==','active')
     );
     vipUnsubscribe = onSnapshot(q, snap => {
       if(!snap.empty){
         const sub = snap.docs[0].data();
+        // Fecha modal de aguardando se estiver aberto
+        document.getElementById('waitingModal').style.display = 'none';
+        if(waitingUnsubscribe){ waitingUnsubscribe(); waitingUnsubscribe = null; }
         applyVipMode(sub);
-        // Se estava na home normal, muda para VIP
+        // Se estava na home normal, vira VIP automaticamente
+        const homeNormal = document.getElementById('sec-home');
+        if(homeNormal && homeNormal.classList.contains('active')){
+          showSection('home');
+          showToast('Pagamento confirmado! Bem-vindo ao VIP! 👑','success');
+        }
+        // Se estava aguardando, também redireciona
         const homeVip = document.getElementById('sec-home-vip');
         if(homeVip && !homeVip.classList.contains('active')){
-          const homeNormal = document.getElementById('sec-home');
-          if(homeNormal && homeNormal.classList.contains('active')){
-            showSection('home');
-          }
+          showSection('home');
         }
       } else {
         clearVipMode();
-        // Se estava no modo VIP, volta à home normal
+        // Se estava no modo VIP, volta à home normal automaticamente
         const homeVip = document.getElementById('sec-home-vip');
         if(homeVip && homeVip.classList.contains('active')){
           homeVip.classList.remove('active');
@@ -511,41 +536,60 @@
           showToast('Sua assinatura foi encerrada.','error');
         }
       }
-    }, err => console.error('subscription listener error:', err));
+    }, err => console.error('subscription listener:', err));
   }
 
-  // Chamado quando cliente digita email MP e clica em verificar
-  window.verifyMpEmail = async function(){
-    const email = document.getElementById('mp-email-input').value.trim().toLowerCase();
+  // Abre modal de email ao clicar "Assinar agora"
+  window.openPlanModal = function(planName, planPrice, planId){
+    pendingPlanId = planId;
+    document.getElementById('plan-modal-name').textContent = planName + ' — ' + planPrice;
+    document.getElementById('plan-email-input').value = '';
+    document.getElementById('planModal').style.display = 'flex';
+  };
+
+  // Cliente confirma email e vai ao MP
+  window.proceedToPlan = async function(){
+    const email = document.getElementById('plan-email-input').value.trim().toLowerCase();
     if(!email || !email.includes('@')){ showToast('Digite um email valido','error'); return; }
-    const btn = document.getElementById('verify-email-btn');
-    btn.disabled = true; btn.textContent = 'Verificando...';
+    if(!loggedPhone){ showToast('Faca login primeiro','error'); return; }
+
+    const btn = document.getElementById('plan-proceed-btn');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+
     try {
-      const res = await fetch('/api/check-subscription?email='+encodeURIComponent(email));
-      const data = await res.json();
-      if(data.active){
-        localStorage.setItem('gbs_mp_email', email);
-        document.getElementById('vipModal').style.display = 'none';
-        listenSubscription(email);
-        showToast('Assinatura confirmada! Bem-vindo, VIP!','success');
-        showSection('home');
-      } else {
-        showToast('Nenhuma assinatura ativa encontrada para este email.','error');
-      }
+      // Salva vínculo email → telefone no Firestore
+      await addDoc(collection(db,'pending_subscriptions'),{
+        email: email,
+        phone: loggedPhone,
+        planId: pendingPlanId,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Fecha modal de email, abre modal de aguardando
+      document.getElementById('planModal').style.display = 'none';
+      document.getElementById('waitingModal').style.display = 'flex';
+
+      // Abre o link do MP em nova aba
+      window.open(MP_LINKS[pendingPlanId], '_blank');
+
+      // Começa a escutar o Firestore pelo telefone — assim que o webhook ativar, vira VIP sozinho
+      listenSubscription(loggedPhone);
+
     } catch(e){
-      showToast('Erro ao verificar. Tente novamente.','error');
+      console.error(e);
+      showToast('Erro ao salvar. Tente novamente.','error');
     } finally {
-      btn.disabled = false; btn.textContent = 'Verificar assinatura';
+      btn.disabled = false; btn.textContent = 'Continuar para pagamento →';
     }
   };
 
-  window.showVipActivation = function(){
-    document.getElementById('vipModal').style.display = 'flex';
+  window.cancelWaiting = function(){
+    document.getElementById('waitingModal').style.display = 'none';
+    if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe = null; }
   };
 
   window.deactivateVip = function(){
     if(!confirm('Deseja sair do modo VIP neste dispositivo?')) return;
-    localStorage.removeItem('gbs_mp_email');
     if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe = null; }
     clearVipMode();
     showToast('Saiu do modo VIP','success');
@@ -553,10 +597,7 @@
   };
 
   window.showSection = function(name){
-    const mpEmail = localStorage.getItem('gbs_mp_email');
-    const homeVipEl = document.getElementById('sec-home-vip');
-    // Verifica se tem assinatura ativa no Firestore via DOM (snap já aplicou applyVipMode)
-    const isVip = mpEmail && homeVipEl && document.getElementById('nav-plans-btn').style.display === 'none';
+    const isVip = document.getElementById('nav-plans-btn').style.display === 'none';
     const actualName = (name === 'home' && isVip) ? 'home-vip' : name;
     document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.sec === name));
@@ -774,16 +815,13 @@
         loggedPhone = saved;
         document.getElementById("nav-phone-display").textContent = maskPhone(saved);
         document.getElementById("f-phone").value = saved;
-        // Preenche telefone no form VIP também
         const vipPhone = document.getElementById("vip-f-phone");
         if(vipPhone) vipPhone.value = saved;
-        // Inicia data mínima no VIP também
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         subscribeAll();
-        // Verifica assinatura VIP salva
-        const mpEmail = localStorage.getItem('gbs_mp_email');
-        if(mpEmail) listenSubscription(mpEmail);
+        // Restaura listener de assinatura VIP em tempo real ao voltar ao site
+        listenSubscription(saved);
       } else {
         document.getElementById("login-screen").style.display="flex";
       }
