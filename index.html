@@ -340,15 +340,11 @@
       <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram"><h3>Instagram</h3><p>@gabriel.bstudio</p><p style="font-size:12px;margin-top:4px;">Siga nosso perfil</p></a>
       <div class="contact-card" style="cursor:default;"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereco"><h3>Endereco</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p></div>
     </div>
-    <div class="hours-card">
+    <div class="hours-card" id="hours-display">
       <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horarios de Funcionamento</h3>
-      <div class="hours-grid" style="grid-template-columns:1fr 1fr 1fr;gap:16px;">
-        <div><div class="hours-label">Ter, Qui & Sex</div><div class="hours-time">10:00 - 21:00</div></div>
-        <div><div class="hours-label">Quarta-feira</div><div class="hours-time">10:00 - 15:00</div></div>
-        <div><div class="hours-label">Sabado</div><div class="hours-time">10:00 - 21:00</div></div>
-      </div>
-      <p class="hours-closed" style="margin-top:16px;color:#f0d78c;font-size:13px;">⚠️ Sextas-feiras: intervalo das 12:00 as 18:00</p>
-      <p class="hours-closed">Segunda-feira e Domingo: Fechado</p>
+      <div id="hours-grid-dynamic" class="hours-grid" style="gap:16px;"></div>
+      <div id="hours-breaks-dynamic"></div>
+      <p class="hours-closed" style="margin-top:16px;">Segunda-feira e Domingo: Fechado</p>
     </div>
   </div>
 </div>
@@ -544,6 +540,42 @@
       const snap = await getDoc(doc(db,'config','schedule'));
       if(snap.exists()) SCHEDULE = snap.data();
     } catch(e){ console.error('loadSchedule error',e); }
+    renderHoursDisplay();
+  }
+
+  const DAY_LABELS = {tue:'Terca-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sabado'};
+
+  function renderHoursDisplay(){
+    const grid = document.getElementById('hours-grid-dynamic');
+    const breaksEl = document.getElementById('hours-breaks-dynamic');
+    if(!grid||!breaksEl) return;
+
+    // Agrupa dias com mesmo horário para exibição compacta
+    const openDays = Object.entries(SCHEDULE.days||{})
+      .filter(([,v])=>v.open)
+      .map(([k,v])=>({key:k, label:DAY_LABELS[k]||k, start:v.start, end:v.end}));
+
+    // Agrupa por horário igual
+    const groups = [];
+    openDays.forEach(d=>{
+      const g = groups.find(g=>g.start===d.start&&g.end===d.end);
+      if(g) g.labels.push(d.label.split('-')[0].trim());
+      else groups.push({start:d.start, end:d.end, labels:[d.label.split('-')[0].trim()]});
+    });
+
+    grid.style.gridTemplateColumns = `repeat(${Math.min(groups.length,3)},1fr)`;
+    grid.innerHTML = groups.map(g=>`
+      <div>
+        <div class="hours-label">${g.labels.join(', ')}</div>
+        <div class="hours-time">${g.start} - ${g.end}</div>
+      </div>`).join('');
+
+    // Mostra intervalos especiais
+    const breaks = (SCHEDULE.breaks||[]).filter(b=>b.label&&b.days&&b.days.length>0);
+    breaksEl.innerHTML = breaks.map(b=>{
+      const dayNames = (b.days||[]).map(k=>DAY_LABELS[k]||k).join(', ');
+      return `<p class="hours-closed" style="margin-top:10px;color:#f0d78c;font-size:13px;">⚠️ ${b.label}: intervalo das ${b.start} as ${b.end} (${dayNames})</p>`;
+    }).join('');
   }
 
   const DOW_KEY = {2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
