@@ -338,7 +338,7 @@
     <div class="contact-grid mb-8">
       <a href="https://wa.me/5522997035391" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp"><h3>WhatsApp</h3><p>(22) 99703-5391</p><p style="font-size:12px;margin-top:4px;">Clique para enviar mensagem</p></a>
       <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram"><h3>Instagram</h3><p>@gabriel.bstudio</p><p style="font-size:12px;margin-top:4px;">Siga nosso perfil</p></a>
-      <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3110286,17z/data=!3m1!4b1!4m6!3m5!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQxNS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereco"><h3>Endereco</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p><p style="font-size:12px;margin-top:4px;">Clique para ver no mapa</p></a>
+      <div class="contact-card" style="cursor:default;"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereco"><h3>Endereco</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p></div>
     </div>
     <div class="hours-card" id="hours-display">
       <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horarios de Funcionamento</h3>
@@ -974,7 +974,7 @@
     try {
       const q=query(collection(db,COL),where("phone","==",loggedPhone),orderBy("date"),orderBy("time"));
       const snap=await getDocs(q);
-      const mine=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const mine=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.status!=='Bloqueado');
       if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">calendar</div><p>Voce nao possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
       const today=getTodayStr();
       container.innerHTML=mine.map(apt=>{
@@ -988,8 +988,24 @@
 
   window.cancelApt = async function(id){
     if(!confirm("Cancelar este agendamento?")) return;
-    try { await deleteDoc(doc(db,COL,id)); showToast("Agendamento cancelado","success"); renderAppointments(); }
-    catch(err){ showToast("Erro ao cancelar","error"); }
+    try {
+      // Busca o agendamento principal no cache em memória
+      const mainApt = allAppointments.find(a=>a.id===id);
+      // Deleta o agendamento principal
+      await deleteDoc(doc(db,COL,id));
+      // Deleta os slots extras bloqueados vinculados a este horário
+      if(mainApt){
+        const blocked = allAppointments.filter(a=>
+          a.status==='Bloqueado' &&
+          a.date===mainApt.date &&
+          a.phone===mainApt.phone &&
+          a.blockedBy===mainApt.time
+        );
+        for(const b of blocked) await deleteDoc(doc(db,COL,b.id));
+      }
+      showToast("Agendamento cancelado","success"); renderAppointments();
+    }
+    catch(err){ console.error(err); showToast("Erro ao cancelar","error"); }
   };
 
   // ===== AGENDAMENTO VIP (formulário na home VIP) =====
