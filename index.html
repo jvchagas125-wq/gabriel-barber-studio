@@ -342,11 +342,13 @@
     </div>
     <div class="hours-card">
       <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horarios de Funcionamento</h3>
-      <div class="hours-grid">
-        <div><div class="hours-label">Segunda a Sexta</div><div class="hours-time">09:00 - 21:00</div></div>
-        <div><div class="hours-label">Sabado</div><div class="hours-time">09:00 - 12:00</div></div>
+      <div class="hours-grid" style="grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div><div class="hours-label">Ter, Qui & Sex</div><div class="hours-time">10:00 - 21:00</div></div>
+        <div><div class="hours-label">Quarta-feira</div><div class="hours-time">10:00 - 15:00</div></div>
+        <div><div class="hours-label">Sabado</div><div class="hours-time">10:00 - 21:00</div></div>
       </div>
-      <p class="hours-closed">Domingo: Fechado</p>
+      <p class="hours-closed" style="margin-top:16px;color:#f0d78c;font-size:13px;">⚠️ Sextas-feiras: intervalo das 12:00 as 18:00</p>
+      <p class="hours-closed">Segunda-feira e Domingo: Fechado</p>
     </div>
   </div>
 </div>
@@ -513,7 +515,54 @@
   const auth = getAuth(app);
   const COL = "appointments";
 
-  const TIME_SLOTS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00"];
+  // ===== HORÁRIOS =====
+  // Duração dos serviços em slots de 30min
+  const SERVICE_SLOTS = {
+    'Cabelo':        2, // 45min → ocupa 2 slots (slot escolhido + próximo)
+    'Cabelo & Barba':3, // 75min → ocupa 3 slots
+    'Barba':         1,
+    'Pezinho':       1,
+    'Raspar Cabeca': 1,
+    'Sobrancelha':   1,
+  };
+
+  // Gera slots de 30 em 30 min entre inicio e fim (exclusive fim)
+  function makeSlots(startH, startM, endH, endM){
+    const slots=[];
+    let h=startH, m=startM;
+    while(h<endH||(h===endH&&m<endM)){
+      slots.push(pad(h)+':'+pad(m));
+      m+=30; if(m>=60){m=0;h++;}
+    }
+    return slots;
+  }
+
+  // Retorna slots válidos para uma data
+  function getSlotsForDate(dateStr){
+    if(!dateStr) return [];
+    const d = new Date(dateStr+'T12:00:00');
+    const dow = d.getDay(); // 0=dom,1=seg,2=ter,3=qua,4=qui,5=sex,6=sab
+
+    // Fechado: domingo (0) e segunda (1)
+    if(dow===0||dow===1) return [];
+
+    // Quarta: 10:00–15:00 sem almoço (barbeiro não tem intervalo na quarta)
+    if(dow===3) return makeSlots(10,0,15,0);
+
+    // Sexta: 10:00–12:00 e 18:00–21:00 (intervalo 12–18)
+    if(dow===5) return [...makeSlots(10,0,12,0), ...makeSlots(18,0,21,0)];
+
+    // Terça, quinta, sábado: 10:00–12:00 e 14:00–21:00 (almoço 12–14)
+    return [...makeSlots(10,0,12,0), ...makeSlots(14,0,21,0)];
+  }
+
+  // Retorna slots extras que um serviço ocupa após o horário escolhido
+  function getExtraSlots(startTime, extraCount){
+    const all = makeSlots(10,0,21,0); // todos os slots possíveis para cálculo
+    const idx = all.indexOf(startTime);
+    if(idx<0) return [];
+    return all.slice(idx+1, idx+extraCount);
+  }
 
   let loggedPhone = null;
   let allAppointments = [];
@@ -719,33 +768,89 @@
 
   function setMinDate(){
     const t=new Date();
-    document.getElementById("f-date").min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate());
+    // Avança até o próximo dia útil (não seg nem dom)
+    while(t.getDay()===0||t.getDay()===1) t.setDate(t.getDate()+1);
+    const minStr=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate());
+    const dateInput=document.getElementById("f-date");
+    dateInput.min=minStr;
+    // Aplica filtro para desabilitar seg e dom no input date via JS
+    dateInput.addEventListener('change', function(){
+      const d=new Date(this.value+'T12:00:00');
+      const dow=d.getDay();
+      if(dow===0||dow===1){
+        showToast('Nao atendemos segunda-feira nem domingo. Selecione outro dia.','error');
+        this.value=''; document.getElementById('timeSlots').innerHTML='';
+      }
+    },{passive:true});
   }
 
   window.renderSlots = function(){
     const container=document.getElementById("timeSlots");
     const selectedDate=document.getElementById("f-date").value;
+    const service=document.getElementById("f-service").value;
     container.innerHTML=""; document.getElementById("f-time").value="";
+    if(!selectedDate) return;
+
+    const slots=getSlotsForDate(selectedDate);
+    if(slots.length===0){
+      container.innerHTML='<p style="color:#888;font-size:13px;grid-column:1/-1;">Sem atendimento neste dia.</p>';
+      return;
+    }
+
     const bookedTimes=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    TIME_SLOTS.forEach(time=>{
-      const isBooked=bookedTimes.includes(time);
+    const extraCount=(SERVICE_SLOTS[service]||1)-1;
+
+    slots.forEach(time=>{
+      // Verifica se o slot principal ou os extras necessários estão ocupados
+      const extras=extraCount>0?getExtraSlots(time,extraCount):[];
+      const allNeeded=[time,...extras];
+      // Extras precisam existir nos slots válidos do dia
+      const extrasValid=extras.every(e=>slots.includes(e));
+      const isBooked=allNeeded.some(t=>bookedTimes.includes(t));
+      const unavailable=isBooked||!extrasValid;
+
       const btn=document.createElement("button");
-      btn.type="button"; btn.textContent=isBooked?time+" X":time; btn.className="time-btn"; btn.disabled=isBooked;
-      if(!isBooked){ btn.onclick=()=>{ document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected")); btn.classList.add("selected"); document.getElementById("f-time").value=time; }; }
+      btn.type="button";
+      btn.className="time-btn";
+      btn.disabled=unavailable;
+
+      if(unavailable){
+        btn.textContent=time+(isBooked?' ✗':'');
+      } else {
+        // Mostra o slot + os extras que serão reservados
+        btn.textContent=extraCount>0?(time+' + '+extraCount*30+'min'):time;
+        btn.onclick=()=>{
+          document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
+          btn.classList.add("selected");
+          document.getElementById("f-time").value=time;
+          // Armazena slots extras para salvar junto
+          btn.dataset.extras=JSON.stringify(extras);
+        };
+      }
       container.appendChild(btn);
     });
   };
 
+  // Re-renderiza slots quando serviço muda (pois duração muda)
+  document.getElementById("f-service").addEventListener("change", ()=>{ if(document.getElementById("f-date").value) renderSlots(); });
+
   // Armazena os dados do agendamento pendente enquanto aguarda confirmação
   let pendingBooking = null;
 
-  async function doSaveBooking(name, phone, service, date, time, justification){
+  async function doSaveBooking(name, phone, service, date, time, justification, extraSlots){
     const btn=document.getElementById("submit-btn");
     btn.disabled=true; btn.textContent="Confirmando...";
     try {
       const data = { name, phone, service, date, time, status:"Confirmado", createdAt:new Date().toISOString() };
       if(justification) data.justification = justification;
+      if(extraSlots&&extraSlots.length>0) data.extraSlots = extraSlots;
       await addDoc(collection(db,COL), data);
+
+      // Salva slots extras como agendamentos bloqueados (mesmo nome, marcados como bloqueio)
+      for(const extra of (extraSlots||[])){
+        await addDoc(collection(db,COL),{ name, phone, service, date, time:extra, status:'Bloqueado', blockedBy:time, createdAt:new Date().toISOString() });
+      }
+
       const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
       document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
       document.getElementById("confirmBox").classList.add("show");
@@ -766,21 +871,25 @@
     if(!service){ showToast("Selecione um servico","error"); return; }
     if(!date){ showToast("Selecione uma data","error"); return; }
     if(!time){ showToast("Selecione um horario","error"); return; }
-    if(allAppointments.some(a=>a.date===date&&a.time===time)){ showToast("Esse horario foi reservado. Escolha outro.","error"); renderSlots(); return; }
 
-    // Verifica se já existe agendamento futuro neste telefone
+    // Pega extras do botão selecionado
+    const selectedBtn=document.querySelector(".time-btn.selected");
+    const extraSlots=selectedBtn&&selectedBtn.dataset.extras?JSON.parse(selectedBtn.dataset.extras):[];
+    const allNeeded=[time,...extraSlots];
+
+    if(allAppointments.some(a=>a.date===date&&allNeeded.includes(a.time))){ showToast("Esse horario foi reservado. Escolha outro.","error"); renderSlots(); return; }
+
     const today=getTodayStr();
-    const hasExisting = allAppointments.some(a=>a.phone===phone && a.date>=today);
+    const hasExisting = allAppointments.some(a=>a.phone===phone && a.date>=today && a.status!=='Bloqueado');
     if(hasExisting){
-      pendingBooking = { name, phone, service, date, time };
-      const modal = document.getElementById("secondBookingModal");
+      pendingBooking = { name, phone, service, date, time, extraSlots };
       document.getElementById("justifySection").style.display="none";
       document.getElementById("justifyText").value="";
-      modal.style.display="flex";
+      document.getElementById("secondBookingModal").style.display="flex";
       return;
     }
 
-    await doSaveBooking(name, phone, service, date, time, null);
+    await doSaveBooking(name, phone, service, date, time, null, extraSlots);
   };
 
   window.declineSecondBooking = function(){
@@ -796,9 +905,9 @@
     const justify = document.getElementById("justifyText").value.trim();
     if(!justify){ showToast("Por favor, informe a justificativa","error"); return; }
     document.getElementById("secondBookingModal").style.display="none";
-    const { name, phone, service, date, time } = pendingBooking;
+    const { name, phone, service, date, time, extraSlots } = pendingBooking;
     pendingBooking = null;
-    await doSaveBooking(name, phone, service, date, time, justify);
+    await doSaveBooking(name, phone, service, date, time, justify, extraSlots||[]);
   };
 
   async function renderAppointments(){
@@ -827,18 +936,45 @@
   };
 
   // ===== AGENDAMENTO VIP (formulário na home VIP) =====
+  // Re-renderiza slots VIP quando serviço muda
+  document.getElementById("vip-f-service").addEventListener("change", ()=>{ if(document.getElementById("vip-f-date").value) renderSlotsVip(); });
+
   window.renderSlotsVip = function(){
     const container = document.getElementById('timeSlotsVip');
     const selectedDate = document.getElementById('vip-f-date').value;
+    const service = document.getElementById('vip-f-service').value;
     container.innerHTML = ''; document.getElementById('vip-f-time').value = '';
     if(!selectedDate) return;
+
+    const slots = getSlotsForDate(selectedDate);
+    if(slots.length===0){
+      container.innerHTML='<p style="color:#888;font-size:13px;grid-column:1/-1;">Sem atendimento neste dia.</p>';
+      return;
+    }
+
     const bookedTimes = allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    TIME_SLOTS.forEach(time=>{
-      const isBooked = bookedTimes.includes(time);
+    const extraCount = (SERVICE_SLOTS[service]||1)-1;
+
+    slots.forEach(time=>{
+      const extras = extraCount>0?getExtraSlots(time,extraCount):[];
+      const allNeeded = [time,...extras];
+      const extrasValid = extras.every(e=>slots.includes(e));
+      const isBooked = allNeeded.some(t=>bookedTimes.includes(t));
+      const unavailable = isBooked||!extrasValid;
+
       const btn = document.createElement('button');
-      btn.type='button'; btn.textContent = isBooked ? time+' X' : time;
-      btn.className='time-btn'; btn.disabled = isBooked;
-      if(!isBooked){ btn.onclick=()=>{ document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('vip-f-time').value=time; }; }
+      btn.type='button'; btn.className='time-btn'; btn.disabled=unavailable;
+      if(unavailable){
+        btn.textContent=time+(isBooked?' ✗':'');
+      } else {
+        btn.textContent=extraCount>0?(time+' + '+extraCount*30+'min'):time;
+        btn.onclick=()=>{
+          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('vip-f-time').value=time;
+          btn.dataset.extras=JSON.stringify(extras);
+        };
+      }
       container.appendChild(btn);
     });
   };
