@@ -344,7 +344,7 @@
       <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horarios de Funcionamento</h3>
       <div id="hours-grid-dynamic" class="hours-grid" style="gap:16px;"></div>
       <div id="hours-breaks-dynamic"></div>
-      <p class="hours-closed" style="margin-top:16px;">Segunda-feira e Domingo: Fechado</p>
+      <!-- Dias fechados agora são controlados pelo painel admin -->
     </div>
   </div>
 </div>
@@ -578,7 +578,7 @@
     }).join('');
   }
 
-  const DOW_KEY = {2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
+  const DOW_KEY = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
 
   function getServiceSlots(service){
     const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
@@ -837,8 +837,10 @@
     dateInput.addEventListener('change', function(){
       const d=new Date(this.value+'T12:00:00');
       const dow=d.getDay();
-      if(dow===0||dow===1){
-        showToast('Nao atendemos segunda-feira nem domingo. Selecione outro dia.','error');
+      const key=DOW_KEY[dow];
+      const dayCfg=key&&SCHEDULE.days[key];
+      if(!dayCfg||!dayCfg.open){
+        showToast('Nao ha atendimento neste dia. Selecione outro dia.','error');
         this.value=''; document.getElementById('timeSlots').innerHTML='';
       }
     },{passive:true});
