@@ -498,7 +498,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -515,68 +515,82 @@
   const auth = getAuth(app);
   const COL = "appointments";
 
-  // ===== HORÁRIOS =====
-  // Duração dos serviços em slots de 15min
-  // Slots bloqueados por serviço (duração + 5min intervalo, em slots de 15min)
-  // Cabelo: 45min serviço + 5min intervalo = 50min → 4 slots (60min, arredondado para cima)
-  // Cabelo & Barba: 70min + 5min = 75min → 5 slots
-  // Demais: 15min + 5min = 20min → 2 slots (30min, arredondado para cima)
-  const SERVICE_SLOTS = {
-    'Cabelo':        4, // 60min bloqueados
-    'Cabelo & Barba':5, // 75min bloqueados
-    'Barba':         2, // 30min bloqueados
-    'Pezinho':       2,
-    'Raspar Cabeca': 2,
-    'Sobrancelha':   2,
+  // ===== HORÁRIOS — carregados do Firestore =====
+  let SCHEDULE = {
+    days: {
+      tue: {open:true,  start:'10:00', end:'21:00'},
+      wed: {open:true,  start:'10:00', end:'15:00'},
+      thu: {open:true,  start:'10:00', end:'21:00'},
+      fri: {open:true,  start:'10:00', end:'21:00'},
+      sat: {open:true,  start:'10:00', end:'21:00'},
+    },
+    breaks: [
+      {days:['tue','thu','sat'], start:'12:00', end:'14:00'},
+      {days:['fri'],             start:'12:00', end:'18:00'},
+    ],
+    services: {
+      'Cabelo':        {duration:45},
+      'Barba':         {duration:15},
+      'Pezinho':       {duration:15},
+      'Cabelo & Barba':{duration:70},
+      'Raspar Cabeca': {duration:15},
+      'Sobrancelha':   {duration:15},
+    },
+    buffer: 5,
   };
 
-  // Gera slots de 15 em 15 min entre inicio e fim (exclusive fim)
-  function makeSlots(startH, startM, endH, endM){
+  async function loadSchedule(){
+    try {
+      const snap = await getDoc(doc(db,'config','schedule'));
+      if(snap.exists()) SCHEDULE = snap.data();
+    } catch(e){ console.error('loadSchedule error',e); }
+  }
+
+  const DOW_KEY = {2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
+
+  function getServiceSlots(service){
+    const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
+    const buf = SCHEDULE.buffer||5;
+    return Math.ceil((dur+buf)/15);
+  }
+
+  function getServiceDuration(service){
+    return (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
+  }
+
+  function makeSlots(startStr, endStr){
     const slots=[];
-    let h=startH, m=startM;
-    while(h<endH||(h===endH&&m<endM)){
+    let [h,m]=startStr.split(':').map(Number);
+    const [eh,em]=endStr.split(':').map(Number);
+    while(h<eh||(h===eh&&m<em)){
       slots.push(pad(h)+':'+pad(m));
       m+=15; if(m>=60){m=0;h++;}
     }
     return slots;
   }
 
-  // Retorna slots válidos para uma data
   function getSlotsForDate(dateStr){
     if(!dateStr) return [];
-    const d = new Date(dateStr+'T12:00:00');
-    const dow = d.getDay(); // 0=dom,1=seg,2=ter,3=qua,4=qui,5=sex,6=sab
-
-    // Fechado: domingo (0) e segunda (1)
-    if(dow===0||dow===1) return [];
-
-    // Quarta: 10:00–15:00 sem almoço (barbeiro não tem intervalo na quarta)
-    if(dow===3) return makeSlots(10,0,15,0);
-
-    // Sexta: 10:00–12:00 e 18:00–21:00 (intervalo 12–18)
-    if(dow===5) return [...makeSlots(10,0,12,0), ...makeSlots(18,0,21,0)];
-
-    // Terça, quinta, sábado: 10:00–12:00 e 14:00–21:00 (almoço 12–14)
-    return [...makeSlots(10,0,12,0), ...makeSlots(14,0,21,0)];
+    const dow = new Date(dateStr+'T12:00:00').getDay();
+    const key = DOW_KEY[dow];
+    if(!key) return [];
+    const dayCfg = SCHEDULE.days[key];
+    if(!dayCfg||!dayCfg.open) return [];
+    let allSlots = makeSlots(dayCfg.start, dayCfg.end);
+    const breaks = (SCHEDULE.breaks||[]).filter(b=>(b.days||[]).includes(key));
+    for(const br of breaks){
+      const brSlots = makeSlots(br.start, br.end);
+      allSlots = allSlots.filter(s=>!brSlots.includes(s));
+    }
+    return allSlots;
   }
 
-  // Retorna slots extras que um serviço ocupa após o horário escolhido
   function getExtraSlots(startTime, extraCount){
-    const all = makeSlots(10,0,21,0); // todos os slots possíveis para cálculo
+    const all = makeSlots('10:00','21:00');
     const idx = all.indexOf(startTime);
     if(idx<0) return [];
     return all.slice(idx+1, idx+extraCount);
   }
-
-  // Duração em minutos para exibição no botão
-  const SERVICE_DURATION = {
-    'Cabelo':        45,
-    'Cabelo & Barba':70,
-    'Barba':         15,
-    'Pezinho':       15,
-    'Raspar Cabeca': 15,
-    'Sobrancelha':   15,
-  };
 
   let loggedPhone = null;
   let allAppointments = [];
@@ -812,13 +826,11 @@
     }
 
     const bookedTimes=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    const extraCount=(SERVICE_SLOTS[service]||1)-1;
+    const extraCount=getServiceSlots(service)-1;
 
     slots.forEach(time=>{
-      // Verifica se o slot principal ou os extras necessários estão ocupados
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
       const allNeeded=[time,...extras];
-      // Extras precisam existir nos slots válidos do dia
       const extrasValid=extras.every(e=>slots.includes(e));
       const isBooked=allNeeded.some(t=>bookedTimes.includes(t));
       const unavailable=isBooked||!extrasValid;
@@ -831,13 +843,12 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        const dur=SERVICE_DURATION[service]||15;
+        const dur=getServiceDuration(service);
         btn.textContent=dur>15?(time+' + '+dur+'min'):time;
         btn.onclick=()=>{
           document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
           document.getElementById("f-time").value=time;
-          // Armazena slots extras para salvar junto
           btn.dataset.extras=JSON.stringify(extras);
         };
       }
@@ -967,7 +978,7 @@
     }
 
     const bookedTimes = allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    const extraCount = (SERVICE_SLOTS[service]||1)-1;
+    const extraCount = getServiceSlots(service)-1;
 
     slots.forEach(time=>{
       const extras = extraCount>0?getExtraSlots(time,extraCount):[];
@@ -981,7 +992,7 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        const dur=SERVICE_DURATION[service]||15;
+        const dur=getServiceDuration(service);
         btn.textContent=dur>15?(time+' + '+dur+'min'):time;
         btn.onclick=()=>{
           document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
@@ -1033,7 +1044,7 @@
         if(vipPhone) vipPhone.value = saved;
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
-        subscribeAll();
+        loadSchedule().then(()=>{ subscribeAll(); });
         // Restaura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
