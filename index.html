@@ -974,7 +974,7 @@
     try {
       const q=query(collection(db,COL),where("phone","==",loggedPhone),orderBy("date"),orderBy("time"));
       const snap=await getDocs(q);
-      const mine=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const mine=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.status!=='Bloqueado');
       if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">calendar</div><p>Voce nao possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
       const today=getTodayStr();
       container.innerHTML=mine.map(apt=>{
@@ -988,8 +988,21 @@
 
   window.cancelApt = async function(id){
     if(!confirm("Cancelar este agendamento?")) return;
-    try { await deleteDoc(doc(db,COL,id)); showToast("Agendamento cancelado","success"); renderAppointments(); }
-    catch(err){ showToast("Erro ao cancelar","error"); }
+    try {
+      const mainApt = allAppointments.find(a=>a.id===id);
+      await deleteDoc(doc(db,COL,id));
+      if(mainApt){
+        const blocked = allAppointments.filter(a=>
+          a.status==='Bloqueado' &&
+          a.date===mainApt.date &&
+          a.phone===mainApt.phone &&
+          a.blockedBy===mainApt.time
+        );
+        for(const b of blocked) await deleteDoc(doc(db,COL,b.id));
+      }
+      showToast("Agendamento cancelado","success"); renderAppointments();
+    }
+    catch(err){ console.error(err); showToast("Erro ao cancelar","error"); }
   };
 
   // ===== AGENDAMENTO VIP (formulário na home VIP) =====
