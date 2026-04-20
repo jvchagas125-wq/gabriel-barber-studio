@@ -209,72 +209,9 @@
       <p class="hero-sub">A melhor barbearia da regiao</p>
     </div>
     <h2 class="section-title gold-gradient">Nossos Servicos</h2>
-    <div class="services-grid">
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/3ZT8O7P.png" alt="Cabelo" onerror="this.style.display='none'">
-        <h3>Cabelo</h3>
-        <ul class="service-features">
-          <li>Cortes so com Maquina</li>
-          <li>Cortes so com Tesoura</li>
-          <li>Maquina + Tesoura</li>
-          <li>Incluso em planos</li>
-        </ul>
-        <div class="service-price">R$ 30,00</div>
-      </div>
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/AeimsaS.png" alt="Barba" onerror="this.style.display='none'">
-        <h3>Barba</h3>
-        <ul class="service-features">
-          <li>Raspado</li>
-          <li>Navalhado</li>
-          <li>Barboterapia</li>
-          <li>Entre outros...</li>
-        </ul>
-        <div class="service-price">R$ 25,00</div>
-      </div>
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/tPULAD0.png" alt="Pezinho" onerror="this.style.display='none'">
-        <h3>Pezinho</h3>
-        <ul class="service-features">
-          <li>Acabamento</li>
-          <li>Navalhado</li>
-        </ul>
-        <div class="service-price">R$ 15,00</div>
-      </div>
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/3OpNuNJ.png" alt="Cabelo e Barba" onerror="this.style.display='none'">
-        <h3>Cabelo &amp; Barba</h3>
-        <ul class="service-features">
-          <li>Pacote com desconto</li>
-          <li>Incluso em planos</li>
-        </ul>
-        <div class="service-price">R$ 50,00</div>
-      </div>
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/IZXmGmw.png" alt="Raspar Cabeca" onerror="this.style.display='none'">
-        <h3>Raspar Cabeca</h3>
-        <ul class="service-features">
-          <li>Curto</li>
-          <li>Zero</li>
-          <li>Navalhado</li>
-        </ul>
-        <div class="service-price">R$ 20,00</div>
-      </div>
-
-      <div class="service-card">
-        <img src="https://i.imgur.com/tPULAD0.png" alt="Sobrancelha" onerror="this.style.display='none'">
-        <h3>Sobrancelha</h3>
-        <ul class="service-features">
-          <li>Navalhada</li>
-        </ul>
-        <div class="service-price">R$ 15,00</div>
-      </div>
-
+    <div class="services-grid" id="services-grid">
+      <!-- carregado dinamicamente do Firestore -->
+      <div style="grid-column:1/-1;text-align:center;padding:32px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
   </div>
@@ -491,6 +428,48 @@
       if(snap.exists()) SCHEDULE = snap.data();
     } catch(e){ console.error('loadSchedule error',e); }
     renderHoursDisplay();
+  }
+
+  // Carrega serviços do Firestore e atualiza grid + selects de agendamento
+  let SERVICES_DATA = [
+    {name:'Cabelo',        price:'30,00', duration:45},
+    {name:'Barba',         price:'25,00', duration:15},
+    {name:'Pezinho',       price:'15,00', duration:15},
+    {name:'Cabelo & Barba',price:'50,00', duration:70},
+    {name:'Raspar Cabeca', price:'20,00', duration:15},
+    {name:'Sobrancelha',   price:'15,00', duration:15},
+  ];
+
+  async function loadServicesFromFirestore(){
+    try {
+      const snap = await getDoc(doc(db,'config','services'));
+      if(snap.exists() && snap.data().list) SERVICES_DATA = snap.data().list;
+    } catch(e){ console.error('loadServicesFromFirestore',e); }
+    renderServicesGrid();
+    updateBookingSelects();
+  }
+
+  function renderServicesGrid(){
+    const grid = document.getElementById('services-grid');
+    if(!grid) return;
+    grid.innerHTML = SERVICES_DATA.map(s=>`
+      <div class="service-card">
+        <h3>${s.name}</h3>
+        <div class="service-price">R$ ${s.price}</div>
+      </div>`).join('');
+  }
+
+  function updateBookingSelects(){
+    const opts = '<option value="">Selecione um servico</option>' +
+      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name} - R$ ${s.price}</option>`).join('');
+    const optsSvc = '<option value="">Selecione um servico</option>' +
+      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+    const fSvc = document.getElementById('f-service');
+    const vipSvc = document.getElementById('vip-f-service');
+    if(fSvc) fSvc.innerHTML = opts;
+    if(vipSvc) vipSvc.innerHTML = optsSvc;
+    // Atualiza SCHEDULE.services com duração atual dos serviços carregados
+    SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
   }
 
   const DAY_LABELS = {tue:'Terca-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sabado'};
@@ -1095,6 +1074,7 @@
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         loadSchedule().then(()=>{ subscribeAll(); });
         loadPlansFromFirestore();
+        loadServicesFromFirestore();
         // Restaura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
