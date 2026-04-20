@@ -173,12 +173,12 @@
   <div class="login-card">
     <div class="login-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
     <div class="login-title gold-gradient">Gabriel Barber Studio</div>
-    <div class="login-subtitle">Entre com seu numero de telefone para agendar</div>
+    <div class="login-subtitle">Entre com seu número de telefone para agendar</div>
     <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
-    <label class="login-label" for="login-phone">Numero de telefone</label>
+    <label class="login-label" for="login-phone">Número de telefone</label>
     <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <p class="login-notice">Seus agendamentos ficam salvos no seu numero</p>
+    <p class="login-notice">Seus agendamentos ficam salvos no seu número</p>
   </div>
 </div>
 
@@ -188,7 +188,7 @@
     <div class="nav-links">
       <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Inicio</button>
       <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
-      <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horarios</button>
+      <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
@@ -208,7 +208,7 @@
       <div class="hero-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
       <p class="hero-sub">A melhor barbearia da regiao</p>
     </div>
-    <h2 class="section-title gold-gradient">Nossos Servicos</h2>
+    <h2 class="section-title gold-gradient">Nossos Serviços</h2>
     <div class="services-grid" id="services-grid">
       <!-- carregado dinamicamente do Firestore -->
       <div style="grid-column:1/-1;text-align:center;padding:32px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
@@ -219,7 +219,7 @@
 
 <div class="section" id="sec-booking">
   <div class="page" style="max-width:640px;">
-    <h2 class="section-title gold-gradient">Agende seu Horario</h2>
+    <h2 class="section-title gold-gradient">Agende seu Horário</h2>
     <div id="confirmBox"><div class="confirm-icon">checkmark</div><div class="confirm-title">Agendamento confirmado!</div><div class="confirm-details" id="confirmDetails"></div></div>
 
     <!-- Modal: segundo agendamento -->
@@ -227,9 +227,9 @@
       <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
         <div style="font-size:28px;text-align:center;margin-bottom:12px;">⚠️</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;margin-bottom:10px;color:#f0d78c;">Agendamento ja existente</div>
-        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Ja existe um agendamento ativo neste numero de telefone. Deseja confirmar um segundo agendamento?</p>
+        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Ja existe um agendamento ativo neste número de telefone. Deseja confirmar um segundo agendamento?</p>
         <div style="display:flex;gap:10px;margin-bottom:20px;">
-          <button onclick="declineSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.35);background:none;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(220,38,38,.1)'" onmouseout="this.style.background='none'">Nao</button>
+          <button onclick="declineSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.35);background:none;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(220,38,38,.1)'" onmouseout="this.style.background='none'">Não</button>
           <button onclick="acceptSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sim</button>
         </div>
         <!-- Campo de justificativa (oculto inicialmente) -->
@@ -243,19 +243,19 @@
     <div class="booking-card">
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
-      <div class="form-group"><label class="form-label">Servico</label>
+      <div class="form-group"><label class="form-label">Serviço</label>
         <select class="form-input" id="f-service">
-          <option value="">Selecione um servico</option>
+          <option value="">Selecione um serviço</option>
           <option value="Cabelo">Cabelo - R$ 30,00</option>
           <option value="Barba">Barba - R$ 25,00</option>
           <option value="Pezinho">Pezinho - R$ 15,00</option>
           <option value="Cabelo & Barba">Cabelo &amp; Barba - R$ 50,00</option>
-          <option value="Raspar Cabeca">Raspar Cabeca - R$ 20,00</option>
+          <option value="Raspar Cabeça">Raspar Cabeça - R$ 20,00</option>
           <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()"></div>
-      <div class="form-group"><label class="form-label">Horario</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
+      <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
       <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
     </div>
   </div>
@@ -263,7 +263,7 @@
 
 <div class="section" id="sec-appointments">
   <div class="page" style="max-width:700px;">
-    <h2 class="section-title gold-gradient">Meus Horarios</h2>
+    <h2 class="section-title gold-gradient">Meus Horários</h2>
     <div id="aptList"></div>
   </div>
 </div>
@@ -278,7 +278,7 @@
       <div class="contact-card" style="cursor:default;"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereco"><h3>Endereco</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p></div>
     </div>
     <div class="hours-card" id="hours-display">
-      <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horarios de Funcionamento</h3>
+      <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horários de Funcionamento</h3>
       <div id="hours-grid-dynamic" class="hours-grid" style="gap:16px;"></div>
       <div id="hours-breaks-dynamic"></div>
       <!-- Dias fechados agora são controlados pelo painel admin -->
@@ -297,8 +297,8 @@
 
     <!-- Observações -->
     <div class="plan-obs">
-      <p><strong>Obs. 1:</strong> As vantagens das assinaturas nao sao acumulativas. O estabelecimento nao se responsabiliza pelo nao aproveitamento do servico/beneficio contratado em conformidade com o plano.</p>
-      <p><strong>Obs. 2:</strong> Os valores poderao passar por reajuste semestral ou anual com aviso previo ao contratante.</p>
+      <p><strong>Obs. 1:</strong> As vantagens das assinaturas não são acumulativas. O estábelecimento não se responsabiliza pelo não aproveitamento do serviço/benefício contratado em conformidade com o plano.</p>
+      <p><strong>Obs. 2:</strong> Os valores poderão passar por reajuste semestral ou anual com aviso prévio ao contratante.</p>
     </div>
   </div>
 </div>
@@ -308,13 +308,13 @@
   <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
     <div style="text-align:center;font-size:32px;margin-bottom:10px;">✉️</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-align:center;margin-bottom:6px;">Antes de prosseguir</div>
-    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Informe o email que voce vai usar para pagar no Mercado Pago.</p>
-    <p style="text-align:center;color:#666;font-size:12px;margin-bottom:22px;">Assim que o pagamento for confirmado, seu acesso VIP sera ativado <strong style="color:#c9a84c;">automaticamente</strong>.</p>
+    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Informe o email que você vai usar para pagar no Mercado Pago.</p>
+    <p style="text-align:center;color:#666;font-size:12px;margin-bottom:22px;">Assim que o pagamento for confirmado, seu acesso VIP será ativado <strong style="color:#c9a84c;">automaticamente</strong>.</p>
     <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
       <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">Plano selecionado</span>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#c9a84c;margin-top:2px;" id="plan-modal-name"></div>
     </div>
-    <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Seu email do Mercado Pago</label>
+    <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Seu e-mail do Mercado Pago</label>
     <input id="plan-email-input" type="email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:16px;transition:border-color .2s;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
     <button id="plan-proceed-btn" onclick="proceedToPlan()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#111;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:opacity .2s;">Continuar para pagamento →</button>
     <button onclick="document.getElementById('planModal').style.display='none'" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:none;color:#666;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
@@ -326,7 +326,7 @@
   <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:36px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);text-align:center;">
     <div style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:#c9a84c;animation:spin .7s linear infinite;margin:0 auto 20px;"></div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:8px;">Aguardando pagamento...</div>
-    <p style="color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Finalize o pagamento no Mercado Pago. Assim que for confirmado, esta tela fechara automaticamente e seu acesso VIP sera ativado.</p>
+    <p style="color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Finalize o pagamento no Mercado Pago. Assim que for confirmado, está tela fechara automaticamente e seu acesso VIP será ativado.</p>
     <p style="color:#555;font-size:12px;margin-top:16px;">Isso pode levar alguns instantes.</p>
     <button onclick="cancelWaiting()" style="margin-top:20px;padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:none;color:#555;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
   </div>
@@ -354,22 +354,22 @@
     </div>
 
     <div class="booking-card">
-      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#c9a84c;margin-bottom:20px;text-align:center;">Agendar meu Horario</h3>
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#c9a84c;margin-bottom:20px;text-align:center;">Agendar meu Horário</h3>
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="vip-f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="vip-f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
-      <div class="form-group"><label class="form-label">Servico</label>
+      <div class="form-group"><label class="form-label">Serviço</label>
         <select class="form-input" id="vip-f-service">
-          <option value="">Selecione um servico</option>
+          <option value="">Selecione um serviço</option>
           <option value="Cabelo">Cabelo</option>
           <option value="Barba">Barba</option>
           <option value="Pezinho">Pezinho</option>
           <option value="Cabelo & Barba">Cabelo &amp; Barba</option>
-          <option value="Raspar Cabeca">Raspar Cabeca</option>
+          <option value="Raspar Cabeça">Raspar Cabeça</option>
           <option value="Sobrancelha">Sobrancelha</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()"></div>
-      <div class="form-group"><label class="form-label">Horario</label><div class="time-grid" id="timeSlotsVip"></div><input type="hidden" id="vip-f-time"></div>
+      <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlotsVip"></div><input type="hidden" id="vip-f-time"></div>
       <button class="submit-btn" id="vip-submit-btn" onclick="submitBookingVip()">Confirmar Agendamento</button>
     </div>
 
@@ -416,7 +416,7 @@
       'Barba':         {duration:15},
       'Pezinho':       {duration:15},
       'Cabelo & Barba':{duration:70},
-      'Raspar Cabeca': {duration:15},
+      'Raspar Cabeça': {duration:15},
       'Sobrancelha':   {duration:15},
     },
     buffer: 5,
@@ -436,7 +436,7 @@
     {name:'Barba',         price:'25,00', duration:15},
     {name:'Pezinho',       price:'15,00', duration:15},
     {name:'Cabelo & Barba',price:'50,00', duration:70},
-    {name:'Raspar Cabeca', price:'20,00', duration:15},
+    {name:'Raspar Cabeça', price:'20,00', duration:15},
     {name:'Sobrancelha',   price:'15,00', duration:15},
   ];
 
@@ -461,9 +461,9 @@
   }
 
   function updateBookingSelects(){
-    const opts = '<option value="">Selecione um servico</option>' +
+    const opts = '<option value="">Selecione um serviço</option>' +
       SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name} - R$ ${s.price}</option>`).join('');
-    const optsSvc = '<option value="">Selecione um servico</option>' +
+    const optsSvc = '<option value="">Selecione um serviço</option>' +
       SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
     const fSvc = document.getElementById('f-service');
     const vipSvc = document.getElementById('vip-f-service');
@@ -473,7 +473,7 @@
     SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
   }
 
-  const DAY_LABELS = {tue:'Terca-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sabado'};
+  const DAY_LABELS = {tue:'Terça-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sábado'};
 
   function renderHoursDisplay(){
     const grid = document.getElementById('hours-grid-dynamic');
@@ -573,7 +573,7 @@
   // ===== VIP / ASSINATURA =====
   let PLANS_DATA = []; // carregado do Firestore
 
-  // Fallback caso Firebase ainda nao tenha carregado
+  // Fallback caso Firebase ainda não tenha carregado
   const VIP_PLANS_FALLBACK = {};
 
   async function loadPlansFromFirestore(){
@@ -605,7 +605,7 @@
     { id:'linedup', order:4, emoji:'📐', name:'Linedup', price:'109,90', featured:false, mpLink:'',
       benefits:['1 Corte/semana','1 Sobrancelha/semana'] },
     { id:'gentleman', order:5, emoji:'🎩', name:'Gentleman', price:'179,90', featured:false, mpLink:'',
-      benefits:['1 Corte/semana','1 Sobrancelha/semana','1 Limpeza de Pele/mes - Gratis'] },
+      benefits:['1 Corte/semana','1 Sobrancelha/semana','1 Limpeza de Pele/mes - Grátis'] },
   ];
 
   function renderPlansSection(){
@@ -663,20 +663,20 @@
         document.getElementById('waitingModal').style.display = 'none';
         if(waitingUnsubscribe){ waitingUnsubscribe(); waitingUnsubscribe = null; }
         applyVipMode(sub);
-        // Se estava na home normal, vira VIP automaticamente
+        // Se estáva na home normal, vira VIP automaticamente
         const homeNormal = document.getElementById('sec-home');
         if(homeNormal && homeNormal.classList.contains('active')){
           showSection('home');
           showToast('Pagamento confirmado! Bem-vindo ao VIP! 👑','success');
         }
-        // Se estava aguardando, também redireciona
+        // Se estáva aguardando, também redireciona
         const homeVip = document.getElementById('sec-home-vip');
         if(homeVip && !homeVip.classList.contains('active')){
           showSection('home');
         }
       } else {
         clearVipMode();
-        // Se estava no modo VIP, volta à home normal automaticamente
+        // Se estáva no modo VIP, volta à home normal automaticamente
         const homeVip = document.getElementById('sec-home-vip');
         if(homeVip && homeVip.classList.contains('active')){
           homeVip.classList.remove('active');
@@ -701,7 +701,7 @@
     const email = document.getElementById('plan-email-input').value.trim().toLowerCase();
     if(!email || !email.includes('@')){ showToast('Digite um email valido','error'); return; }
     if(!loggedPhone){ showToast('Faca login primeiro','error'); return; }
-    if(!pendingPlanLink){ showToast('Link do plano nao configurado. Fale com o barbeiro.','error'); return; }
+    if(!pendingPlanLink){ showToast('Link do plano não configurado. Fale com o barbeiro.','error'); return; }
 
     const btn = document.getElementById('plan-proceed-btn');
     btn.disabled = true; btn.textContent = 'Salvando...';
@@ -773,7 +773,7 @@
     const raw=document.getElementById("login-phone").value;
     const digits=raw.replace(/\D/g,"");
     const errEl=document.getElementById("login-error");
-    if(digits.length<10){ errEl.textContent="Digite um numero valido com DDD."; errEl.style.display="block"; return; }
+    if(digits.length<10){ errEl.textContent="Digite um número válido com DDD."; errEl.style.display="block"; return; }
     errEl.style.display="none";
     const formatted=formatPhone(raw);
     try {
@@ -822,7 +822,7 @@
       const key=DOW_KEY[dow];
       const dayCfg=key&&SCHEDULE.days[key];
       if(!dayCfg||!dayCfg.open){
-        showToast('Nao ha atendimento neste dia. Selecione outro dia.','error');
+        showToast('Não há atendimento neste dia. Selecione outro dia.','error');
         this.value=''; document.getElementById('timeSlots').innerHTML='';
       }
     },{passive:true});
@@ -909,16 +909,16 @@
     const date=document.getElementById("f-date").value;
     const time=document.getElementById("f-time").value;
     if(!name){ showToast("Informe seu nome","error"); return; }
-    if(!service){ showToast("Selecione um servico","error"); return; }
+    if(!service){ showToast("Selecione um serviço","error"); return; }
     if(!date){ showToast("Selecione uma data","error"); return; }
-    if(!time){ showToast("Selecione um horario","error"); return; }
+    if(!time){ showToast("Selecione um horário","error"); return; }
 
     // Pega extras do botão selecionado
     const selectedBtn=document.querySelector(".time-btn.selected");
     const extraSlots=selectedBtn&&selectedBtn.dataset.extras?JSON.parse(selectedBtn.dataset.extras):[];
     const allNeeded=[time,...extraSlots];
 
-    if(allAppointments.some(a=>a.date===date&&allNeeded.includes(a.time))){ showToast("Esse horario foi reservado. Escolha outro.","error"); renderSlots(); return; }
+    if(allAppointments.some(a=>a.date===date&&allNeeded.includes(a.time))){ showToast("Esse horário foi reservado. Escolha outro.","error"); renderSlots(); return; }
 
     const today=getTodayStr();
     const hasExisting = allAppointments.some(a=>a.phone===phone && a.date>=today && a.status!=='Bloqueado');
@@ -953,19 +953,19 @@
 
   async function renderAppointments(){
     const container=document.getElementById("aptList");
-    if(!loggedPhone){ container.innerHTML='<div class="no-apt"><p>Faca login para ver seus agendamentos.</p></div>'; return; }
+    if(!loggedPhone){ container.innerHTML='<div class="no-apt"><p>Faça login para ver seus agendamentos.</p></div>'; return; }
     container.innerHTML='<div class="no-apt"><div class="spinner" style="margin:0 auto;"></div></div>';
     try {
       const q=query(collection(db,COL),where("phone","==",loggedPhone),orderBy("date"),orderBy("time"));
       const snap=await getDocs(q);
       const mine=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.status!=='Bloqueado');
-      if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">calendar</div><p>Voce nao possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
+      if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">calendar</div><p>Você não possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
       const today=getTodayStr();
       container.innerHTML=mine.map(apt=>{
         const fmtDate=new Date(apt.date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
         const isPast=apt.date<today;
         const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
-        return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':'')+'">'+(isPast?'Realizado':apt.status)+'</div></div><div class="apt-grid"><div class="apt-field"><span>Servico</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horario</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+(isPast?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
+        return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':'')+'">'+(isPast?'Realizado':apt.status)+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+(isPast?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
       }).join("");
     } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
   }
@@ -1041,10 +1041,10 @@
     const date    = document.getElementById('vip-f-date').value;
     const time    = document.getElementById('vip-f-time').value;
     if(!name)   { showToast('Informe seu nome','error'); return; }
-    if(!service){ showToast('Selecione um servico','error'); return; }
+    if(!service){ showToast('Selecione um serviço','error'); return; }
     if(!date)   { showToast('Selecione uma data','error'); return; }
-    if(!time)   { showToast('Selecione um horario','error'); return; }
-    if(allAppointments.some(a=>a.date===date&&a.time===time)){ showToast('Esse horario foi reservado. Escolha outro.','error'); renderSlotsVip(); return; }
+    if(!time)   { showToast('Selecione um horário','error'); return; }
+    if(allAppointments.some(a=>a.date===date&&a.time===time)){ showToast('Esse horário foi reservado. Escolha outro.','error'); renderSlotsVip(); return; }
     const btn = document.getElementById('vip-submit-btn');
     btn.disabled=true; btn.textContent='Confirmando...';
     try {
@@ -1076,7 +1076,7 @@
         loadSchedule().then(()=>{ subscribeAll(); });
         loadPlansFromFirestore();
         loadServicesFromFirestore();
-        // Restaura listener de assinatura VIP em tempo real ao voltar ao site
+        // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
         document.getElementById("login-screen").style.display="flex";
