@@ -116,6 +116,14 @@
       .contact-grid{grid-template-columns:1fr} .hours-grid{grid-template-columns:1fr;gap:14px}
     }
     @media(max-width:380px){.services-grid{grid-template-columns:1fr}}
+    /* ===== BANNERS / AVISOS ===== */
+    .site-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:10px;margin-bottom:12px;font-size:14px;font-weight:500;animation:slideInUp .4s ease-out backwards;}
+    .site-banner-info{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
+    .site-banner-promo{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:#f0d78c;}
+    .site-banner-warn{background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#fde047;}
+    .site-banner-icon{font-size:20px;flex-shrink:0;}
+    .site-banner a{color:inherit;text-decoration:underline;opacity:.85;}
+
 
     /* ===== PLANOS ===== */
     .plans-section{padding:48px 0 24px}
@@ -186,7 +194,7 @@
   <div class="nav-inner">
     <div class="nav-logo"><img src="https://i.imgur.com/bmEuklI.png" alt="Gabriel Barber Studio" style="height:38px;width:auto;object-fit:contain;display:block;"></div>
     <div class="nav-links">
-      <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Inicio</button>
+      <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Início</button>
       <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
@@ -207,6 +215,7 @@
     <div class="hero">
       <div class="hero-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
     </div>
+    <div id="site-banners-container"></div>
     <h2 class="section-title gold-gradient">Nossos Serviços</h2>
     <div class="services-grid" id="services-grid">
       <!-- carregado dinamicamente do Firestore -->
@@ -225,8 +234,8 @@
     <div id="secondBookingModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;animation:fadeIn .3s ease-out;">
       <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
         <div style="font-size:28px;text-align:center;margin-bottom:12px;">⚠️</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;margin-bottom:10px;color:#f0d78c;">Agendamento ja existente</div>
-        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Ja existe um agendamento ativo neste número de telefone. Deseja confirmar um segundo agendamento?</p>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;margin-bottom:10px;color:#f0d78c;">Agendamento já existente</div>
+        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Já existe um agendamento ativo neste número de telefone. Deseja confirmar um segundo agendamento?</p>
         <div style="display:flex;gap:10px;margin-bottom:20px;">
           <button onclick="declineSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.35);background:none;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(220,38,38,.1)'" onmouseout="this.style.background='none'">Não</button>
           <button onclick="acceptSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sim</button>
@@ -431,13 +440,36 @@
 
   // Carrega serviços do Firestore e atualiza grid + selects de agendamento
   let SERVICES_DATA = [
-    {name:'Cabelo',        price:'30,00', duration:45},
-    {name:'Barba',         price:'25,00', duration:15},
-    {name:'Pezinho',       price:'15,00', duration:15},
-    {name:'Cabelo & Barba',price:'50,00', duration:70},
-    {name:'Raspar Cabeça', price:'20,00', duration:15},
-    {name:'Sobrancelha',   price:'15,00', duration:15},
+    {name:'Cabelo',        price:'30,00', duration:45, features:['Cortes apenas com Máquina','Cortes apenas com Tesoura','Cortes com Máquina + Tesoura','Incluso em planos por assinatura']},
+    {name:'Barba',         price:'25,00', duration:15, features:['Raspado','Navalhado','Barboterapia','Entre outros...']},
+    {name:'Pezinho',       price:'15,00', duration:15, features:['Acabamento','Navalhado']},
+    {name:'Cabelo & Barba',price:'50,00', duration:70, features:['Pacote com desconto','Incluso em planos por assinatura']},
+    {name:'Raspar Cabeça', price:'20,00', duration:15, features:['Curto','Zero','Navalhado']},
+    {name:'Sobrancelha',   price:'15,00', duration:15, features:['Navalhada']},
   ];
+
+  async function loadBannersFromFirestore(){
+    try {
+      const snap = await getDoc(doc(db,'config','banners'));
+      if(snap.exists() && snap.data().list) renderSiteBanners(snap.data().list);
+    } catch(e){ console.error('loadBannersFromFirestore',e); }
+  }
+
+  function renderSiteBanners(banners){
+    const container = document.getElementById('site-banners-container');
+    if(!container) return;
+    const active = (banners||[]).filter(b=>b.active!==false && b.text);
+    if(active.length===0){ container.innerHTML=''; return; }
+    const icons = {info:'ℹ️', promo:'🏷️', warn:'⚠️'};
+    container.innerHTML = active.map((b,i)=>{
+      const cls = 'site-banner-'+(b.type||'info');
+      const icon = icons[b.type||'info']||'ℹ️';
+      const text = b.link
+        ? `<a href="${b.link}" target="_blank" rel="noopener">${b.text}</a>`
+        : b.text;
+      return `<div class="site-banner ${cls}" style="animation-delay:${i*0.08}s"><span class="site-banner-icon">${icon}</span><span>${text}</span></div>`;
+    }).join('');
+  }
 
   async function loadServicesFromFirestore(){
     try {
@@ -451,12 +483,17 @@
   function renderServicesGrid(){
     const grid = document.getElementById('services-grid');
     if(!grid) return;
-    grid.innerHTML = SERVICES_DATA.map(s=>`
-      <div class="service-card">
+    grid.innerHTML = SERVICES_DATA.map(s=>{
+      const featuresHtml = (s.features && s.features.length>0)
+        ? '<ul class="service-features">'+s.features.map(f=>'<li>'+f+'</li>').join('')+'</ul>'
+        : '';
+      return `<div class="service-card">
         ${s.image ? `<img src="${s.image}" alt="${s.name}" onerror="this.style.display='none'">` : ''}
         <h3>${s.name}</h3>
         <div class="service-price">R$ ${s.price}</div>
-      </div>`).join('');
+        ${featuresHtml}
+      </div>`;
+    }).join('');
   }
 
   function updateBookingSelects(){
@@ -472,16 +509,18 @@
     SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
   }
 
-  const DAY_LABELS = {tue:'Terça-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sábado'};
+  const DAY_LABELS = {mon:'Segunda-feira', tue:'Terça-feira', wed:'Quarta-feira', thu:'Quinta-feira', fri:'Sexta-feira', sat:'Sábado', sun:'Domingo'};
 
   function renderHoursDisplay(){
     const grid = document.getElementById('hours-grid-dynamic');
     const breaksEl = document.getElementById('hours-breaks-dynamic');
     if(!grid||!breaksEl) return;
 
-    // Agrupa dias com mesmo horário para exibição compacta
+    // Agrupa dias com mesmo horário para exibição compacta — ordenados na semana
+    const DAY_ORDER = ['mon','tue','wed','thu','fri','sat','sun'];
     const openDays = Object.entries(SCHEDULE.days||{})
       .filter(([,v])=>v.open)
+      .sort(([a],[b])=>DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b))
       .map(([k,v])=>({key:k, label:DAY_LABELS[k]||k, start:v.start, end:v.end}));
 
     // Agrupa por horário igual
@@ -613,14 +652,16 @@
     grid.innerHTML = PLANS_DATA.map(p => {
       const featuredClass = p.featured ? ' featured' : '';
       const badge = p.featured ? '<div class="plan-badge">⭐ Mais Popular</div>' : '';
+      const bestValueBadge = p.bestValue ? '<div style="text-align:center;margin-top:8px;"><span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(22,163,74,0.18);color:#4ade80;border:1px solid rgba(22,163,74,0.35);padding:3px 12px;border-radius:20px;">💚 Melhor Custo-Benefício</span></div>' : '';
       const price = p.price ? p.price.replace('.',',') : '–';
       const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('');
       const btnAttr = p.mpLink
-        ? 'onclick="openPlanModal(\''+p.name+'\',\'R$'+price+'/mes\',\''+p.mpLink+'\')"'
-        : 'onclick="showToast(\'Link de assinatura em breve!\',\'error\')" style="opacity:.6;cursor:not-allowed;"';
+        ? 'onclick="openPlanModal(''+p.name+'','R$'+price+'/mês',''+p.mpLink+'')"'
+        : 'onclick="showToast('Link de assinatura em breve!','error')" style="opacity:.6;cursor:not-allowed;"';
       return '<div class="plan-card'+featuredClass+'">'+badge+
         '<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'+
         '<div class="plan-price">R$'+price+'<span>/mês</span></div>'+
+        bestValueBadge+
         '<div class="plan-divider"></div>'+
         '<ul class="plan-features">'+benefitsHtml+'</ul>'+
         '<button class="plan-btn" '+btnAttr+'>Assinar agora</button>'+
@@ -1075,6 +1116,7 @@
         loadSchedule().then(()=>{ subscribeAll(); });
         loadPlansFromFirestore();
         loadServicesFromFirestore();
+        loadBannersFromFirestore();
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
