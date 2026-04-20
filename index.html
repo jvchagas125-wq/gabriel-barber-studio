@@ -1243,9 +1243,7 @@
         loadPlansFromFirestore();
         loadServicesFromFirestore();
         loadBannersFromFirestore();
-        // Inicializar data mínima para o form VIP também
-        const vipDate = document.getElementById('vip-f-date');
-        if(vipDate){ const t=new Date(); const pad=n=>String(n).padStart(2,'0'); vipDate.min=t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate()); }
+
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
