@@ -25,9 +25,32 @@
     .nav-links{display:flex;gap:4px;align-items:center}
     .nav-btn{padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;background:none;border:none;color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s}
     .nav-btn:hover{background:rgba(255,255,255,0.06);color:var(--text)} .nav-btn.active{background:var(--gold-dim);color:var(--gold)}
-    .nav-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:20px;background:var(--gold-dim);border:1px solid var(--gold-border);font-size:13px;font-weight:600;color:var(--gold)}
-    .nav-user-dot{width:7px;height:7px;border-radius:50%;background:var(--gold)}
-    .logout-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;padding:4px 6px;border-radius:4px;transition:color .15s} .logout-btn:hover{color:var(--red)}
+    /* ── Perfil dropdown ── */
+    .profile-wrap{position:relative;}
+    .profile-btn{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:24px;background:var(--gold-dim);border:1px solid var(--gold-border);cursor:pointer;transition:background .2s;font-family:"DM Sans",sans-serif;}
+    .profile-btn:hover{background:rgba(201,168,76,.22);}
+    .profile-avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .profile-avatar svg{width:16px;height:16px;fill:#111;}
+    .profile-avatar-vip{background:linear-gradient(135deg,#c9a84c,#f0d78c);}
+    .profile-info{display:flex;flex-direction:column;align-items:flex-start;gap:1px;}
+    .profile-phone{font-size:12px;font-weight:700;color:var(--gold);line-height:1.2;}
+    .profile-status{font-size:10px;font-weight:600;color:var(--text-muted);line-height:1.2;letter-spacing:.3px;}
+    .profile-status-vip{color:#c9a84c;}
+    .profile-chevron{font-size:10px;color:var(--text-muted);margin-left:2px;transition:transform .2s;}
+    .profile-wrap.open .profile-chevron{transform:rotate(180deg);}
+    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:8px;display:none;z-index:100;animation:fadeIn .15s ease-out;}
+    .profile-wrap.open .profile-dropdown{display:block;}
+    .profile-dd-header{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:6px;}
+    .profile-dd-name{font-size:13px;font-weight:700;color:var(--text);}
+    .profile-dd-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .profile-dd-vip-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--gold);}
+    .profile-dd-btn{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;font-family:"DM Sans",sans-serif;text-align:left;}
+    .profile-dd-btn:hover{background:rgba(255,255,255,.05);color:var(--text);}
+    .profile-dd-btn.danger{color:#f87171;}
+    .profile-dd-btn.danger:hover{background:rgba(220,38,38,.1);color:#f87171;}
+    .nav-user{display:none;} /* esconde o antigo */
+    .nav-user-dot{display:none;}
+    .logout-btn{display:none;}
     #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;display:none;pointer-events:none}
     .toast-box{padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;animation:toastIn .3s ease-out;box-shadow:0 8px 32px rgba(0,0,0,.5)}
     @keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
@@ -202,10 +225,35 @@
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
-    <div class="nav-user" id="nav-user">
-      <div class="nav-user-dot"></div>
-      <span id="nav-phone-display">-</span>
-      <button class="logout-btn" onclick="doLogout()" title="Sair">x</button>
+    <div class="nav-user" id="nav-user" style="display:none;"></div>
+    <!-- Novo perfil dropdown -->
+    <div class="profile-wrap" id="profile-wrap">
+      <button class="profile-btn" onclick="toggleProfileMenu()" id="profile-btn">
+        <div class="profile-avatar" id="profile-avatar">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div class="profile-info">
+          <span class="profile-phone" id="nav-phone-display">-</span>
+          <span class="profile-status" id="profile-status-label">Cliente</span>
+        </div>
+        <span class="profile-chevron">▼</span>
+      </button>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="profile-dd-header">
+          <div class="profile-dd-name" id="profile-dd-phone">—</div>
+          <div class="profile-dd-sub">Minha conta</div>
+          <div class="profile-dd-vip-badge" id="profile-vip-badge" style="display:none;">👑 <span id="profile-vip-plan-label">VIP</span></div>
+        </div>
+        <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
+          🗓️ Meus Agendamentos
+        </button>
+        <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
+          📍 Contato
+        </button>
+        <button class="profile-dd-btn danger" onclick="closeProfileMenu();doLogout()">
+          ↩️ Sair da conta
+        </button>
+      </div>
     </div>
   </div>
 </nav>
@@ -345,16 +393,31 @@
 <!-- Home VIP -->
 <div class="section" id="sec-home-vip" style="display:none;">
   <div class="page" style="max-width:640px;">
-    <div style="text-align:center;padding:20px 0 32px;">
-      <div style="display:inline-block;animation:float 3s ease-in-out infinite;">
-        <img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" style="width:160px;height:160px;object-fit:contain;" onerror="this.style.display='none'">
+    <!-- Hero VIP -->
+    <div style="text-align:center;padding:24px 0 8px;">
+      <!-- Avatar VIP animado -->
+      <div style="position:relative;display:inline-block;margin-bottom:16px;">
+        <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#f0d78c);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 0 4px rgba(201,168,76,.2),0 0 32px rgba(201,168,76,.35);animation:float 3s ease-in-out infinite;">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="#111" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div style="position:absolute;bottom:-4px;right:-4px;background:var(--gold);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid #111;">👑</div>
       </div>
-      <div style="margin-top:12px;">
-        <span style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#111;background:#c9a84c;padding:4px 14px;border-radius:20px;">👑 Membro VIP</span>
+      <!-- Badge VIP -->
+      <div style="margin-bottom:10px;">
+        <span style="display:inline-block;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#111;background:linear-gradient(135deg,#c9a84c,#f0d78c);padding:5px 18px;border-radius:20px;" id="vip-plan-badge-label">👑 PLANO VIP</span>
       </div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;margin:12px 0 4px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Bem-vindo de volta!</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c9a84c;margin-bottom:8px;" id="vip-plan-display">Plano —</div>
-      <div id="vip-benefits-list" style="display:flex;flex-direction:column;gap:8px;max-width:360px;margin:0 auto 24px;"></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;margin:4px 0 2px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Bem-vindo de volta!</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;" id="vip-plan-display">Plano —</div>
+      <!-- Benefícios do plano -->
+      <div id="vip-benefits-list" style="display:flex;flex-direction:column;gap:8px;max-width:380px;margin:0 auto 20px;"></div>
+    </div>
+    <!-- Card de aviso de assinatura ativa -->
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:28px;flex-shrink:0;">✨</div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--gold);margin-bottom:3px;">Assinatura ativa — <span id="vip-plan-inline-name">VIP</span></div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">Seu plano está ativo! Realize seu agendamento abaixo com prioridade no atendimento.</div>
+      </div>
     </div>
 
     <!-- Formulário de agendamento inline no VIP -->
@@ -684,17 +747,42 @@
   let waitingUnsubscribe = null;
 
   function applyVipMode(sub){
-    document.getElementById('vip-plan-display').textContent = 'Plano '+sub.planName+' — '+sub.planPrice;
+    const planLabel = sub.planName || 'VIP';
+    const planPrice = sub.planPrice || '';
+    document.getElementById('vip-plan-display').textContent = planLabel + (planPrice ? ' — '+planPrice : '');
+    // Badge no topo da home VIP
+    const badgeEl = document.getElementById('vip-plan-badge-label');
+    if(badgeEl) badgeEl.textContent = '👑 PLANO ' + planLabel.toUpperCase();
+    // Aviso inline
+    const inlineEl = document.getElementById('vip-plan-inline-name');
+    if(inlineEl) inlineEl.textContent = planLabel;
+    // Benefícios
     const planData = PLANS_DATA.find(p=>p.name===sub.planName);
     const benefits = sub.benefits || (planData&&planData.benefits) || [];
     document.getElementById('vip-benefits-list').innerHTML = benefits.map(b=>
       '<div class="vip-benefit"><span class="vip-benefit-icon">✦</span><span>'+b+'</span></div>'
     ).join('');
     document.getElementById('nav-plans-btn').style.display = 'none';
+    // Atualizar perfil nav — modo VIP
+    const avatar = document.getElementById('profile-avatar');
+    const statusLabel = document.getElementById('profile-status-label');
+    const vipBadge = document.getElementById('profile-vip-badge');
+    const vipPlanLabel = document.getElementById('profile-vip-plan-label');
+    if(avatar){ avatar.classList.add('profile-avatar-vip'); avatar.innerHTML='<span style="font-size:16px;">👑</span>'; }
+    if(statusLabel){ statusLabel.textContent = planLabel; statusLabel.classList.add('profile-status-vip'); }
+    if(vipBadge) vipBadge.style.display='inline-flex';
+    if(vipPlanLabel) vipPlanLabel.textContent = 'Plano '+planLabel;
   }
 
   function clearVipMode(){
     document.getElementById('nav-plans-btn').style.display = '';
+    // Reset perfil nav — modo normal
+    const avatar = document.getElementById('profile-avatar');
+    const statusLabel = document.getElementById('profile-status-label');
+    const vipBadge = document.getElementById('profile-vip-badge');
+    if(avatar){ avatar.classList.remove('profile-avatar-vip'); avatar.innerHTML='<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>'; }
+    if(statusLabel){ statusLabel.textContent='Cliente'; statusLabel.classList.remove('profile-status-vip'); }
+    if(vipBadge) vipBadge.style.display='none';
   }
 
   // Escuta assinatura em tempo real no Firestore pelo telefone do cliente
@@ -842,6 +930,7 @@
       localStorage.setItem("gbs_phone",formatted);
       document.getElementById("login-screen").style.display="none";
       document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
+      document.getElementById("profile-dd-phone").textContent=formatted;
       document.getElementById("f-phone").value=formatted;
       subscribeAll();
     } catch(err){
@@ -1127,6 +1216,7 @@
       if(user && saved){
         loggedPhone = saved;
         document.getElementById("nav-phone-display").textContent = maskPhone(saved);
+      document.getElementById("profile-dd-phone").textContent = saved;
         document.getElementById("f-phone").value = saved;
         const vipPhone = document.getElementById("vip-f-phone");
         if(vipPhone) vipPhone.value = saved;
@@ -1147,6 +1237,24 @@
 
     setTimeout(hideLoading, 6000);
   });
+
+  // ══════════════════════════════
+  // PERFIL DROPDOWN
+  // ══════════════════════════════
+  window.toggleProfileMenu = function(){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap) wrap.classList.toggle('open');
+  };
+  window.closeProfileMenu = function(){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap) wrap.classList.remove('open');
+  };
+  // Fechar ao clicar fora
+  document.addEventListener('click', function(e){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+  });
+
 </script>
 </body>
 </html>
