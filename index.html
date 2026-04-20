@@ -454,6 +454,7 @@
     if(!grid) return;
     grid.innerHTML = SERVICES_DATA.map(s=>`
       <div class="service-card">
+        ${s.image ? `<img src="${s.image}" alt="${s.name}" onerror="this.style.display='none'">` : ''}
         <h3>${s.name}</h3>
         <div class="service-price">R$ ${s.price}</div>
       </div>`).join('');
