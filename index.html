@@ -435,12 +435,6 @@
       <div class="form-group"><label class="form-label">Serviço</label>
         <select class="form-input" id="vip-f-service">
           <option value="">Selecione um serviço</option>
-          <option value="Cabelo">Cabelo</option>
-          <option value="Barba">Barba</option>
-          <option value="Pezinho">Pezinho</option>
-          <option value="Cabelo & Barba">Cabelo &amp; Barba</option>
-          <option value="Raspar Cabeça">Raspar Cabeça</option>
-          <option value="Sobrancelha">Sobrancelha</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()"></div>
@@ -570,7 +564,7 @@
     const fSvc = document.getElementById('f-service');
     const vipSvc = document.getElementById('vip-f-service');
     if(fSvc) fSvc.innerHTML = opts;
-    if(vipSvc) vipSvc.innerHTML = optsSvc;
+    if(vipSvc) vipSvc.innerHTML = opts;
     // Atualiza SCHEDULE.services com duração atual dos serviços carregados
     SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
   }
@@ -788,6 +782,9 @@
 
   function clearVipMode(){
     document.getElementById('nav-plans-btn').style.display = '';
+    // Limpar flag de boas-vindas para próxima ativação
+    var _vipKey = 'gbs_vip_welcomed_' + (loggedPhone||'').replace(/\D/g,'');
+    localStorage.removeItem(_vipKey);
     document.querySelectorAll('.nav-btn').forEach(function(b){
       if(b.dataset.sec==='home'||b.dataset.sec==='booking') b.style.display='';
     });
@@ -819,7 +816,12 @@
         const homeNormal = document.getElementById('sec-home');
         if(homeNormal && homeNormal.classList.contains('active')){
           showSection('home');
-          showToast('Pagamento confirmado! Bem-vindo ao VIP! 👑','success');
+          // Mostrar boas-vindas só na primeira vez que o VIP é ativado
+          const vipWelcomeKey = 'gbs_vip_welcomed_' + (loggedPhone||'').replace(/\D/g,'');
+          if(!localStorage.getItem(vipWelcomeKey)){
+            showToast('Pagamento confirmado! Bem-vindo ao VIP! 👑','success');
+            localStorage.setItem(vipWelcomeKey, '1');
+          }
         }
         // Se estáva aguardando, também redireciona
         const homeVip = document.getElementById('sec-home-vip');
