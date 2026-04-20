@@ -650,21 +650,30 @@
     if(!grid) return;
     grid.innerHTML = PLANS_DATA.map(p => {
       const featuredClass = p.featured ? ' featured' : '';
-      const badge = p.featured ? '<div class="plan-badge">⭐ Mais Popular</div>' : '';
-      const bvBadge = p.bestValue ? '<div style="text-align:center;margin:6px 0 -6px;"><span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(22,163,74,0.18);color:#4ade80;border:1px solid rgba(22,163,74,0.35);padding:3px 12px;border-radius:20px;">💚 Melhor Custo-Benefício</span></div>' : '';
+      const badge = p.featured ? '<div class="plan-badge">&#11088; Mais Popular</div>' : '';
+      const bvBadge = p.bestValue
+        ? '<div style="text-align:center;margin:6px 0 -6px;"><span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(22,163,74,0.18);color:#4ade80;border:1px solid rgba(22,163,74,0.35);padding:3px 12px;border-radius:20px;">&#128154; Melhor Custo-Ben&eacute;ficio</span></div>'
+        : '';
       const price = p.price ? p.price.replace('.',',') : '–';
       const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('');
-      const btnAttr = p.mpLink
-        ? 'onclick="openPlanModal(''+p.name+'','R$'+price+'/mês',''+p.mpLink+'')"'
-        : 'onclick="showToast('Link de assinatura em breve!','error')" style="opacity:.6;cursor:not-allowed;"';
-      return '<div class="plan-card'+featuredClass+'">'+badge+
-        '<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'+
-        '<div class="plan-price">R$'+price+'<span>/mês</span></div>'+
-        bvBadge+
-        '<div class="plan-divider"></div>'+
-        '<ul class="plan-features">'+benefitsHtml+'</ul>'+
-        '<button class="plan-btn" '+btnAttr+'>Assinar agora</button>'+
-        '</div>';
+      let btnHtml;
+      if(p.mpLink){
+        btnHtml = '<button class="plan-btn" onclick="openPlanModal(this)" data-name="'
+          + p.name.replace(/"/g,'&quot;')
+          + '" data-price="R$' + price + '/m&ecirc;s" data-link="'
+          + p.mpLink.replace(/"/g,'&quot;')
+          + '">Assinar agora</button>';
+      } else {
+        btnHtml = '<button class="plan-btn" onclick="showToast(&quot;Link de assinatura em breve!&quot;,&quot;error&quot;)" style="opacity:.6;cursor:not-allowed;">Assinar agora</button>';
+      }
+      return '<div class="plan-card'+featuredClass+'">'+badge
+        +'<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'
+        +'<div class="plan-price">R$'+price+'<span>/m&ecirc;s</span></div>'
+        +bvBadge
+        +'<div class="plan-divider"></div>'
+        +'<ul class="plan-features">'+benefitsHtml+'</ul>'
+        +btnHtml
+        +'</div>';
     }).join('');
   }
 
@@ -727,8 +736,18 @@
   }
 
   // Abre modal de email ao clicar "Assinar agora"
-  window.openPlanModal = function(planName, planPrice, mpLink){
-    pendingPlanLink = mpLink;
+  window.openPlanModal = function(elOrName, planPrice, mpLink){
+    // Suporta chamada via data-attributes (botão) ou direto (legacy)
+    let planName, link;
+    if(elOrName && elOrName.dataset){
+      planName = elOrName.dataset.name || '';
+      planPrice = elOrName.dataset.price || '';
+      link      = elOrName.dataset.link || '';
+    } else {
+      planName = elOrName;
+      link = mpLink;
+    }
+    pendingPlanLink = link;
     pendingPlanName = planName;
     document.getElementById('plan-modal-name').textContent = planName + ' — ' + planPrice;
     document.getElementById('plan-email-input').value = '';
