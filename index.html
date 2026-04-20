@@ -447,7 +447,7 @@
     </div>
 
     <div style="text-align:center;margin-top:24px;">
-      <button class="vip-exit" onclick="deactivateVip()">Cancelar assinatura / sair do modo VIP</button>
+      <button class="vip-exit" onclick="openCancelVipModal()">Cancelar assinatura / sair do modo VIP</button>
     </div>
   </div>
 </div>
@@ -919,11 +919,59 @@
   };
 
   window.deactivateVip = function(){
-    if(!confirm('Deseja sair do modo VIP neste dispositivo?')) return;
-    if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe = null; }
-    clearVipMode();
-    showToast('Saiu do modo VIP','success');
-    showSection('home');
+    // Mantido para compatibilidade — agora usa o modal
+    openCancelVipModal();
+  };
+
+  window.openCancelVipModal = function(){
+    document.getElementById('cancelVipModal').style.display='flex';
+    // Limpar estado anterior
+    document.querySelectorAll('#cancel-reasons input[type=radio]').forEach(r=>r.checked=false);
+    document.querySelectorAll('#cancel-reasons label').forEach(l=>{ l.style.background='none'; l.style.borderColor='rgba(255,255,255,0.08)'; });
+    document.getElementById('cancel-vip-text').value='';
+  };
+
+  window.closeCancelVipModal = function(){
+    document.getElementById('cancelVipModal').style.display='none';
+  };
+
+  window.selectCancelReason = function(label){
+    document.querySelectorAll('#cancel-reasons label').forEach(l=>{ l.style.background='none'; l.style.borderColor='rgba(255,255,255,0.08)'; });
+    label.style.background='rgba(201,168,76,0.1)';
+    label.style.borderColor='rgba(201,168,76,0.35)';
+  };
+
+  window.confirmCancelVip = async function(){
+    const radio = document.querySelector('#cancel-reasons input[type=radio]:checked');
+    const reason = radio ? radio.value : '';
+    const details = document.getElementById('cancel-vip-text').value.trim();
+    if(!reason){ showToast('Selecione um motivo para continuar','error'); return; }
+
+    const btn = document.getElementById('confirm-cancel-vip-btn');
+    btn.disabled=true; btn.textContent='Enviando...';
+
+    try {
+      // Salvar solicitação no Firestore para notificar o Gabriel
+      await addDoc(collection(db,'cancellation_requests'),{
+        phone:     loggedPhone||'',
+        planName:  document.getElementById('vip-plan-display')?.textContent||'',
+        reason,
+        details,
+        requestedAt: new Date().toISOString(),
+        status: 'pending',
+      });
+      // Fechar modal e sair do VIP localmente
+      document.getElementById('cancelVipModal').style.display='none';
+      if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe=null; }
+      clearVipMode();
+      showToast('Solicitação enviada! Gabriel entrará em contato.','success');
+      showSection('home');
+    } catch(e){
+      console.error(e);
+      showToast('Erro ao enviar. Tente novamente.','error');
+    } finally {
+      btn.disabled=false; btn.textContent='Confirmar cancelamento';
+    }
   };
 
   window.showSection = function(name){
@@ -1293,5 +1341,48 @@
   });
 
 </script>
+
+<!-- Modal cancelamento de assinatura VIP -->
+<div id="cancelVipModal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:440px;margin:16px;background:#1a1a1a;border:1px solid rgba(220,38,38,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+    <div style="text-align:center;font-size:36px;margin-bottom:12px;">😔</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-align:center;margin-bottom:8px;color:#f87171;">Cancelar Assinatura</div>
+    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:20px;line-height:1.6;">Sentimos muito em ver você partir. Por favor, nos diga o motivo do cancelamento para que possamos melhorar.</p>
+
+    <!-- Motivos rápidos -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;" id="cancel-reasons">
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Preço alto" style="accent-color:#c9a84c;"> Preço muito alto
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Não uso os benefícios" style="accent-color:#c9a84c;"> Não estou usando os benefícios
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Mudei de barbearia" style="accent-color:#c9a84c;"> Mudei de barbearia
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Problemas financeiros" style="accent-color:#c9a84c;"> Problemas financeiros
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Outro" style="accent-color:#c9a84c;"> Outro motivo
+      </label>
+    </div>
+
+    <!-- Campo de texto adicional -->
+    <textarea id="cancel-vip-text" rows="3" placeholder="Detalhes adicionais (opcional)..."
+      style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;margin-bottom:16px;transition:border-color .2s;"
+      onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCancelVipModal()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:none;color:#888;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Manter assinatura
+      </button>
+      <button onclick="confirmCancelVip()" id="confirm-cancel-vip-btn" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.4);background:rgba(220,38,38,.12);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;">
+        Confirmar cancelamento
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
