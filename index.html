@@ -354,58 +354,8 @@
   <div class="page">
     <h2 class="section-title gold-gradient">Planos de Assinatura</h2>
     <p class="text-center" style="color:var(--text-muted);margin-bottom:40px;font-size:15px;">Economize com um plano mensal e tenha prioridade no atendimento</p>
-    <div class="plans-grid">
-
-      <!-- Plano 1: LumberJack -->
-      <div class="plan-card">
-        <div class="plan-name">LumberJack</div>
-        <div class="plan-price">R$80<span>/mês</span></div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li>1 Cabelo &amp; Barba por mês</li>
-          <li>1 Limpeza de Sobrancelha por mês</li>
-        </ul>
-        <button class="plan-btn" onclick="openPlanModal('LumberJack','R$80/mes','088faf9bd4814ffb84b415736cfb1f80')">Assinar agora</button>
-      </div>
-
-      <!-- Plano 2: Ontheruler -->
-      <div class="plan-card">
-        <div class="plan-name">Ontheruler</div>
-        <div class="plan-price">R$90<span>/mês</span></div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li>2 Cabelo &amp; Barba por mês</li>
-          <li>2 Limpezas de Sobrancelha por mês</li>
-        </ul>
-        <button class="plan-btn" onclick="openPlanModal('Ontheruler','R$90/mes','694d9ae32b03435b85f961ac3d4b2428')">Assinar agora</button>
-      </div>
-
-      <!-- Plano 3: Linedup -->
-      <div class="plan-card featured">
-        <div class="plan-badge">⭐ Mais Popular</div>
-        <div class="plan-name">Linedup</div>
-        <div class="plan-price">R$125<span>/mês</span></div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li>1 Corte por semana</li>
-          <li>4 cortes por mês inclusos</li>
-        </ul>
-        <button class="plan-btn" onclick="openPlanModal('Linedup','R$125/mes','35515cb8289947f6a21fbe00747e2986')">Assinar agora</button>
-      </div>
-
-      <!-- Plano 4: Gentleman -->
-      <div class="plan-card">
-        <div class="plan-name">Gentleman</div>
-        <div class="plan-price">R$200<span>/mês</span></div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li>1 Corte por semana (4/mês)</li>
-          <li>1 Sobrancelha por semana (4/mês)</li>
-          <li>1 Limpeza de Pele por mês</li>
-        </ul>
-        <button class="plan-btn" onclick="openPlanModal('Gentleman','R$200/mes','e398fc94b6a84ce28276f5675e1c981f')">Assinar agora</button>
-      </div>
-
+    <div class="plans-grid" id="plans-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
     </div>
 
     <!-- Observações -->
@@ -494,7 +444,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -641,19 +591,63 @@
   };
 
   // ===== VIP / ASSINATURA =====
-  const VIP_PLANS = {
-    'LumberJack': ['1 Cabelo & Barba por mes','1 Limpeza de Sobrancelha por mes'],
-    'Ontheruler': ['2 Cabelo & Barba por mes','2 Limpezas de Sobrancelha por mes'],
-    'Linedup':    ['1 Corte por semana (4/mes)'],
-    'Gentleman':  ['1 Corte por semana (4/mes)','1 Sobrancelha por semana (4/mes)','1 Limpeza de Pele por mes'],
-  };
+  let PLANS_DATA = []; // carregado do Firestore
 
-  const MP_LINKS = {
-    '088faf9bd4814ffb84b415736cfb1f80': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=088faf9bd4814ffb84b415736cfb1f80',
-    '694d9ae32b03435b85f961ac3d4b2428': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=694d9ae32b03435b85f961ac3d4b2428',
-    '35515cb8289947f6a21fbe00747e2986': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=35515cb8289947f6a21fbe00747e2986',
-    'e398fc94b6a84ce28276f5675e1c981f': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=e398fc94b6a84ce28276f5675e1c981f',
-  };
+  // Fallback caso Firebase ainda nao tenha carregado
+  const VIP_PLANS_FALLBACK = {};
+
+  async function loadPlansFromFirestore(){
+    try {
+      const snap = await getDocs(query(collection(db,'plans'), orderBy('order')));
+      if(!snap.empty){
+        PLANS_DATA = snap.docs.map(d=>({id:d.id,...d.data()}));
+      } else {
+        // Seed com os planos padrão se ainda não existirem no Firestore
+        PLANS_DATA = DEFAULT_PLANS;
+        for(const p of DEFAULT_PLANS){
+          await setDoc(doc(db,'plans',p.id), p);
+        }
+      }
+    } catch(e){
+      console.error('loadPlansFromFirestore',e);
+      PLANS_DATA = DEFAULT_PLANS;
+    }
+    renderPlansSection();
+  }
+
+  const DEFAULT_PLANS = [
+    { id:'lumberjack', order:1, emoji:'🪓', name:'Lumberjack', price:'59,90', featured:false, mpLink:'',
+      benefits:['1 Corte/mes','1 Barba/mes','1 Limpeza de Sobrancelha/mes'] },
+    { id:'swift', order:2, emoji:'⚡', name:'Swift', price:'69,90', featured:true, mpLink:'',
+      benefits:['1 Corte/cada 10 dias'] },
+    { id:'ontheruler', order:3, emoji:'📏', name:'Ontheruler', price:'79,90', featured:false, mpLink:'',
+      benefits:['1 Corte/cada 10 dias','1 Limpeza de Sobrancelha/cada 10 dias'] },
+    { id:'linedup', order:4, emoji:'📐', name:'Linedup', price:'109,90', featured:false, mpLink:'',
+      benefits:['1 Corte/semana','1 Sobrancelha/semana'] },
+    { id:'gentleman', order:5, emoji:'🎩', name:'Gentleman', price:'179,90', featured:false, mpLink:'',
+      benefits:['1 Corte/semana','1 Sobrancelha/semana','1 Limpeza de Pele/mes - Gratis'] },
+  ];
+
+  function renderPlansSection(){
+    const grid = document.getElementById('plans-grid');
+    if(!grid) return;
+    grid.innerHTML = PLANS_DATA.map(p => {
+      const featuredClass = p.featured ? ' featured' : '';
+      const badge = p.featured ? '<div class="plan-badge">⭐ Mais Popular</div>' : '';
+      const price = p.price ? p.price.replace('.',',') : '–';
+      const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('');
+      const btnAttr = p.mpLink
+        ? 'onclick="openPlanModal(\''+p.name+'\',\'R$'+price+'/mes\',\''+p.mpLink+'\')"'
+        : 'onclick="showToast(\'Link de assinatura em breve!\',\'error\')" style="opacity:.6;cursor:not-allowed;"';
+      return '<div class="plan-card'+featuredClass+'">'+badge+
+        '<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'+
+        '<div class="plan-price">R$'+price+'<span>/mês</span></div>'+
+        '<div class="plan-divider"></div>'+
+        '<ul class="plan-features">'+benefitsHtml+'</ul>'+
+        '<button class="plan-btn" '+btnAttr+'>Assinar agora</button>'+
+        '</div>';
+    }).join('');
+  }
 
   let vipUnsubscribe = null;
   let pendingPlanId = null;
@@ -661,7 +655,8 @@
 
   function applyVipMode(sub){
     document.getElementById('vip-plan-display').textContent = 'Plano '+sub.planName+' — '+sub.planPrice;
-    const benefits = sub.benefits || VIP_PLANS[sub.planName] || [];
+    const planData = PLANS_DATA.find(p=>p.name===sub.planName);
+    const benefits = sub.benefits || (planData&&planData.benefits) || [];
     document.getElementById('vip-benefits-list').innerHTML = benefits.map(b=>
       '<div class="vip-benefit"><span class="vip-benefit-icon">✦</span><span>'+b+'</span></div>'
     ).join('');
@@ -1092,12 +1087,14 @@
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         loadSchedule().then(()=>{ subscribeAll(); });
+        loadPlansFromFirestore();
         // Restaura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
       } else {
         document.getElementById("login-screen").style.display="flex";
       }
-      showSection("home");
+      loadPlansFromFirestore();
+    showSection("home");
     });
 
     setTimeout(hideLoading, 6000);
