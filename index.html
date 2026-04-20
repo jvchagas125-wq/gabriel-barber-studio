@@ -412,11 +412,14 @@
       <div id="vip-benefits-list" style="display:flex;flex-direction:column;gap:8px;max-width:380px;margin:0 auto 20px;"></div>
     </div>
     <!-- Card de aviso de assinatura ativa -->
+    <!-- Banners/avisos do admin -->
+    <div id="site-banners-container-vip" style="margin-bottom:8px;"></div>
+
     <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
       <div style="font-size:28px;flex-shrink:0;">✨</div>
       <div>
         <div style="font-weight:700;font-size:14px;color:var(--gold);margin-bottom:3px;">Assinatura ativa — <span id="vip-plan-inline-name">VIP</span></div>
-        <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">Seu plano está ativo! Realize seu agendamento abaixo com prioridade no atendimento.</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">Realize seu agendamento abaixo com prioridade no atendimento.</div>
       </div>
     </div>
 
@@ -522,17 +525,18 @@
   }
 
   function renderSiteBanners(banners){
-    const c=document.getElementById('site-banners-container');
-    if(!c) return;
-    const active=(banners||[]).filter(b=>b.active!==false&&b.text);
-    if(!active.length){c.innerHTML='';return;}
-    const icons={info:'ℹ️',promo:'🏷️',warn:'⚠️'};
-    c.innerHTML=active.map((b,i)=>{
-      const cls='site-banner-'+(b.type||'info');
-      const icon=icons[b.type||'info']||'ℹ️';
-      const text=b.link?`<a href="${b.link}" target="_blank" rel="noopener">${b.text}</a>`:b.text;
-      return `<div class="site-banner ${cls}" style="animation-delay:${i*0.08}s"><span class="site-banner-icon">${icon}</span><span>${text}</span></div>`;
+    var active=(banners||[]).filter(function(b){return b.active!==false&&b.text;});
+    var icons={info:'ℹ️',promo:'🏷️',warn:'⚠️'};
+    var html=active.map(function(b,i){
+      var cls='site-banner-'+(b.type||'info');
+      var icon=icons[b.type||'info']||'ℹ️';
+      var text=b.link?'<a href="'+b.link+'" target="_blank" rel="noopener">'+b.text+'</a>':b.text;
+      return '<div class="site-banner '+cls+'" style="animation-delay:'+i*0.08+'s"><span class="site-banner-icon">'+icon+'</span><span>'+text+'</span></div>';
     }).join('');
+    var c1=document.getElementById('site-banners-container');
+    var c2=document.getElementById('site-banners-container-vip');
+    if(c1) c1.innerHTML=html;
+    if(c2) c2.innerHTML=html;
   }
 
   async function loadServicesFromFirestore(){
@@ -763,6 +767,9 @@
       '<div class="vip-benefit"><span class="vip-benefit-icon">✦</span><span>'+b+'</span></div>'
     ).join('');
     document.getElementById('nav-plans-btn').style.display = 'none';
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+      if(b.dataset.sec==='home'||b.dataset.sec==='booking') b.style.display='none';
+    });
     // Atualizar perfil nav — modo VIP
     const avatar = document.getElementById('profile-avatar');
     const statusLabel = document.getElementById('profile-status-label');
@@ -776,6 +783,9 @@
 
   function clearVipMode(){
     document.getElementById('nav-plans-btn').style.display = '';
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+      if(b.dataset.sec==='home'||b.dataset.sec==='booking') b.style.display='';
+    });
     // Reset perfil nav — modo normal
     const avatar = document.getElementById('profile-avatar');
     const statusLabel = document.getElementById('profile-status-label');
@@ -899,14 +909,14 @@
 
   window.showSection = function(name){
     const isVip = document.getElementById('nav-plans-btn').style.display === 'none';
-    const actualName = (name === 'home' && isVip) ? 'home-vip' : name;
+    const actualName = (isVip && (name === 'home' || name === 'booking')) ? 'home-vip' : name;
     document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.sec === name));
     const sec = document.getElementById('sec-'+actualName);
     if(sec) sec.classList.add('active');
     window.scrollTo(0, 0);
     if(name === 'appointments') renderAppointments();
-    if(name === 'booking'){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
+    if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
   };
 
   document.getElementById("login-phone").addEventListener("input",function(){
