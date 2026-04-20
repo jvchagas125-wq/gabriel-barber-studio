@@ -221,6 +221,8 @@
     <div class="nav-links">
       <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Início</button>
       <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
+      <button class="nav-btn" id="nav-vip-home-btn" data-sec="home" onclick="showSection('home')" style="display:none;">Início</button>
+      <button class="nav-btn" id="nav-vip-booking-btn" data-sec="booking" onclick="showSection('booking')" style="display:none;">Agendar</button>
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
@@ -772,8 +774,13 @@
     ).join('');
     document.getElementById('nav-plans-btn').style.display = 'none';
     document.querySelectorAll('.nav-btn').forEach(function(b){
-      if(b.dataset.sec==='home'||b.dataset.sec==='booking') b.style.display='none';
+      if((b.dataset.sec==='home'||b.dataset.sec==='booking')&&b.id!=='nav-vip-home-btn'&&b.id!=='nav-vip-booking-btn') b.style.display='none';
     });
+    // Mostrar botões VIP
+    var nvh=document.getElementById('nav-vip-home-btn');
+    var nvb=document.getElementById('nav-vip-booking-btn');
+    if(nvh) nvh.style.display='';
+    if(nvb) nvb.style.display='';
     // Atualizar perfil nav — modo VIP
     const avatar = document.getElementById('profile-avatar');
     const statusLabel = document.getElementById('profile-status-label');
@@ -787,6 +794,11 @@
 
   function clearVipMode(){
     document.getElementById('nav-plans-btn').style.display = '';
+    // Ocultar botões VIP
+    var _nvh=document.getElementById('nav-vip-home-btn');
+    var _nvb=document.getElementById('nav-vip-booking-btn');
+    if(_nvh) _nvh.style.display='none';
+    if(_nvb) _nvb.style.display='none';
     // Limpar flag de boas-vindas para próxima ativação
     var _vipKey = 'gbs_vip_welcomed_' + (loggedPhone||'').replace(/\D/g,'');
     localStorage.removeItem(_vipKey);
