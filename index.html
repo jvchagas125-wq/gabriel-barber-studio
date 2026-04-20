@@ -397,10 +397,9 @@
     <div style="text-align:center;padding:24px 0 8px;">
       <!-- Avatar VIP animado -->
       <div style="position:relative;display:inline-block;margin-bottom:16px;">
-        <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#f0d78c);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 0 4px rgba(201,168,76,.2),0 0 32px rgba(201,168,76,.35);animation:float 3s ease-in-out infinite;">
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="#111" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        <div id="vip-hero-avatar" style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#f0d78c);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 0 4px rgba(201,168,76,.2),0 0 32px rgba(201,168,76,.35);animation:float 3s ease-in-out infinite;font-size:48px;">
+          👑
         </div>
-        <div style="position:absolute;bottom:-4px;right:-4px;background:var(--gold);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid #111;">👑</div>
       </div>
       <!-- Badge VIP -->
       <div style="margin-bottom:10px;">
@@ -753,13 +752,19 @@
   function applyVipMode(sub){
     const planLabel = sub.planName || 'VIP';
     const planPrice = sub.planPrice || '';
+    // Pegar emoji do plano
+    const planData2 = PLANS_DATA.find(p=>p.name===sub.planName);
+    const planEmoji = (planData2 && planData2.emoji) ? planData2.emoji : '👑';
     document.getElementById('vip-plan-display').textContent = planLabel + (planPrice ? ' — '+planPrice : '');
     // Badge no topo da home VIP
     const badgeEl = document.getElementById('vip-plan-badge-label');
-    if(badgeEl) badgeEl.textContent = '👑 PLANO ' + planLabel.toUpperCase();
+    if(badgeEl) badgeEl.textContent = planEmoji + ' PLANO ' + planLabel.toUpperCase();
     // Aviso inline
     const inlineEl = document.getElementById('vip-plan-inline-name');
     if(inlineEl) inlineEl.textContent = planLabel;
+    // Avatar hero
+    const heroAvatar = document.getElementById('vip-hero-avatar');
+    if(heroAvatar) heroAvatar.textContent = planEmoji;
     // Benefícios
     const planData = PLANS_DATA.find(p=>p.name===sub.planName);
     const benefits = sub.benefits || (planData&&planData.benefits) || [];
@@ -775,10 +780,10 @@
     const statusLabel = document.getElementById('profile-status-label');
     const vipBadge = document.getElementById('profile-vip-badge');
     const vipPlanLabel = document.getElementById('profile-vip-plan-label');
-    if(avatar){ avatar.classList.add('profile-avatar-vip'); avatar.innerHTML='<span style="font-size:16px;">👑</span>'; }
+    if(avatar){ avatar.classList.add('profile-avatar-vip'); avatar.innerHTML='<span style="font-size:16px;">'+planEmoji+'</span>'; }
     if(statusLabel){ statusLabel.textContent = planLabel; statusLabel.classList.add('profile-status-vip'); }
     if(vipBadge) vipBadge.style.display='inline-flex';
-    if(vipPlanLabel) vipPlanLabel.textContent = 'Plano '+planLabel;
+    if(vipPlanLabel) vipPlanLabel.textContent = planEmoji+' Plano '+planLabel;
   }
 
   function clearVipMode(){
