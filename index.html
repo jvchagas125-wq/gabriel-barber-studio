@@ -667,9 +667,8 @@
       const feats = (s.features && s.features.length > 0)
         ? '<ul class="service-features">' + s.features.map(f=>'<li>'+f+'</li>').join('') + '</ul>'
         : '';
-      const imgEl = document.createElement('img');
       const imgHtml = s.image
-        ? '<img src="' + s.image + '" alt="' + s.name + '" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none'">'
+        ? '<img src="' + s.image + '" alt="' + s.name + '" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">'
         : '';
       return '<div class="service-card">'
         + '<div class="service-card-header">'
