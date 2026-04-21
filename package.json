@@ -1,1 +1,9 @@
 {"type":"module"}
+{
+  "name": "gabriel-barber-studio",
+  "version": "1.0.0",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "google-auth-library": "^9.0.0"
+  }
+}
