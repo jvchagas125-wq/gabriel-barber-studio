@@ -1,0 +1,26 @@
+{
+  "name": "Gabriel Barber Studio",
+  "short_name": "Gabriel Barber",
+  "description": "Agende seu horário na Gabriel Barber Studio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#c9a84c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/vcPQoRh.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.imgur.com/vcPQoRh.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "shopping"],
+  "lang": "pt-BR"
+}
