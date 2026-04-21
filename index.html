@@ -1036,6 +1036,7 @@
       const ddName=document.getElementById("profile-dd-name"); if(ddName) ddName.textContent=rawName;
       document.getElementById("f-phone").value=formatted;
       subscribeAll();
+      initPushNotifications();
     } catch(err){
       console.error(err);
       errEl.textContent="Erro ao autenticar. Tente novamente.";
@@ -1343,6 +1344,7 @@
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         loadSchedule().then(()=>{ subscribeAll(); });
+        initPushNotifications();
         loadPlansFromFirestore();
         loadServicesFromFirestore();
         loadBannersFromFirestore();
@@ -1375,6 +1377,81 @@
     const wrap = document.getElementById('profile-wrap');
     if(wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
   });
+
+
+  // ═══════════════════════════════════════
+  // PUSH NOTIFICATIONS
+  // ═══════════════════════════════════════
+  function initPushNotifications(){
+    if(!('Notification' in window)) return;
+    const dismissed = localStorage.getItem('gbs_push_dismissed');
+    if(dismissed) return;
+    if(Notification.permission === 'granted'){
+      subscribeToNotifications();
+      return;
+    }
+    if(Notification.permission !== 'denied'){
+      setTimeout(()=>{
+        const banner = document.getElementById('push-banner');
+        if(banner) banner.style.display='block';
+      }, 3000);
+    }
+  }
+
+  window.allowPushNotifications = async function(){
+    dismissPushBanner();
+    try {
+      const permission = await Notification.requestPermission();
+      if(permission === 'granted'){
+        subscribeToNotifications();
+        showToast('Notificações ativadas! ✅','success');
+      }
+    } catch(e){ console.error('push permission error:', e); }
+  };
+
+  window.dismissPushBanner = function(){
+    const banner = document.getElementById('push-banner');
+    if(banner) banner.style.display='none';
+    localStorage.setItem('gbs_push_dismissed','1');
+  };
+
+  function subscribeToNotifications(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    setDoc(doc(db,'push_subscribers',digits),{
+      phone: loggedPhone, name: loggedName||'', digits,
+      permission: 'granted',
+      subscribedAt: new Date().toISOString(),
+      active: true,
+    },{merge:true}).catch(e=>console.warn('push_subscribers:',e));
+    listenForPushNotifications(digits);
+  }
+
+  let pushUnsubscribe = null;
+  function listenForPushNotifications(digits){
+    if(pushUnsubscribe) pushUnsubscribe();
+    if(Notification.permission !== 'granted') return;
+    const q = query(collection(db,'push_notifications'), orderBy('createdAt','desc'));
+    let firstLoad = true;
+    pushUnsubscribe = onSnapshot(q, snap=>{
+      if(firstLoad){ firstLoad=false; return; }
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added'){
+          const n = change.doc.data();
+          const seenKey = 'gbs_seen_'+change.doc.id;
+          if(localStorage.getItem(seenKey)) return;
+          localStorage.setItem(seenKey,'1');
+          showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'https://i.imgur.com/vcPQoRh.png');
+        }
+      });
+    }, err=>console.error('listenForPushNotifications:',err));
+  }
+
+  function showPushNotification(title, body, icon){
+    if(Notification.permission !== 'granted') return;
+    try { new Notification(title,{body,icon,badge:icon,tag:'gbs-notification'}); }
+    catch(e){ console.warn('Notification error:',e); }
+  }
 
 </script>
 
@@ -1416,6 +1493,22 @@
       <button onclick="confirmCancelVip()" id="confirm-cancel-vip-btn" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.4);background:rgba(220,38,38,.12);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;">
         Confirmar cancelamento
       </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Banner de permissão de notificações -->
+<div id="push-banner" style="display:none;">
+  <div class="push-banner">
+    <div class="push-banner-icon">🔔</div>
+    <div class="push-banner-text">
+      <div class="push-banner-title">Ativar notificações</div>
+      <div class="push-banner-sub">Receba avisos sobre promoções, novos horários e ofertas.</div>
+    </div>
+    <div class="push-banner-btns">
+      <button class="push-allow-btn" onclick="allowPushNotifications()">Ativar</button>
+      <button class="push-deny-btn" onclick="dismissPushBanner()">Agora não</button>
     </div>
   </div>
 </div>
