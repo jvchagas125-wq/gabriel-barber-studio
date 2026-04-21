@@ -2,6 +2,15 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#c9a84c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gabriel Barber">
+  <link rel="apple-touch-icon" href="https://i.imgur.com/vcPQoRh.png">
+  <meta name="application-name" content="Gabriel Barber Studio">
   <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/wBSFb7pS/Design-sem-nome.jpg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gabriel Barber Studio</title>
@@ -1495,6 +1504,41 @@
     }
   }
 
+
+  // ═══════════════════════════════════════
+  // PWA — INSTALAR APP
+  // ═══════════════════════════════════════
+  let deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    // Mostrar botão de instalação se não foi dispensado
+    if(!localStorage.getItem('gbs_pwa_dismissed') && !localStorage.getItem('gbs_pwa_installed')){
+      setTimeout(()=>{
+        const banner = document.getElementById('pwa-install-banner');
+        if(banner) banner.style.display='block';
+      }, 5000);
+    }
+  });
+
+  window.installPWA = async function(){
+    if(!deferredInstallPrompt) return;
+    document.getElementById('pwa-install-banner').style.display='none';
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if(outcome === 'accepted'){
+      localStorage.setItem('gbs_pwa_installed','1');
+      showToast('App instalado com sucesso! 📲','success');
+    }
+    deferredInstallPrompt = null;
+  };
+
+  window.addEventListener('appinstalled', ()=>{
+    localStorage.setItem('gbs_pwa_installed','1');
+    document.getElementById('pwa-install-banner').style.display='none';
+  });
+
 </script>
 
 <!-- Modal cancelamento de assinatura VIP -->
@@ -1554,6 +1598,19 @@
       Agora não
     </button>
   </div>
+</div>
+
+
+<!-- Botão de instalar PWA -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:20px;right:20px;z-index:300;animation:slideInUp .4s ease-out;">
+  <button id="pwa-install-btn" onclick="installPWA()" style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;border:1px solid var(--gold-border);background:#1a1a1a;color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:background .2s;">
+    <span style="font-size:20px;">📲</span>
+    <div style="text-align:left;">
+      <div style="font-size:13px;font-weight:700;color:var(--gold);">Instalar app</div>
+      <div style="font-size:11px;color:var(--text-muted);font-weight:400;">Adicionar à tela inicial</div>
+    </div>
+  </button>
+  <button onclick="document.getElementById('pwa-install-banner').style.display='none';localStorage.setItem('gbs_pwa_dismissed','1')" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:#111;color:#888;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
 </div>
 
 </body>
