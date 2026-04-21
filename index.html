@@ -1393,7 +1393,7 @@
     if(Notification.permission !== 'denied'){
       setTimeout(()=>{
         const banner = document.getElementById('push-banner');
-        if(banner) banner.style.display='block';
+        if(banner) banner.style.display='flex';
       }, 3000);
     }
   }
@@ -1498,18 +1498,19 @@
 </div>
 
 
-<!-- Banner de permissão de notificações -->
-<div id="push-banner" style="display:none;">
-  <div class="push-banner">
-    <div class="push-banner-icon">🔔</div>
-    <div class="push-banner-text">
-      <div class="push-banner-title">Ativar notificações</div>
-      <div class="push-banner-sub">Receba avisos sobre promoções, novos horários e ofertas.</div>
-    </div>
-    <div class="push-banner-btns">
-      <button class="push-allow-btn" onclick="allowPushNotifications()">Ativar</button>
-      <button class="push-deny-btn" onclick="dismissPushBanner()">Agora não</button>
-    </div>
+<!-- Modal de permissão de notificações -->
+<div id="push-banner" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid var(--gold-border);border-radius:20px;padding:36px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;text-align:center;">
+    <div style="width:72px;height:72px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:34px;">🔔</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;margin-bottom:10px;">Ativar Notificações</div>
+    <p style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:8px;">Deseja receber avisos sobre <strong style="color:var(--gold);">promoções, novos horários e ofertas</strong> da Gabriel Barber Studio?</p>
+    <p style="color:var(--text-dim);font-size:12px;margin-bottom:28px;">As notificações aparecem no seu dispositivo mesmo com o site fechado.</p>
+    <button onclick="allowPushNotifications()" style="width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;transition:opacity .2s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+      🔔 Sim, quero receber notificações
+    </button>
+    <button onclick="dismissPushBanner()" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+      Agora não
+    </button>
   </div>
 </div>
 
