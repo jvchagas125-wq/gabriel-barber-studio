@@ -163,55 +163,44 @@
 
 
 
-    /* ===== CARDS DE SERVIÇO — MOBILE HORIZONTAL ===== */
+    /* ===== CARDS DE SERVIÇO — MOBILE 2 COLUNAS ===== */
+    .service-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .service-card-header-info{display:flex;flex-direction:column;gap:2px;flex:1;}
+    .service-card-header-info h3{margin:0!important;font-size:14px;}
+    .service-card-header-info .service-price{font-size:15px;line-height:1;}
     @media(max-width:640px){
       .services-grid{
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
       }
       .service-card{
-        padding: 12px 14px !important;
+        padding: 10px 10px !important;
         text-align: left !important;
         display: flex !important;
         flex-direction: column !important;
       }
-      .service-card-header{
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
-      }
       .service-card-header img{
-        width: 36px !important;
-        height: 36px !important;
+        width: 28px !important;
+        height: 28px !important;
         flex-shrink: 0;
         margin: 0 !important;
       }
-      .service-card-header-info{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 1;
-        flex-wrap: wrap;
-      }
-      .service-card-header-info h3{
-        font-size: 14px !important;
-        margin: 0 !important;
-      }
-      .service-card-header-info .service-price{
-        font-size: 16px !important;
-        line-height: 1;
-      }
+      .service-card-header-info h3{ font-size: 12px !important; }
+      .service-card-header-info .service-price{ font-size: 13px !important; }
       .service-card .service-features{
         margin: 0 !important;
-        padding-left: 0 !important;
+        padding: 0 !important;
       }
       .service-card .service-features li{
-        font-size: 11px !important;
+        font-size: 10px !important;
         line-height: 1.4 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        gap: 3px !important;
+      }
+      .service-card .service-features li::before{
+        font-size: 12px !important;
       }
     }
 
