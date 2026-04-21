@@ -295,7 +295,7 @@
 <div class="section active" id="sec-home">
   <div class="page">
     <div class="hero">
-      <div class="hero-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
+      <div class="hero-logo"><img id="site-hero-logo" src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
     </div>
     <div id="site-banners-container" style="margin-bottom:8px;"></div>
     <h2 class="section-title gold-gradient">Nossos Serviços</h2>
@@ -363,9 +363,9 @@
     <h2 class="section-title gold-gradient" style="font-size:56px;margin-bottom:8px;">Entre em Contato</h2>
     <p class="text-center mb-8" style="color:var(--text-muted);">Visite-nos ou fale conosco</p>
     <div class="contact-grid mb-8">
-      <a href="https://wa.me/5522997035391" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp"><h3>WhatsApp</h3><p>(22) 99703-5391</p><p style="font-size:12px;margin-top:4px;">Clique para enviar mensagem</p></a>
-      <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram"><h3>Instagram</h3><p>@gabriel.bstudio</p><p style="font-size:12px;margin-top:4px;">Siga nosso perfil</p></a>
-      <a href="https://maps.app.goo.gl/HLubhsnHgJELtAyQ7" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereço"><h3>Endereço</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p><p style="font-size:12px;margin-top:4px;">Clique para abrir no Maps</p></a>
+      <a id="contact-whatsapp" href="https://wa.me/5522997035391" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp"><h3>WhatsApp</h3><p id="contact-whatsapp-num">(22) 99703-5391</p><p style="font-size:12px;margin-top:4px;">Clique para enviar mensagem</p></a>
+      <a id="contact-instagram" href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram"><h3>Instagram</h3><p id="contact-instagram-handle">@gabriel.bstudio</p><p style="font-size:12px;margin-top:4px;">Siga nosso perfil</p></a>
+      <a id="contact-address" href="https://maps.app.goo.gl/HLubhsnHgJELtAyQ7" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereço"><h3>Endereço</h3><p id="contact-address-text">R. Luis Isaltino de Oliveira, 65<br>Pq Flamboyant - Campos dos Goytacazes<br>28015-170 (Loja 2)</p><p style="font-size:12px;margin-top:4px;">Clique para abrir no Maps</p></a>
     </div>
     <div class="hours-card" id="hours-display">
       <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horários de Funcionamento</h3>
@@ -1377,6 +1377,7 @@
         loadPlansFromFirestore();
         loadServicesFromFirestore();
         loadBannersFromFirestore();
+        loadSiteConfig();
 
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
@@ -1562,6 +1563,47 @@
         document.body.style.backgroundImage = 'url("'+snap.data().bgImage+'")';
       }
     } catch(e){ console.warn('loadSiteBackground:',e); }
+  }
+
+
+  // ═══════════════════════════════════════
+  // CONFIGURAÇÕES DO SITE (logo, contatos)
+  // ═══════════════════════════════════════
+  async function loadSiteConfig(){
+    try {
+      const snap = await getDoc(doc(db,'config','site'));
+      if(!snap.exists()) return;
+      const d = snap.data();
+      // Logo hero
+      if(d.heroLogo){
+        const img = document.getElementById('site-hero-logo');
+        if(img) img.src = d.heroLogo;
+      }
+      // WhatsApp
+      if(d.whatsappNum){
+        const el = document.getElementById('contact-whatsapp');
+        const num = document.getElementById('contact-whatsapp-num');
+        if(el) el.href = 'https://wa.me/55'+d.whatsappNum.replace(/\D/g,'');
+        if(num) num.textContent = d.whatsappNum;
+      }
+      // Instagram
+      if(d.instagramHandle){
+        const el = document.getElementById('contact-instagram');
+        const handle = document.getElementById('contact-instagram-handle');
+        const slug = d.instagramHandle.replace('@','');
+        if(el) el.href = 'https://instagram.com/'+slug;
+        if(handle) handle.textContent = d.instagramHandle.startsWith('@') ? d.instagramHandle : '@'+slug;
+      }
+      // Endereço
+      if(d.addressText){
+        const txt = document.getElementById('contact-address-text');
+        if(txt) txt.innerHTML = d.addressText.replace(/\n/g,'<br>');
+      }
+      if(d.mapsLink){
+        const el = document.getElementById('contact-address');
+        if(el) el.href = d.mapsLink;
+      }
+    } catch(e){ console.warn('loadSiteConfig:',e); }
   }
 
 </script>
