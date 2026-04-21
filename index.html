@@ -164,9 +164,11 @@
 
 
     /* ===== CARDS DE SERVIÇO — DESKTOP ===== */
-    .service-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-    .service-card-header-info{display:flex;flex-direction:column;gap:2px;flex:1;}
-    .service-card-header-info h3{margin:0!important;}
+    .service-card-header{display:flex;flex-direction:column;align-items:center;gap:0;margin-bottom:0;}
+    .service-card-header img{width:56px;height:56px;object-fit:contain;margin:0 auto 12px;display:block;}
+    .service-card-header-info{display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;width:100%;}
+    .service-card-header-info h3{font-weight:600;font-size:15px;margin-bottom:6px;}
+    .service-card-header-info .service-price{font-family:"Bebas Neue",sans-serif;font-size:24px;color:var(--gold);}
     /* ===== CARDS DE SERVIÇO — MOBILE LISTA HORIZONTAL ===== */
     @media(max-width:640px){
       .services-grid{
