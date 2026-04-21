@@ -344,7 +344,7 @@
           <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()"></div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()" onkeydown="return false" style="cursor:pointer;"></div>
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
       <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
     </div>
@@ -472,7 +472,7 @@
           <option value="">Selecione um serviço</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()"></div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()" onkeydown="return false" style="cursor:pointer;"></div>
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlotsVip"></div><input type="hidden" id="vip-f-time"></div>
       <button class="submit-btn" id="vip-submit-btn" onclick="submitBookingVip()">Confirmar Agendamento</button>
     </div>
