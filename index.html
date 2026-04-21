@@ -951,14 +951,18 @@
     btn.disabled=true; btn.textContent='Enviando...';
 
     try {
-      // Salvar solicitação no Firestore para notificar o Gabriel
-      await addDoc(collection(db,'cancellation_requests'),{
-        phone:     loggedPhone||'',
-        planName:  document.getElementById('vip-plan-display')?.textContent||'',
+      // Usar setDoc com ID baseado no telefone+timestamp para evitar duplicatas
+      const cancelId = (loggedPhone||'unknown').replace(/\D/g,'') + '_' + Date.now();
+      // Pegar só o nome do plano (sem o preço)
+      const planDisplay = document.getElementById('vip-plan-display')?.textContent||'';
+      const planNameOnly = planDisplay.split(' — ')[0].trim();
+      await setDoc(doc(db,'cancellation_requests', cancelId),{
+        phone:       loggedPhone||'',
+        planName:    planNameOnly,
         reason,
         details,
         requestedAt: new Date().toISOString(),
-        status: 'pending',
+        status:      'pending',
       });
       // Fechar modal e sair do VIP localmente
       document.getElementById('cancelVipModal').style.display='none';
@@ -967,8 +971,8 @@
       showToast('Solicitação enviada! Gabriel entrará em contato.','success');
       showSection('home');
     } catch(e){
-      console.error(e);
-      showToast('Erro ao enviar. Tente novamente.','error');
+      console.error('confirmCancelVip error:', e);
+      showToast('Erro ao enviar. Verifique sua conexão.','error');
     } finally {
       btn.disabled=false; btn.textContent='Confirmar cancelamento';
     }
