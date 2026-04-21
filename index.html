@@ -1949,17 +1949,24 @@
       list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
       return;
     }
-    list.innerHTML = notifications.slice(0,20).map(n=>{
+    const iconMap = {'servi':'✂️','plano':'💎','horário':'📅','aviso':'⚠️','promoção':'🏷️'};
+    list.innerHTML = '';
+    notifications.slice(0,20).forEach(n=>{
       const key = 'gbs_notif_read_'+n.id;
       const isRead = !!localStorage.getItem(key);
       const time = n.createdAt ? new Date(n.createdAt).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      const icon = n.icon ? '' : (n.title||'').includes('servi') ? '✂️' : (n.title||'').includes('plano') ? '💎' : (n.title||'').includes('horário') ? '📅' : '🔔';
-      return '<div class="notif-item'+(isRead?'':' unread')+'" onclick="readNotif(''+n.id+'',this)">'
-        +'<div class="notif-item-title">'+icon+' '+(n.title||'Gabriel Barber Studio')+'</div>'
-        +'<div class="notif-item-body">'+(n.body||'')+'</div>'
-        +'<div class="notif-item-time">'+time+'</div>'
-        +'</div>';
-    }).join('');
+      const t = (n.title||'').toLowerCase();
+      let icon = '🔔';
+      for(const [k,v] of Object.entries(iconMap)){ if(t.includes(k)){icon=v;break;} }
+
+      const div = document.createElement('div');
+      div.className = 'notif-item' + (isRead ? '' : ' unread');
+      div.innerHTML = '<div class="notif-item-title">'+icon+' '+(n.title||'Gabriel Barber Studio')+'</div>'
+        + '<div class="notif-item-body">'+(n.body||'')+'</div>'
+        + '<div class="notif-item-time">'+time+'</div>';
+      div.onclick = function(){ readNotif(n.id, div); };
+      list.appendChild(div);
+    });
   }
 
   window.readNotif = function(id, el){
