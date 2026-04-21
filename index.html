@@ -703,30 +703,28 @@
   function renderServicesGrid(){
     const grid = document.getElementById('services-grid');
     if(!grid) return;
+    const btnStyle = 'background:none;border:none;color:#c9a84c;font-size:10px;font-weight:700;cursor:pointer;padding:2px 0;letter-spacing:.3px;';
     grid.innerHTML = SERVICES_DATA.map((s, si)=>{
       const allFeats = s.features || [];
       const MAX = 3;
 
-      // Desktop: mostra todas normalmente
-      // Mobile: mostra só 3 + botão "ver mais"
       const featsFull = allFeats.length > 0
         ? '<ul class="service-features">' + allFeats.map(f=>'<li>'+f+'</li>').join('') + '</ul>'
         : '';
 
-      // Mobile com "ver mais"
       let featsMobile = '';
       if(allFeats.length > 0){
         const visible = allFeats.slice(0, MAX);
         const hidden  = allFeats.slice(MAX);
         const visHtml = visible.map(f=>'<li>'+f+'</li>').join('');
-        const hidHtml = hidden.length > 0
-          ? '<li class="feat-hidden-'+si+'" style="display:none;" hidden-feat="1">'+hidden.map(f=>'</li><li class="feat-hidden-'+si+'" style="display:none;" hidden-feat="1">'+f).join('')+'</li>'
-          : '';
+        let hidHtml = '';
+        hidden.forEach(f=>{
+          hidHtml += '<li class="feat-hidden-'+si+'" style="display:none;">'+f+'</li>';
+        });
         const btnHtml = hidden.length > 0
-          ? '<li class="feat-more-btn" style="list-style:none;padding-left:0;">'
-            + '<button onclick="toggleFeats('+si+', this)" '
-            + 'style="background:none;border:none;color:var(--gold);font-size:10px;font-weight:700;cursor:pointer;padding:2px 0;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">'
-            + '+ ver mais ('+(hidden.length)+')</button></li>'
+          ? '<li style="list-style:none;padding-left:0;margin-top:2px;">'
+            + '<button onclick="toggleFeats('+si+', this)" style="'+btnStyle+'">'
+            + '+ ver mais ('+hidden.length+')</button></li>'
           : '';
         featsMobile = '<ul class="service-features svc-feats-mobile-'+si+'">'
           + visHtml + hidHtml + btnHtml + '</ul>';
@@ -744,7 +742,6 @@
         + '<div class="service-price">R$ ' + s.price + '</div>'
         + '</div>'
         + '</div>'
-        // Desktop: featsFull | Mobile: featsMobile via CSS display
         + '<div class="svc-feats-desktop">' + featsFull + '</div>'
         + '<div class="svc-feats-mobile">'  + featsMobile + '</div>'
         + '</div>';
