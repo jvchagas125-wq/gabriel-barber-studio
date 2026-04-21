@@ -611,6 +611,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBuqPBQocq7gFFnbtD8VoMB6kTu1I3R_9w",
@@ -624,6 +625,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
+  const messaging = getMessaging(app);
   const COL = "appointments";
 
   // ===== HORÁRIOS — carregados do Firestore =====
@@ -1581,10 +1583,7 @@
     if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
     const dismissed = localStorage.getItem('gbs_push_dismissed');
     if(Notification.permission === 'granted'){
-      // Já tem permissão — registrar SW e escutar
-      navigator.serviceWorker.register('/sw.js').then(()=>{
-        subscribeToNotifications();
-      }).catch(e=>console.warn('SW:',e));
+      registerFCM();
       return;
     }
     if(dismissed) return;
@@ -1596,23 +1595,56 @@
     }
   }
 
+  async function registerFCM(){
+    try {
+      // Registrar o SW do Firebase Messaging
+      const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      await navigator.serviceWorker.ready;
+
+      // Obter token FCM
+      const token = await getToken(messaging, {
+        vapidKey: 'BLwGsQRzcFrLs6XsSmgN3i2NP44Of28D9BrAjZtd_6XExonjtFCV_4KyY90Ee8cdltlz96TUflTxsmyHTDCgAEs',
+        serviceWorkerRegistration: swReg,
+      });
+
+      if(token && loggedPhone){
+        const digits = loggedPhone.replace(/\D/g,'');
+        // Salvar token no Firestore vinculado ao telefone
+        setDoc(doc(db,'push_subscribers',digits),{
+          phone: loggedPhone,
+          name:  loggedName||'',
+          digits,
+          fcmToken: token,
+          permission: 'granted',
+          subscribedAt: new Date().toISOString(),
+          active: true,
+        },{merge:true}).catch(e=>console.warn('push_subscribers:',e));
+      }
+
+      // Receber notificações com app em foreground
+      onMessage(messaging, payload=>{
+        const n = payload.notification || {};
+        showPushNotification(
+          n.title || 'Gabriel Barber Studio',
+          n.body  || '',
+          n.icon  || 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
+        );
+      });
+
+    } catch(e){ console.warn('FCM registerFCM error:', e); }
+  }
+
   window.allowPushNotifications = async function(){
     dismissPushBanner();
     try {
-      // Garantir que o SW está registrado primeiro
-      if('serviceWorker' in navigator){
-        await navigator.serviceWorker.register('/sw.js');
-        await navigator.serviceWorker.ready;
-      }
       const permission = await Notification.requestPermission();
       if(permission === 'granted'){
-        subscribeToNotifications();
-        showToast('Notificações ativadas! ✅','success');
-        // Enviar notificação de teste imediata
+        await registerFCM();
+        showToast('Notificações ativadas! 🔔','success');
         setTimeout(()=>showPushNotification(
           'Gabriel Barber Studio 🔔',
-          'Notificações ativadas! Você será avisado sobre promoções e novidades.',
-          'https://i.imgur.com/vcPQoRh.png'
+          'Notificações ativadas! Você receberá avisos mesmo com o app fechado.',
+          'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
         ), 1000);
       } else {
         showToast('Permissão negada. Ative nas configurações do navegador.','error');
