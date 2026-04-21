@@ -22,8 +22,10 @@
       --gold-border: rgba(201,168,76,0.25); --bg: #111111; --bg2: #1a1a1a; --bg3: #222222;
       --text: #e5e5e5; --text-muted: #888; --text-dim: #555; --red: #dc2626; --green: #16a34a;
     }
-    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(201,168,76,0.025) 35px, rgba(201,168,76,0.025) 70px); background-attachment: fixed; }
-    .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
+
+    body::before{content:'';position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.72);pointer-events:none;}
+        .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
     #app-loading { position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px; }
     #app-loading img { width:90px;height:90px;object-fit:contain;opacity:.8; }
@@ -212,7 +214,7 @@
     }
   </script>
 </head>
-<body>
+<body id="site-body">
 
 <div id="app-loading">
   <img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'">
@@ -1361,6 +1363,7 @@
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         loadSchedule().then(()=>{ subscribeAll(); });
+        loadSiteBackground();
         initPushNotifications();
         loadPlansFromFirestore();
         loadServicesFromFirestore();
@@ -1538,6 +1541,19 @@
     localStorage.setItem('gbs_pwa_installed','1');
     document.getElementById('pwa-install-banner').style.display='none';
   });
+
+
+  // ═══════════════════════════════════════
+  // PLANO DE FUNDO DINÂMICO
+  // ═══════════════════════════════════════
+  async function loadSiteBackground(){
+    try {
+      const snap = await getDoc(doc(db,'config','appearance'));
+      if(snap.exists() && snap.data().bgImage){
+        document.body.style.backgroundImage = 'url("'+snap.data().bgImage+'")';
+      }
+    } catch(e){ console.warn('loadSiteBackground:',e); }
+  }
 
 </script>
 
