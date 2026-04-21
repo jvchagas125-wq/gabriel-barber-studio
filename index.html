@@ -194,6 +194,14 @@
     }
     @media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
   </style>
+
+  <script>
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('SW register error:',e));
+      });
+    }
+  </script>
 </head>
 <body>
 
@@ -1383,13 +1391,16 @@
   // PUSH NOTIFICATIONS
   // ═══════════════════════════════════════
   function initPushNotifications(){
-    if(!('Notification' in window)) return;
+    if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
     const dismissed = localStorage.getItem('gbs_push_dismissed');
-    if(dismissed) return;
     if(Notification.permission === 'granted'){
-      subscribeToNotifications();
+      // Já tem permissão — registrar SW e escutar
+      navigator.serviceWorker.register('/sw.js').then(()=>{
+        subscribeToNotifications();
+      }).catch(e=>console.warn('SW:',e));
       return;
     }
+    if(dismissed) return;
     if(Notification.permission !== 'denied'){
       setTimeout(()=>{
         const banner = document.getElementById('push-banner');
@@ -1401,10 +1412,23 @@
   window.allowPushNotifications = async function(){
     dismissPushBanner();
     try {
+      // Garantir que o SW está registrado primeiro
+      if('serviceWorker' in navigator){
+        await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+      }
       const permission = await Notification.requestPermission();
       if(permission === 'granted'){
         subscribeToNotifications();
         showToast('Notificações ativadas! ✅','success');
+        // Enviar notificação de teste imediata
+        setTimeout(()=>showPushNotification(
+          'Gabriel Barber Studio 🔔',
+          'Notificações ativadas! Você será avisado sobre promoções e novidades.',
+          'https://i.imgur.com/vcPQoRh.png'
+        ), 1000);
+      } else {
+        showToast('Permissão negada. Ative nas configurações do navegador.','error');
       }
     } catch(e){ console.error('push permission error:', e); }
   };
@@ -1447,10 +1471,28 @@
     }, err=>console.error('listenForPushNotifications:',err));
   }
 
-  function showPushNotification(title, body, icon){
+  async function showPushNotification(title, body, icon){
     if(Notification.permission !== 'granted') return;
-    try { new Notification(title,{body,icon,badge:icon,tag:'gbs-notification'}); }
-    catch(e){ console.warn('Notification error:',e); }
+    try {
+      // Tentar via Service Worker (funciona em todos os contextos)
+      if('serviceWorker' in navigator){
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, {
+          body,
+          icon: icon||'https://i.imgur.com/vcPQoRh.png',
+          badge: icon||'https://i.imgur.com/vcPQoRh.png',
+          tag: 'gbs-notification',
+          vibrate: [200,100,200],
+        });
+      } else {
+        // Fallback para new Notification()
+        new Notification(title,{body,icon,tag:'gbs-notification'});
+      }
+    } catch(e){
+      console.warn('Notification error:',e);
+      // Último fallback
+      try { new Notification(title,{body}); } catch(e2){}
+    }
   }
 
 </script>
