@@ -163,44 +163,82 @@
 
 
 
-    /* ===== CARDS DE SERVIÇO — MOBILE 2 COLUNAS ===== */
+    /* ===== CARDS DE SERVIÇO — DESKTOP ===== */
     .service-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
     .service-card-header-info{display:flex;flex-direction:column;gap:2px;flex:1;}
-    .service-card-header-info h3{margin:0!important;font-size:14px;}
-    .service-card-header-info .service-price{font-size:15px;line-height:1;}
+    .service-card-header-info h3{margin:0!important;}
+    /* ===== CARDS DE SERVIÇO — MOBILE LISTA HORIZONTAL ===== */
     @media(max-width:640px){
       .services-grid{
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr !important;
         gap: 8px !important;
       }
       .service-card{
-        padding: 10px 10px !important;
+        padding: 10px 12px !important;
         text-align: left !important;
         display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+      }
+      /* Lado esquerdo: ícone + nome + preço */
+      .service-card-header{
         flex-direction: column !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+        width: 68px !important;
+        min-width: 68px !important;
       }
       .service-card-header img{
-        width: 28px !important;
-        height: 28px !important;
-        flex-shrink: 0;
+        width: 32px !important;
+        height: 32px !important;
         margin: 0 !important;
       }
-      .service-card-header-info h3{ font-size: 12px !important; }
-      .service-card-header-info .service-price{ font-size: 13px !important; }
-      .service-card .service-features{
+      .service-card-header-info{
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1px !important;
+        text-align: center !important;
+      }
+      .service-card-header-info h3{
+        font-size: 11px !important;
+        margin: 0 !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+      .service-card-header-info .service-price{
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+      }
+      /* Divisor vertical */
+      .service-card-header::after{
+        content: '';
+        display: none;
+      }
+      /* Lado direito: características */
+      .service-card > .service-features{
+        flex: 1 !important;
         margin: 0 !important;
         padding: 0 !important;
+        border-left: 1px solid rgba(201,168,76,0.2) !important;
+        padding-left: 10px !important;
+        justify-content: center !important;
+        min-height: 100% !important;
       }
-      .service-card .service-features li{
-        font-size: 10px !important;
-        line-height: 1.4 !important;
+      .service-card > .service-features li{
+        font-size: 11px !important;
+        line-height: 1.5 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        gap: 3px !important;
+        gap: 4px !important;
       }
-      .service-card .service-features li::before{
-        font-size: 12px !important;
+      .service-card > .service-features li::before{
+        font-size: 13px !important;
+        flex-shrink: 0 !important;
       }
     }
 
