@@ -208,6 +208,8 @@
     <div class="login-title gold-gradient">Gabriel Barber Studio</div>
     <div class="login-subtitle">Entre com seu número de telefone para agendar</div>
     <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
+    <label class="login-label" for="login-name">Nome completo</label>
+    <input class="login-input" type="text" id="login-name" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
     <label class="login-label" for="login-phone">Número de telefone</label>
     <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
@@ -657,6 +659,7 @@
   }
 
   let loggedPhone = null;
+  let loggedName = null;
   let allAppointments = [];
 
   function pad(n){ return String(n).padStart(2,"0"); }
@@ -1002,20 +1005,29 @@
     let out=""; if(v.length>0) out="("+v.slice(0,2); if(v.length>=3) out+=") "+v.slice(2,v.length<=10?6:7); if(v.length>=7) out+="-"+v.slice(v.length<=10?6:7);
     this.value=out;
   });
+  document.getElementById("login-name").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-phone").focus(); });
   document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
 
   window.doLogin = async function(){
+    const rawName=document.getElementById("login-name").value.trim();
     const raw=document.getElementById("login-phone").value;
     const digits=raw.replace(/\D/g,"");
     const errEl=document.getElementById("login-error");
+    if(!rawName){ errEl.textContent="Digite seu nome completo."; errEl.style.display="block"; return; }
     if(digits.length<10){ errEl.textContent="Digite um número válido com DDD."; errEl.style.display="block"; return; }
     errEl.style.display="none";
     const formatted=formatPhone(raw);
     try {
-      // Login anônimo no Firebase — gera token seguro sem expor dados
       if(!auth.currentUser) await signInAnonymously(auth);
       loggedPhone=formatted;
+      loggedName=rawName;
       localStorage.setItem("gbs_phone",formatted);
+      localStorage.setItem("gbs_name",rawName);
+      // Salvar perfil do cliente no Firestore
+      await setDoc(doc(db,'clients',digits),{
+        name:rawName, phone:formatted, digits,
+        lastSeen:new Date().toISOString(),
+      },{merge:true});
       document.getElementById("login-screen").style.display="none";
       document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
       document.getElementById("profile-dd-phone").textContent=formatted;
@@ -1197,7 +1209,21 @@
       const mine=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.status!=='Bloqueado');
       if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">📅</div><p>Você não possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
       const today=getTodayStr();
-      container.innerHTML=mine.map(apt=>{
+      const doneCount=mine.filter(a=>a.date<today).length;
+      const totalCount=mine.length;
+      const counterHtml='<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">'
+        +'<div style="flex:1;min-width:120px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:10px;padding:14px 18px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">Total</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:var(--gold);line-height:1;">'+totalCount+'</div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">agendamentos</div>'
+        +'</div>'
+        +'<div style="flex:1;min-width:120px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:10px;padding:14px 18px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">Realizados</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:#4ade80;line-height:1;">'+doneCount+'</div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">concluídos</div>'
+        +'</div>'
+        +'</div>';
+      container.innerHTML=counterHtml+mine.map(apt=>{
         const fmtDate=new Date(apt.date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
         const isPast=apt.date<today;
         const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
@@ -1301,10 +1327,12 @@
     onAuthStateChanged(auth, user => {
       hideLoading();
       const saved = localStorage.getItem("gbs_phone");
+      const savedName = localStorage.getItem("gbs_name");
       if(user && saved){
         loggedPhone = saved;
+        loggedName = savedName||'';        
         document.getElementById("nav-phone-display").textContent = maskPhone(saved);
-      document.getElementById("profile-dd-phone").textContent = saved;
+        document.getElementById("profile-dd-phone").textContent = saved;
         document.getElementById("f-phone").value = saved;
         const vipPhone = document.getElementById("vip-f-phone");
         if(vipPhone) vipPhone.value = saved;
