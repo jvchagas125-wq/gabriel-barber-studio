@@ -162,6 +162,59 @@
     .site-banner a{color:inherit;text-decoration:underline;opacity:.85;}
 
 
+
+    /* ===== CARDS DE SERVIÇO — MOBILE HORIZONTAL ===== */
+    @media(max-width:640px){
+      .services-grid{
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .service-card{
+        padding: 12px 14px !important;
+        text-align: left !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .service-card-header{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .service-card-header img{
+        width: 36px !important;
+        height: 36px !important;
+        flex-shrink: 0;
+        margin: 0 !important;
+      }
+      .service-card-header-info{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        flex-wrap: wrap;
+      }
+      .service-card-header-info h3{
+        font-size: 14px !important;
+        margin: 0 !important;
+      }
+      .service-card-header-info .service-price{
+        font-size: 16px !important;
+        line-height: 1;
+      }
+      .service-card .service-features{
+        margin: 0 !important;
+        padding-left: 0 !important;
+      }
+      .service-card .service-features li{
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+    }
+
     /* ===== PLANOS ===== */
     .plans-section{padding:48px 0 24px}
     .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-bottom:28px}
@@ -613,12 +666,19 @@
     grid.innerHTML = SERVICES_DATA.map(s=>{
       const feats=(s.features&&s.features.length>0)
         ?'<ul class="service-features">'+s.features.map(f=>'<li>'+f+'</li>').join('')+'</ul>':'';
-      return `<div class="service-card">
-        ${s.image?`<img src="${s.image}" alt="${s.name}" onerror="this.style.display='none'">`:''}
-        <h3>${s.name}</h3>
-        <div class="service-price">R$ ${s.price}</div>
-        ${feats}
-      </div>`;
+      const imgHtml = s.image
+        ?'<img src="'+s.image+'" alt="'+s.name+'" onerror="this.style.display='none'">'
+        :'';
+      return '<div class="service-card">'
+        +'<div class="service-card-header">'
+        +imgHtml
+        +'<div class="service-card-header-info">'
+        +'<h3>'+s.name+'</h3>'
+        +'<div class="service-price">R$ '+s.price+'</div>'
+        +'</div>'
+        +'</div>'
+        +feats
+        +'</div>';
     }).join('');
   }
 
