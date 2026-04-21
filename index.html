@@ -154,11 +154,11 @@
     @media(max-width:500px){.services-grid{grid-template-columns:1fr}}
 
     /* ===== BANNERS / AVISOS ===== */
-    .site-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:10px;margin-bottom:10px;font-size:14px;font-weight:500;animation:slideInUp .4s ease-out backwards;}
+    .site-banner{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:500;animation:slideInUp .4s ease-out backwards;}
     .site-banner-info{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
     .site-banner-promo{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:#f0d78c;}
     .site-banner-warn{background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#fde047;}
-    .site-banner-icon{font-size:20px;flex-shrink:0;}
+    .site-banner-icon{font-size:16px;flex-shrink:0;}
     .site-banner a{color:inherit;text-decoration:underline;opacity:.85;}
 
 
@@ -255,6 +255,28 @@
       .svc-feats-mobile { display:flex; flex:1; flex-direction:column; justify-content:center;
         padding-left:14px !important; border-left:1px solid rgba(201,168,76,0.3) !important; }
     }
+
+    /* ===== INBOX DE NOTIFICAÇÕES ===== */
+    .notif-badge{position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid #111;display:none;}
+    .notif-inbox{max-height:320px;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.06);margin-top:6px;padding-top:6px;}
+    .notif-item{padding:10px 12px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background .15s;}
+    .notif-item:hover{background:rgba(255,255,255,0.06);}
+    .notif-item.unread{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.2);}
+    .notif-item-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;}
+    .notif-item-body{font-size:11px;color:var(--text-muted);line-height:1.4;}
+    .notif-item-time{font-size:10px;color:var(--text-dim);margin-top:3px;}
+    .notif-empty{text-align:center;padding:20px 0;color:var(--text-dim);font-size:12px;}
+
+    /* Modal de nova notificação */
+    .notif-modal{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:500;width:calc(100% - 32px);max-width:420px;background:#1a1a1a;border:1px solid var(--gold-border);border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.7);animation:slideInDown .4s ease-out;display:none;}
+    @keyframes slideInDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .notif-modal-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .notif-modal-icon{font-size:24px;flex-shrink:0;}
+    .notif-modal-title{font-weight:700;font-size:14px;color:var(--gold);flex:1;}
+    .notif-modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px;}
+    .notif-modal-body{font-size:13px;color:var(--text-muted);line-height:1.5;}
+    .notif-modal-time{font-size:11px;color:var(--text-dim);margin-top:6px;}
+
     /* ===== PLANOS ===== */
     .plans-section{padding:48px 0 24px}
     .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-bottom:28px}
@@ -389,6 +411,19 @@
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
           🗓️ Meus Agendamentos
         </button>
+        <button class="profile-dd-btn" onclick="toggleNotifInbox()" style="justify-content:space-between;">
+          <span>🔔 Notificações</span>
+          <span id="notif-count-label" style="background:var(--gold);color:#111;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:none;">0</span>
+        </button>
+        <!-- Inbox de notificações -->
+        <div id="notif-inbox-wrap" style="display:none;">
+          <div class="notif-inbox" id="notif-inbox-list">
+            <div class="notif-empty">Nenhuma notificação ainda.</div>
+          </div>
+          <button onclick="markAllNotifsRead()" style="width:100%;margin-top:6px;padding:6px;border-radius:7px;border:none;background:rgba(201,168,76,0.1);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;">
+            ✓ Marcar todas como lidas
+          </button>
+        </div>
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
           📍 Contato
         </button>
@@ -1545,6 +1580,7 @@
         loadServicesFromFirestore();
         loadBannersFromFirestore();
         loadSiteConfig();
+        startNotifListener();
 
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
@@ -1846,6 +1882,145 @@
     }
   };
 
+
+  // ═══════════════════════════════════════
+  // SISTEMA DE NOTIFICAÇÕES IN-APP
+  // ═══════════════════════════════════════
+  let notifUnsubscribe = null;
+  let notifModalTimer = null;
+
+  function startNotifListener(){
+    if(notifUnsubscribe) notifUnsubscribe();
+    const q = query(collection(db,'push_notifications'), orderBy('createdAt','desc'));
+    let firstLoad = true;
+
+    notifUnsubscribe = onSnapshot(q, snap=>{
+      const all = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+      // Verificar notificações não vistas
+      const unseen = all.filter(n=>{
+        const key = 'gbs_notif_read_'+n.id;
+        return !localStorage.getItem(key);
+      });
+
+      // Atualizar badge
+      const countLabel = document.getElementById('notif-count-label');
+      if(countLabel){
+        if(unseen.length > 0){
+          countLabel.textContent = unseen.length > 9 ? '9+' : unseen.length;
+          countLabel.style.display = 'inline-block';
+        } else {
+          countLabel.style.display = 'none';
+        }
+      }
+
+      // Renderizar inbox
+      renderNotifInbox(all);
+
+      // Mostrar modal para notificações novas (não no primeiro load)
+      if(!firstLoad){
+        snap.docChanges().forEach(change=>{
+          if(change.type === 'added'){
+            const n = change.doc.data();
+            const key = 'gbs_notif_read_'+change.doc.id;
+            if(!localStorage.getItem(key)){
+              showNotifModal(n.title||'Gabriel Barber Studio', n.body||'', n.createdAt||'');
+            }
+          }
+        });
+      }
+
+      // Ao entrar no site: mostrar modal da notificação mais recente não lida
+      if(firstLoad && unseen.length > 0){
+        const latest = unseen[0];
+        setTimeout(()=>{
+          showNotifModal(latest.title||'Gabriel Barber Studio', latest.body||'', latest.createdAt||'', latest.id);
+        }, 1500);
+      }
+
+      firstLoad = false;
+    }, err=>console.warn('notif listener:', err));
+  }
+
+  function renderNotifInbox(notifications){
+    const list = document.getElementById('notif-inbox-list');
+    if(!list) return;
+    if(!notifications.length){
+      list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
+      return;
+    }
+    list.innerHTML = notifications.slice(0,20).map(n=>{
+      const key = 'gbs_notif_read_'+n.id;
+      const isRead = !!localStorage.getItem(key);
+      const time = n.createdAt ? new Date(n.createdAt).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      const icon = n.icon ? '' : (n.title||'').includes('servi') ? '✂️' : (n.title||'').includes('plano') ? '💎' : (n.title||'').includes('horário') ? '📅' : '🔔';
+      return '<div class="notif-item'+(isRead?'':' unread')+'" onclick="readNotif(''+n.id+'',this)">'
+        +'<div class="notif-item-title">'+icon+' '+(n.title||'Gabriel Barber Studio')+'</div>'
+        +'<div class="notif-item-body">'+(n.body||'')+'</div>'
+        +'<div class="notif-item-time">'+time+'</div>'
+        +'</div>';
+    }).join('');
+  }
+
+  window.readNotif = function(id, el){
+    localStorage.setItem('gbs_notif_read_'+id, '1');
+    if(el) el.classList.remove('unread');
+    // Atualizar badge
+    const countLabel = document.getElementById('notif-count-label');
+    if(countLabel){
+      const unread = document.querySelectorAll('.notif-item.unread').length;
+      countLabel.textContent = unread > 9 ? '9+' : unread;
+      countLabel.style.display = unread > 0 ? 'inline-block' : 'none';
+    }
+  };
+
+  window.markAllNotifsRead = function(){
+    document.querySelectorAll('.notif-item').forEach(el=>{
+      const id = el.getAttribute('data-id');
+      el.classList.remove('unread');
+    });
+    // Marcar todas no localStorage
+    const list = document.getElementById('notif-inbox-list');
+    if(list){
+      list.querySelectorAll('[onclick^="readNotif"]').forEach(el=>{
+        const match = el.getAttribute('onclick').match(/'([^']+)'/);
+        if(match) localStorage.setItem('gbs_notif_read_'+match[1],'1');
+      });
+    }
+    const countLabel = document.getElementById('notif-count-label');
+    if(countLabel) countLabel.style.display='none';
+  };
+
+  window.toggleNotifInbox = function(){
+    const wrap = document.getElementById('notif-inbox-wrap');
+    if(wrap) wrap.style.display = wrap.style.display==='none' ? 'block' : 'none';
+  };
+
+  function showNotifModal(title, body, createdAt, id){
+    const modal = document.getElementById('notif-modal');
+    const titleEl = document.getElementById('notif-modal-title');
+    const bodyEl = document.getElementById('notif-modal-body');
+    const timeEl = document.getElementById('notif-modal-time');
+    if(!modal) return;
+    if(titleEl) titleEl.textContent = title;
+    if(bodyEl)  bodyEl.textContent  = body;
+    if(timeEl && createdAt){
+      timeEl.textContent = new Date(createdAt).toLocaleString('pt-BR',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+    }
+    modal.style.display='block';
+    // Fechar automaticamente após 8 segundos
+    clearTimeout(notifModalTimer);
+    notifModalTimer = setTimeout(()=>closeNotifModal(), 8000);
+    // Marcar como lida ao mostrar
+    if(id) localStorage.setItem('gbs_notif_read_'+id,'1');
+  }
+
+  window.closeNotifModal = function(){
+    const modal = document.getElementById('notif-modal');
+    if(modal) modal.style.display='none';
+    clearTimeout(notifModalTimer);
+  };
+
 </script>
 
 <!-- Modal cancelamento de assinatura VIP -->
@@ -1922,6 +2097,18 @@
     </div>
   </button>
   <button onclick="document.getElementById('pwa-install-banner').style.display='none';localStorage.setItem('gbs_pwa_dismissed','1')" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:#111;color:#888;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+</div>
+
+
+<!-- Modal nova notificação -->
+<div id="notif-modal" class="notif-modal">
+  <div class="notif-modal-header">
+    <span class="notif-modal-icon">🔔</span>
+    <span class="notif-modal-title" id="notif-modal-title">Gabriel Barber Studio</span>
+    <button class="notif-modal-close" onclick="closeNotifModal()">✕</button>
+  </div>
+  <div class="notif-modal-body" id="notif-modal-body"></div>
+  <div class="notif-modal-time" id="notif-modal-time"></div>
 </div>
 
 </body>
