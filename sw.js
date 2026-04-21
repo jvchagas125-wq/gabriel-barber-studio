@@ -1,42 +1,1617 @@
-// Gabriel Barber Studio — Service Worker para Push Notifications
-const CACHE_NAME = 'gbs-sw-v1';
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#c9a84c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gabriel Barber">
+  <link rel="apple-touch-icon" href="https://i.imgur.com/vcPQoRh.png">
+  <meta name="application-name" content="Gabriel Barber Studio">
+  <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/wBSFb7pS/Design-sem-nome.jpg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gabriel Barber Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #c9a84c; --gold-light: #f0d78c; --gold-dim: rgba(201,168,76,0.15);
+      --gold-border: rgba(201,168,76,0.25); --bg: #111111; --bg2: #1a1a1a; --bg3: #222222;
+      --text: #e5e5e5; --text-muted: #888; --text-dim: #555; --red: #dc2626; --green: #16a34a;
+    }
+    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(201,168,76,0.025) 35px, rgba(201,168,76,0.025) 70px); background-attachment: fixed; }
+    .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+    #app-loading { position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px; }
+    #app-loading img { width:90px;height:90px;object-fit:contain;opacity:.8; }
+    .spinner { width:32px;height:32px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);animation:spin .7s linear infinite; }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    nav{position:sticky;top:0;z-index:40;background:rgba(17,17,17,0.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:960px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+    .nav-links{display:flex;gap:4px;align-items:center}
+    .nav-btn{padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;background:none;border:none;color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s}
+    .nav-btn:hover{background:rgba(255,255,255,0.06);color:var(--text)} .nav-btn.active{background:var(--gold-dim);color:var(--gold)}
+    /* ── Perfil dropdown ── */
+    .profile-wrap{position:relative;}
+    .profile-btn{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:24px;background:var(--gold-dim);border:1px solid var(--gold-border);cursor:pointer;transition:background .2s;font-family:"DM Sans",sans-serif;}
+    .profile-btn:hover{background:rgba(201,168,76,.22);}
+    .profile-avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .profile-avatar svg{width:16px;height:16px;fill:#111;}
+    .profile-avatar-vip{background:linear-gradient(135deg,#c9a84c,#f0d78c);}
+    .profile-info{display:flex;flex-direction:column;align-items:flex-start;gap:1px;}
+    .profile-phone{font-size:12px;font-weight:700;color:var(--gold);line-height:1.2;}
+    .profile-status{font-size:10px;font-weight:600;color:var(--text-muted);line-height:1.2;letter-spacing:.3px;}
+    .profile-status-vip{color:#c9a84c;}
+    .profile-chevron{font-size:10px;color:var(--text-muted);margin-left:2px;transition:transform .2s;}
+    .profile-wrap.open .profile-chevron{transform:rotate(180deg);}
+    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:8px;display:none;z-index:100;animation:fadeIn .15s ease-out;}
+    .profile-wrap.open .profile-dropdown{display:block;}
+    .profile-dd-header{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:6px;}
+    .profile-dd-name{font-size:13px;font-weight:700;color:var(--text);}
+    .profile-dd-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .profile-dd-vip-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--gold);}
+    .profile-dd-btn{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;font-family:"DM Sans",sans-serif;text-align:left;}
+    .profile-dd-btn:hover{background:rgba(255,255,255,.05);color:var(--text);}
+    .profile-dd-btn.danger{color:#f87171;}
+    .profile-dd-btn.danger:hover{background:rgba(220,38,38,.1);color:#f87171;}
+    .nav-user{display:none;} /* esconde o antigo */
+    .nav-user-dot{display:none;}
+    .logout-btn{display:none;}
+    #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;display:none;pointer-events:none}
+    .toast-box{padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;animation:toastIn .3s ease-out;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+    @keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+    .section{display:none;animation:fadeIn .4s ease-out} .section.active{display:block}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .page{max-width:960px;margin:0 auto;padding:48px 16px 80px}
+    #login-screen{position:fixed;inset:0;z-index:200;background:rgba(10,10,10,.97);display:flex;align-items:center;justify-content:center;animation:fadeIn .4s ease-out}
+    .login-card{width:100%;max-width:400px;margin:16px;background:var(--bg2);border:1px solid var(--gold-border);border-radius:16px;padding:40px 32px;box-shadow:0 24px 80px rgba(0,0,0,.7);animation:slideUp .5s ease-out}
+    @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .login-logo{text-align:center;margin-bottom:28px} .login-logo img{width:110px;height:110px;object-fit:contain}
+    .login-title{font-family:"Bebas Neue",sans-serif;font-size:32px;text-align:center;margin-bottom:6px}
+    .login-subtitle{text-align:center;color:var(--text-muted);font-size:14px;margin-bottom:28px}
+    .login-label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted)}
+    .login-input{width:100%;padding:12px 16px;border-radius:10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-size:16px;font-family:"DM Sans",sans-serif;transition:border-color .2s,box-shadow .2s}
+    .login-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+    .login-btn{width:100%;margin-top:20px;padding:14px;border-radius:10px;border:none;cursor:pointer;background:var(--gold);color:#1a1a1a;font-family:"DM Sans",sans-serif;font-weight:700;font-size:16px;transition:opacity .2s,transform .1s}
+    .login-btn:hover{opacity:.9} .login-btn:active{transform:scale(.98)}
+    .login-notice{text-align:center;font-size:12px;color:var(--text-dim);margin-top:14px}
+    .hero{text-align:center;padding:20px 0 40px}
+    .hero-logo{display:inline-block;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+    .hero-logo img{width:240px;height:240px;object-fit:contain}
+    .hero-sub{color:var(--text-muted);font-size:17px;margin:8px 0 40px}
+    .section-title{font-family:"Bebas Neue",sans-serif;font-size:40px;text-align:center;margin-bottom:32px}
+    .services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;margin-bottom:24px}
+    .service-card{padding:28px 20px;border-radius:12px;text-align:center;background:var(--gold-dim);border:1px solid var(--gold-border);transition:background .25s,transform .2s;animation:slideInUp .5s ease-out backwards}
+    .service-card:hover{background:rgba(201,168,76,.22);transform:translateY(-3px)}
+    .service-card img{width:56px;height:56px;object-fit:contain;margin:0 auto 12px;display:block}
+    .service-card h3{font-weight:600;font-size:15px;margin-bottom:6px} .service-card p{color:var(--text-muted);font-size:13px;margin-bottom:10px}
+    .service-price{font-family:"Bebas Neue",sans-serif;font-size:24px;color:var(--gold)}
+    .service-features{list-style:none;margin:8px 0 10px;padding:0;display:flex;flex-direction:column;gap:5px;text-align:left}
+    .service-features li{font-size:12px;color:var(--text-muted);display:flex;align-items:flex-start;gap:6px;line-height:1.4}
+    .service-features li::before{content:"·";color:var(--gold);font-size:16px;line-height:1;flex-shrink:0}
+    @keyframes slideInUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+    .service-card:nth-child(1){animation-delay:.05s}.service-card:nth-child(2){animation-delay:.1s}.service-card:nth-child(3){animation-delay:.15s}.service-card:nth-child(4){animation-delay:.2s}.service-card:nth-child(5){animation-delay:.25s}
+    .cta-btn{display:inline-block;padding:14px 36px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:17px;cursor:pointer;transition:opacity .2s;animation:pulseGold 2s ease-in-out infinite}
+    .cta-btn:hover{opacity:.88}
+    @keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.45)}50%{box-shadow:0 0 0 10px rgba(201,168,76,0)}}
+    .booking-card{background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:14px;padding:28px}
+    .form-group{margin-bottom:20px}
+    .form-label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted)}
+    .form-input{width:100%;padding:11px 14px;border-radius:9px;background:var(--bg2);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-size:15px;font-family:"DM Sans",sans-serif;transition:border-color .2s,box-shadow .2s}
+    .form-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
+    .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .time-btn{padding:9px 6px;border-radius:8px;border:1px solid rgba(201,168,76,.3);background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;transition:all .15s}
+    .time-btn:hover:not(:disabled){background:var(--gold);color:#1a1a1a;font-weight:600} .time-btn.selected{background:var(--gold);color:#1a1a1a;font-weight:700}
+    .time-btn:disabled{background:#222;color:var(--text-dim);cursor:not-allowed;opacity:.5;font-size:11px}
+    .submit-btn{width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px;transition:opacity .2s,transform .1s;font-family:"DM Sans",sans-serif}
+    .submit-btn:hover{opacity:.9} .submit-btn:active{transform:scale(.99)} .submit-btn:disabled{opacity:.5;cursor:not-allowed}
+    #confirmBox{display:none;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.35);border-radius:12px;padding:20px 24px;margin-bottom:24px;animation:slideUp .4s ease-out}
+    #confirmBox.show{display:block}
+    .confirm-icon{font-size:28px;margin-bottom:8px} .confirm-title{font-weight:700;font-size:16px;color:#4ade80;margin-bottom:4px} .confirm-details{font-size:14px;color:var(--text-muted)}
+    .apt-card{background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:12px;padding:20px 24px;margin-bottom:16px;transition:transform .18s,box-shadow .18s}
+    .apt-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+    .apt-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+    .apt-name{font-weight:700;font-size:16px} .apt-phone{color:var(--text-muted);font-size:13px;margin-top:2px}
+    .apt-status{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,.2);color:var(--gold);border:1px solid var(--gold-border)}
+    .apt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .apt-field span{font-size:12px;color:var(--text-dim);display:block} .apt-field strong{font-size:14px}
+    .cancel-btn{background:none;border:1px solid rgba(220,38,38,.3);color:#f87171;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:background .15s;margin-top:14px}
+    .cancel-btn:hover{background:rgba(220,38,38,.12)}
+    .no-apt{text-align:center;color:var(--text-muted);padding:60px 0} .no-apt-icon{font-size:40px;margin-bottom:12px}
+    .contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-bottom:32px}
+    .contact-card{padding:32px 20px;border-radius:12px;text-align:center;background:var(--gold-dim);border:1px solid var(--gold-border);transition:transform .2s;text-decoration:none;color:inherit;display:block}
+    .contact-card:hover{transform:scale(1.04)} .contact-card img{width:44px;height:44px;object-fit:contain;margin:0 auto 14px;display:block}
+    .contact-card h3{font-weight:700;font-size:18px;margin-bottom:6px} .contact-card p{color:var(--text-muted);font-size:14px}
+    .hours-card{background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:12px;padding:32px}
+    .hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;text-align:center}
+    .hours-label{font-weight:600;font-size:15px;margin-bottom:8px} .hours-time{font-family:"Bebas Neue",sans-serif;font-size:28px;color:var(--gold)}
+    .hours-closed{color:var(--text-muted);font-size:13px;margin-top:20px;text-align:center}
+    .text-center{text-align:center} .mb-8{margin-bottom:32px}
+    @media(max-width:640px){
+      .nav-inner{padding:8px 12px;gap:4px;flex-wrap:wrap}
+      .nav-btn{padding:5px 7px;font-size:11px}
+      .nav-user{padding:4px 8px;font-size:11px;gap:5px} .nav-user-dot{width:5px;height:5px}
+      .page{padding:24px 12px 56px}
+      .hero-logo img{width:160px;height:160px} .hero-sub{font-size:14px;margin-bottom:28px}
+      .section-title{font-size:28px;margin-bottom:20px}
+      .services-grid{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+      .service-card{padding:18px 14px} .service-card img{width:40px;height:40px}
+      .service-card h3{font-size:13px} .service-card p{font-size:11px} .service-price{font-size:18px}
+      .cta-btn{font-size:15px;padding:12px 26px}
+      .login-card{padding:28px 18px;margin:12px} .login-title{font-size:26px}
+      .booking-card{padding:16px 13px} .form-input{font-size:16px}
+      .time-grid{grid-template-columns:repeat(3,1fr);gap:6px} .time-btn{padding:10px 2px;font-size:12px}
+      .apt-card{padding:14px}
+      .contact-grid{grid-template-columns:1fr} .hours-grid{grid-template-columns:1fr;gap:14px}
+    }
+    @media(max-width:420px){.services-grid{grid-template-columns:1fr}}
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
+    /* ===== BANNERS / AVISOS ===== */
+    .site-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:10px;margin-bottom:10px;font-size:14px;font-weight:500;animation:slideInUp .4s ease-out backwards;}
+    .site-banner-info{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
+    .site-banner-promo{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:#f0d78c;}
+    .site-banner-warn{background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#fde047;}
+    .site-banner-icon{font-size:20px;flex-shrink:0;}
+    .site-banner a{color:inherit;text-decoration:underline;opacity:.85;}
 
-self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
-});
 
-// Recebe mensagens do app para disparar notificações
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SHOW_NOTIFICATION') {
-    const { title, body, icon } = e.data;
-    e.waitUntil(
-      self.registration.showNotification(title, {
-        body,
-        icon: icon || 'https://i.imgur.com/vcPQoRh.png',
-        badge: icon || 'https://i.imgur.com/vcPQoRh.png',
-        tag: 'gbs-notification',
-        requireInteraction: false,
-        vibrate: [200, 100, 200],
-      })
-    );
+    /* ===== PLANOS ===== */
+    .plans-section{padding:48px 0 24px}
+    .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-bottom:28px}
+    .plan-card{border-radius:16px;padding:28px 22px;border:1px solid var(--gold-border);background:var(--bg2);position:relative;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;gap:0}
+    .plan-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+    .plan-card.featured{border-color:var(--gold);background:linear-gradient(145deg,#1e1a10,#1a1a1a);box-shadow:0 0 0 1px rgba(201,168,76,.15),0 8px 32px rgba(201,168,76,.1)}
+    .plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#111;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:4px 14px;border-radius:20px;white-space:nowrap}
+    .plan-name{font-family:"Bebas Neue",sans-serif;font-size:28px;color:var(--gold);margin-bottom:2px}
+    .plan-price{font-family:"Bebas Neue",sans-serif;font-size:42px;line-height:1;color:var(--text);margin-bottom:4px}
+    .plan-price span{font-size:16px;color:var(--text-muted);font-family:"DM Sans",sans-serif;font-weight:400}
+    .plan-divider{height:1px;background:rgba(255,255,255,0.07);margin:16px 0}
+    .plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px;flex:1}
+    .plan-features li{font-size:13px;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px}
+    .plan-features li::before{content:"✦";color:var(--gold);font-size:10px;margin-top:2px;flex-shrink:0}
+    .plan-btn{display:block;text-align:center;padding:12px;border-radius:10px;border:1px solid var(--gold);background:none;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;transition:background .15s,color .15s;font-family:"DM Sans",sans-serif}
+    .plan-btn:hover{background:var(--gold);color:#111}
+    .plan-card.featured .plan-btn{background:var(--gold);color:#111}
+    .plan-card.featured .plan-btn:hover{opacity:.88}
+    .plan-obs{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px 20px;margin-top:8px}
+    .plan-obs p{font-size:12px;color:var(--text-dim);line-height:1.7}
+    .plan-obs p+p{margin-top:8px}
+    .plan-obs strong{color:var(--text-muted)}
+
+    /* ===== MODO VIP ===== */
+    .vip-hero{text-align:center;padding:32px 0 40px}
+    .vip-crown{font-size:52px;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+    .vip-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#111;background:var(--gold);padding:5px 16px;border-radius:20px;margin-bottom:16px}
+    .vip-title{font-family:"Bebas Neue",sans-serif;font-size:48px;margin-bottom:8px}
+    .vip-sub{color:var(--text-muted);font-size:15px;margin-bottom:28px}
+    .vip-plan-name{font-family:"Bebas Neue",sans-serif;font-size:22px;color:var(--gold);margin-bottom:20px}
+    .vip-benefits{display:flex;flex-direction:column;gap:10px;max-width:400px;margin:0 auto 32px}
+    .vip-benefit{display:flex;align-items:center;gap:12px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:10px;padding:14px 18px;font-size:14px;font-weight:600}
+    .vip-benefit-icon{font-size:20px;flex-shrink:0}
+    .vip-exit{background:none;border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px;padding:8px 18px;border-radius:8px;cursor:pointer;transition:all .15s;font-family:"DM Sans",sans-serif}
+    .vip-exit:hover{border-color:rgba(220,38,38,.4);color:#f87171}
+    @media(max-width:640px){
+      .plans-grid{grid-template-columns:1fr 1fr;gap:12px}
+      .plan-card{padding:20px 14px}
+      .plan-name{font-size:22px} .plan-price{font-size:32px}
+      .plan-features li{font-size:12px}
+      .vip-title{font-size:36px}
+    }
+    @media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
+  </style>
+
+  <script>
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('SW register error:',e));
+      });
+    }
+  </script>
+</head>
+<body>
+
+<div id="app-loading">
+  <img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'">
+  <div class="spinner"></div>
+</div>
+
+<div id="login-screen" style="display:none;">
+  <div class="login-card">
+    <div class="login-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
+    <div class="login-title gold-gradient">Gabriel Barber Studio</div>
+    <div class="login-subtitle">Entre com seu número de telefone para agendar</div>
+    <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
+    <label class="login-label" for="login-name">Nome completo</label>
+    <input class="login-input" type="text" id="login-name" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
+    <label class="login-label" for="login-phone">Número de telefone</label>
+    <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <p class="login-notice">Seus agendamentos ficam salvos no seu número</p>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Gabriel Barber Studio" style="height:38px;width:auto;object-fit:contain;display:block;"></div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Início</button>
+      <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
+      <button class="nav-btn" id="nav-vip-btn" onclick="showSection('home')" style="display:none;">👑 VIP</button>
+      <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
+      <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
+      <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
+    </div>
+    <div class="nav-user" id="nav-user" style="display:none;"></div>
+    <!-- Novo perfil dropdown -->
+    <div class="profile-wrap" id="profile-wrap">
+      <button class="profile-btn" onclick="toggleProfileMenu()" id="profile-btn">
+        <div class="profile-avatar" id="profile-avatar">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div class="profile-info">
+          <span class="profile-phone" id="nav-phone-display">-</span>
+          <span class="profile-status" id="profile-status-label">Cliente</span>
+        </div>
+        <span class="profile-chevron">▼</span>
+      </button>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="profile-dd-header">
+          <div class="profile-dd-name" id="profile-dd-name" style="font-size:14px;font-weight:700;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:1px;" id="profile-dd-phone">—</div>
+          <div class="profile-dd-sub" style="margin-top:2px;">Minha conta</div>
+          <div class="profile-dd-vip-badge" id="profile-vip-badge" style="display:none;">👑 <span id="profile-vip-plan-label">VIP</span></div>
+        </div>
+        <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
+          🗓️ Meus Agendamentos
+        </button>
+        <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
+          📍 Contato
+        </button>
+        <button class="profile-dd-btn danger" onclick="closeProfileMenu();doLogout()">
+          ↩️ Sair da conta
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div id="toast"><div class="toast-box" id="toast-box"></div></div>
+
+<div class="section active" id="sec-home">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
+    </div>
+    <div id="site-banners-container" style="margin-bottom:8px;"></div>
+    <h2 class="section-title gold-gradient">Nossos Serviços</h2>
+    <div class="services-grid" id="services-grid">
+      <!-- carregado dinamicamente do Firestore -->
+      <div style="grid-column:1/-1;text-align:center;padding:32px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
+    </div>
+    <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
+  </div>
+</div>
+
+<div class="section" id="sec-booking">
+  <div class="page" style="max-width:640px;">
+    <h2 class="section-title gold-gradient">Agende seu Horário</h2>
+    <div id="confirmBox"><div class="confirm-icon">checkmark</div><div class="confirm-title">Agendamento confirmado!</div><div class="confirm-details" id="confirmDetails"></div></div>
+
+    <!-- Modal: segundo agendamento -->
+    <div id="secondBookingModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;animation:fadeIn .3s ease-out;">
+      <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+        <div style="font-size:28px;text-align:center;margin-bottom:12px;">⚠️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;margin-bottom:10px;color:#f0d78c;">Agendamento já existente</div>
+        <p style="text-align:center;color:#888;font-size:14px;margin-bottom:24px;line-height:1.6;">Já existe um agendamento ativo neste número de telefone. Deseja confirmar um segundo agendamento?</p>
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+          <button onclick="declineSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.35);background:none;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(220,38,38,.1)'" onmouseout="this.style.background='none'">Não</button>
+          <button onclick="acceptSecondBooking()" style="flex:1;padding:12px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sim</button>
+        </div>
+        <!-- Campo de justificativa (oculto inicialmente) -->
+        <div id="justifySection" style="display:none;animation:slideUp .3s ease-out;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Por que precisa de um segundo agendamento?</label>
+          <textarea id="justifyText" rows="3" placeholder="Ex: preciso cortar o cabelo e a barba em dias separados..." style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;resize:vertical;transition:border-color .2s;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+          <button onclick="confirmSecondBooking()" style="width:100%;margin-top:12px;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#1a1a1a;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">Confirmar Agendamento</button>
+        </div>
+      </div>
+    </div>
+    <div class="booking-card">
+      <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="f-name" placeholder="Joao Silva"></div>
+      <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
+      <div class="form-group"><label class="form-label">Serviço</label>
+        <select class="form-input" id="f-service">
+          <option value="">Selecione um serviço</option>
+          <option value="Cabelo">Cabelo - R$ 30,00</option>
+          <option value="Barba">Barba - R$ 25,00</option>
+          <option value="Pezinho">Pezinho - R$ 15,00</option>
+          <option value="Cabelo & Barba">Cabelo &amp; Barba - R$ 50,00</option>
+          <option value="Raspar Cabeça">Raspar Cabeça - R$ 20,00</option>
+          <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()"></div>
+      <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
+      <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="sec-appointments">
+  <div class="page" style="max-width:700px;">
+    <h2 class="section-title gold-gradient">Meus Horários</h2>
+    <div id="aptList"></div>
+  </div>
+</div>
+
+<div class="section" id="sec-contact">
+  <div class="page">
+    <h2 class="section-title gold-gradient" style="font-size:56px;margin-bottom:8px;">Entre em Contato</h2>
+    <p class="text-center mb-8" style="color:var(--text-muted);">Visite-nos ou fale conosco</p>
+    <div class="contact-grid mb-8">
+      <a href="https://wa.me/5522997035391" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/gRZS5sC.png" alt="WhatsApp"><h3>WhatsApp</h3><p>(22) 99703-5391</p><p style="font-size:12px;margin-top:4px;">Clique para enviar mensagem</p></a>
+      <a href="https://instagram.com/gabriel.bstudio" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/o7nqXUj.png" alt="Instagram"><h3>Instagram</h3><p>@gabriel.bstudio</p><p style="font-size:12px;margin-top:4px;">Siga nosso perfil</p></a>
+      <a href="https://maps.app.goo.gl/HLubhsnHgJELtAyQ7" target="_blank" rel="noopener" class="contact-card"><img src="https://i.imgur.com/lgZ7wqK.png" alt="Endereço"><h3>Endereço</h3><p>R. Luis Isaltino de Oliveira, 65</p><p>Pq Flamboyant - Campos dos Goytacazes</p><p>28015-170 (Loja 2)</p><p style="font-size:12px;margin-top:4px;">Clique para abrir no Maps</p></a>
+    </div>
+    <div class="hours-card" id="hours-display">
+      <h3 style="font-family:Bebas Neue,sans-serif;font-size:28px;text-align:center;margin-bottom:24px;">Horários de Funcionamento</h3>
+      <div id="hours-grid-dynamic" class="hours-grid" style="gap:16px;"></div>
+      <div id="hours-breaks-dynamic"></div>
+      <!-- Dias fechados agora são controlados pelo painel admin -->
+    </div>
+  </div>
+</div>
+
+<!-- ===== SEÇÃO PLANOS ===== -->
+<div class="section" id="sec-plans">
+  <div class="page">
+    <h2 class="section-title gold-gradient">Planos de Assinatura</h2>
+    <p class="text-center" style="color:var(--text-muted);margin-bottom:40px;font-size:15px;">Economize com um plano mensal e tenha prioridade no atendimento</p>
+    <div class="plans-grid" id="plans-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
+    </div>
+
+    <!-- Observações -->
+    <div class="plan-obs">
+      <p><strong>Obs. 1:</strong> As vantagens das assinaturas não são acumulativas. O estábelecimento não se responsabiliza pelo não aproveitamento do serviço/benefício contratado em conformidade com o plano.</p>
+      <p><strong>Obs. 2:</strong> Os valores poderão passar por reajuste semestral ou anual com aviso prévio ao contratante.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: email antes de ir ao MP -->
+<div id="planModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:420px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+    <div style="text-align:center;font-size:32px;margin-bottom:10px;">✉️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-align:center;margin-bottom:6px;">Antes de prosseguir</div>
+    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Informe o email que você vai usar para pagar no Mercado Pago.</p>
+    <p style="text-align:center;color:#666;font-size:12px;margin-bottom:22px;">Assim que o pagamento for confirmado, seu acesso VIP será ativado <strong style="color:#c9a84c;">automaticamente</strong>.</p>
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">
+      <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">Plano selecionado</span>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#c9a84c;margin-top:2px;" id="plan-modal-name"></div>
+    </div>
+    <label style="display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Seu e-mail do Mercado Pago</label>
+    <input id="plan-email-input" type="email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:16px;transition:border-color .2s;" onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+    <button id="plan-proceed-btn" onclick="proceedToPlan()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#c9a84c;color:#111;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:opacity .2s;">Continuar para pagamento →</button>
+    <button onclick="document.getElementById('planModal').style.display='none'" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:none;color:#666;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal aguardando pagamento -->
+<div id="waitingModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:36px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);text-align:center;">
+    <div style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:#c9a84c;animation:spin .7s linear infinite;margin:0 auto 20px;"></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:8px;">Aguardando pagamento...</div>
+    <p style="color:#888;font-size:13px;margin-bottom:6px;line-height:1.6;">Finalize o pagamento no Mercado Pago. Assim que for confirmado, está tela fechara automaticamente e seu acesso VIP será ativado.</p>
+    <p style="color:#555;font-size:12px;margin-top:16px;">Isso pode levar alguns instantes.</p>
+    <button onclick="cancelWaiting()" style="margin-top:20px;padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:none;color:#555;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
+  </div>
+</div>
+
+<!-- Home VIP -->
+<div class="section" id="sec-home-vip">
+  <div class="page" style="max-width:640px;">
+    <!-- Hero VIP -->
+    <div style="text-align:center;padding:24px 0 8px;">
+      <!-- Avatar VIP animado -->
+      <div style="position:relative;display:inline-block;margin-bottom:16px;">
+        <div style="position:relative;display:inline-block;">
+          <div id="vip-hero-avatar" style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#f0d78c);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 0 4px rgba(201,168,76,.2),0 0 32px rgba(201,168,76,.35);animation:float 3s ease-in-out infinite;">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="#111" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+          </div>
+          <div id="vip-hero-badge" style="position:absolute;bottom:-4px;right:-4px;background:var(--gold);border-radius:20px;padding:2px 7px;font-size:15px;border:2px solid #111;white-space:nowrap;">👑</div>
+        </div>
+      </div>
+      <!-- Badge VIP -->
+      <div style="margin-bottom:10px;">
+        <span style="display:inline-block;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#111;background:linear-gradient(135deg,#c9a84c,#f0d78c);padding:5px 18px;border-radius:20px;" id="vip-plan-badge-label">👑 PLANO VIP</span>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;margin:4px 0 2px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Bem-vindo de volta!</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;" id="vip-plan-display">Plano —</div>
+      <!-- Benefícios do plano -->
+      <div id="vip-benefits-list" style="display:flex;flex-direction:column;gap:8px;max-width:380px;margin:0 auto 20px;"></div>
+    </div>
+    <!-- Card de aviso de assinatura ativa -->
+    <!-- Banners/avisos do admin -->
+    <div id="site-banners-container-vip" style="margin-bottom:8px;"></div>
+
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:28px;flex-shrink:0;">✨</div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--gold);margin-bottom:3px;">Assinatura ativa — <span id="vip-plan-inline-name">VIP</span></div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">Realize seu agendamento abaixo com prioridade no atendimento.</div>
+      </div>
+    </div>
+
+    <!-- Formulário de agendamento inline no VIP -->
+    <div id="confirmBox-vip" style="display:none;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.35);border-radius:12px;padding:20px 24px;margin-bottom:24px;animation:slideUp .4s ease-out;">
+      <div style="font-weight:700;font-size:16px;color:#4ade80;margin-bottom:4px;">✓ Agendamento confirmado!</div>
+      <div style="font-size:14px;color:#888;" id="confirmDetails-vip"></div>
+    </div>
+
+    <div class="booking-card">
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#c9a84c;margin-bottom:20px;text-align:center;">Agendar meu Horário</h3>
+      <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="vip-f-name" placeholder="Joao Silva"></div>
+      <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="vip-f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
+      <div class="form-group"><label class="form-label">Serviço</label>
+        <select class="form-input" id="vip-f-service">
+          <option value="">Selecione um serviço</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()"></div>
+      <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlotsVip"></div><input type="hidden" id="vip-f-time"></div>
+      <button class="submit-btn" id="vip-submit-btn" onclick="submitBookingVip()">Confirmar Agendamento</button>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <button class="vip-exit" onclick="openCancelVipModal()">Cancelar assinatura / sair do modo VIP</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBuqPBQocq7gFFnbtD8VoMB6kTu1I3R_9w",
+    authDomain: "gabriel-barber-studio.firebaseapp.com",
+    projectId: "gabriel-barber-studio",
+    storageBucket: "gabriel-barber-studio.firebasestorage.app",
+    messagingSenderId: "618389372519",
+    appId: "1:618389372519:web:e17540f85980687ad75ec2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const COL = "appointments";
+
+  // ===== HORÁRIOS — carregados do Firestore =====
+  let SCHEDULE = {
+    days: {
+      tue: {open:true,  start:'10:00', end:'21:00'},
+      wed: {open:true,  start:'10:00', end:'15:00'},
+      thu: {open:true,  start:'10:00', end:'21:00'},
+      fri: {open:true,  start:'10:00', end:'21:00'},
+      sat: {open:true,  start:'10:00', end:'21:00'},
+    },
+    breaks: [
+      {days:['tue','thu','sat'], start:'12:00', end:'14:00'},
+      {days:['fri'],             start:'12:00', end:'18:00'},
+    ],
+    services: {
+      'Cabelo':        {duration:45},
+      'Barba':         {duration:15},
+      'Pezinho':       {duration:15},
+      'Cabelo & Barba':{duration:70},
+      'Raspar Cabeça': {duration:15},
+      'Sobrancelha':   {duration:15},
+    },
+    buffer: 5,
+  };
+
+  async function loadSchedule(){
+    try {
+      const snap = await getDoc(doc(db,'config','schedule'));
+      if(snap.exists()) SCHEDULE = snap.data();
+    } catch(e){ console.error('loadSchedule error',e); }
+    renderHoursDisplay();
   }
-});
 
-// Clique na notificação abre o site
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url.includes('gabriel-barber-studio') && 'focus' in client) {
-          return client.focus();
+  // Carrega serviços do Firestore e atualiza grid + selects de agendamento
+  let SERVICES_DATA = [
+    {name:'Cabelo',        price:'30,00', duration:45, features:['Cortes apenas com Máquina','Cortes apenas com Tesoura','Cortes com Máquina + Tesoura','Incluso em planos por assinatura']},
+    {name:'Barba',         price:'25,00', duration:15, features:['Raspado','Navalhado','Barboterapia','Entre outros...']},
+    {name:'Pezinho',       price:'15,00', duration:15, features:['Acabamento','Navalhado']},
+    {name:'Cabelo & Barba',price:'50,00', duration:70, features:['Pacote com desconto','Incluso em planos por assinatura']},
+    {name:'Raspar Cabeça', price:'20,00', duration:15, features:['Curto','Zero','Navalhado']},
+    {name:'Sobrancelha',   price:'15,00', duration:15, features:['Navalhada']},
+  ];
+
+
+  async function loadBannersFromFirestore(){
+    try{
+      const snap=await getDoc(doc(db,'config','banners'));
+      if(snap.exists()&&snap.data().list) renderSiteBanners(snap.data().list);
+    }catch(e){console.error('loadBannersFromFirestore',e);}
+  }
+
+  function renderSiteBanners(banners){
+    var active=(banners||[]).filter(function(b){return b.active!==false&&b.text;});
+    var icons={info:'ℹ️',promo:'🏷️',warn:'⚠️'};
+    var html=active.map(function(b,i){
+      var cls='site-banner-'+(b.type||'info');
+      var icon=icons[b.type||'info']||'ℹ️';
+      var text=b.link?'<a href="'+b.link+'" target="_blank" rel="noopener">'+b.text+'</a>':b.text;
+      return '<div class="site-banner '+cls+'" style="animation-delay:'+i*0.08+'s"><span class="site-banner-icon">'+icon+'</span><span>'+text+'</span></div>';
+    }).join('');
+    var c1=document.getElementById('site-banners-container');
+    var c2=document.getElementById('site-banners-container-vip');
+    if(c1) c1.innerHTML=html;
+    if(c2) c2.innerHTML=html;
+  }
+
+  async function loadServicesFromFirestore(){
+    try {
+      const snap = await getDoc(doc(db,'config','services'));
+      if(snap.exists() && snap.data().list) SERVICES_DATA = snap.data().list;
+    } catch(e){ console.error('loadServicesFromFirestore',e); }
+    renderServicesGrid();
+    updateBookingSelects();
+  }
+
+  function renderServicesGrid(){
+    const grid = document.getElementById('services-grid');
+    if(!grid) return;
+    grid.innerHTML = SERVICES_DATA.map(s=>{
+      const feats=(s.features&&s.features.length>0)
+        ?'<ul class="service-features">'+s.features.map(f=>'<li>'+f+'</li>').join('')+'</ul>':'';
+      return `<div class="service-card">
+        ${s.image?`<img src="${s.image}" alt="${s.name}" onerror="this.style.display='none'">`:''}
+        <h3>${s.name}</h3>
+        <div class="service-price">R$ ${s.price}</div>
+        ${feats}
+      </div>`;
+    }).join('');
+  }
+
+  function updateBookingSelects(){
+    const opts = '<option value="">Selecione um serviço</option>' +
+      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name} - R$ ${s.price}</option>`).join('');
+    const optsSvc = '<option value="">Selecione um serviço</option>' +
+      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+    const fSvc = document.getElementById('f-service');
+    const vipSvc = document.getElementById('vip-f-service');
+    if(fSvc) fSvc.innerHTML = opts;
+    if(vipSvc) vipSvc.innerHTML = opts;
+    // Atualiza SCHEDULE.services com duração atual dos serviços carregados
+    SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
+  }
+
+  const DAY_LABELS = {mon:'Segunda-feira',tue:'Terça-feira',wed:'Quarta-feira',thu:'Quinta-feira',fri:'Sexta-feira',sat:'Sábado',sun:'Domingo'};
+
+  function renderHoursDisplay(){
+    const grid = document.getElementById('hours-grid-dynamic');
+    const breaksEl = document.getElementById('hours-breaks-dynamic');
+    if(!grid||!breaksEl) return;
+
+    // Agrupa dias com mesmo horário para exibição compacta — ordenados pela semana
+    const DAY_ORDER=['mon','tue','wed','thu','fri','sat','sun'];
+    const openDays = Object.entries(SCHEDULE.days||{})
+      .filter(([,v])=>v.open)
+      .sort(([a],[b])=>DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b))
+      .map(([k,v])=>({key:k, label:DAY_LABELS[k]||k, start:v.start, end:v.end}));
+
+    // Agrupa por horário igual
+    const groups = [];
+    openDays.forEach(d=>{
+      const g = groups.find(g=>g.start===d.start&&g.end===d.end);
+      if(g) g.labels.push(d.label.split('-')[0].trim());
+      else groups.push({start:d.start, end:d.end, labels:[d.label.split('-')[0].trim()]});
+    });
+
+    grid.style.gridTemplateColumns = `repeat(${Math.min(groups.length,3)},1fr)`;
+    grid.innerHTML = groups.map(g=>`
+      <div>
+        <div class="hours-label">${g.labels.join(', ')}</div>
+        <div class="hours-time">${g.start} - ${g.end}</div>
+      </div>`).join('');
+
+    // Mostra intervalos especiais
+    const breaks = (SCHEDULE.breaks||[]).filter(b=>b.label&&b.days&&b.days.length>0);
+    breaksEl.innerHTML = breaks.map(b=>{
+      const dayNames = (b.days||[]).map(k=>DAY_LABELS[k]||k).join(', ');
+      return `<p class="hours-closed" style="margin-top:10px;color:#f0d78c;font-size:13px;">⚠️ ${b.label}: intervalo das ${b.start} as ${b.end} (${dayNames})</p>`;
+    }).join('');
+  }
+
+  const DOW_KEY = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
+
+  function getServiceSlots(service){
+    const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
+    const buf = SCHEDULE.buffer||5;
+    return Math.ceil((dur+buf)/15);
+  }
+
+  function getServiceDuration(service){
+    return (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
+  }
+
+  function makeSlots(startStr, endStr){
+    const slots=[];
+    let [h,m]=startStr.split(':').map(Number);
+    const [eh,em]=endStr.split(':').map(Number);
+    while(h<eh||(h===eh&&m<em)){
+      slots.push(pad(h)+':'+pad(m));
+      m+=15; if(m>=60){m=0;h++;}
+    }
+    return slots;
+  }
+
+  function getSlotsForDate(dateStr){
+    if(!dateStr) return [];
+    const dow = new Date(dateStr+'T12:00:00').getDay();
+    const key = DOW_KEY[dow];
+    if(!key) return [];
+    const dayCfg = SCHEDULE.days[key];
+    if(!dayCfg||!dayCfg.open) return [];
+    let allSlots = makeSlots(dayCfg.start, dayCfg.end);
+    const breaks = (SCHEDULE.breaks||[]).filter(b=>(b.days||[]).includes(key));
+    for(const br of breaks){
+      const brSlots = makeSlots(br.start, br.end);
+      allSlots = allSlots.filter(s=>!brSlots.includes(s));
+    }
+    return allSlots;
+  }
+
+  function getExtraSlots(startTime, extraCount){
+    const all = makeSlots('10:00','21:00');
+    const idx = all.indexOf(startTime);
+    if(idx<0) return [];
+    return all.slice(idx+1, idx+extraCount+1);
+  }
+
+  let loggedPhone = null;
+  let loggedName = null;
+  let allAppointments = [];
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function getTodayStr(){ const t=new Date(); return t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
+  function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function maskPhone(p){ const d=p.replace(/\D/g,""); return d.length>=9?"("+d.slice(0,2)+") *****-"+d.slice(-4):p; }
+  function formatPhone(raw){ const d=raw.replace(/\D/g,""); if(d.length===11) return "("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7); if(d.length===10) return "("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6); return raw; }
+
+  let toastTimer;
+  window.showToast = function(msg,type){
+    const el=document.getElementById("toast"); const box=document.getElementById("toast-box");
+    box.textContent=msg; box.style.background=type==="error"?"#dc2626":"#16a34a";
+    el.style.display="block"; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.style.display="none"},3500);
+  };
+
+  // ===== VIP / ASSINATURA =====
+  let PLANS_DATA = []; // carregado do Firestore
+
+  // Fallback caso Firebase ainda não tenha carregado
+  const VIP_PLANS_FALLBACK = {};
+
+  async function loadPlansFromFirestore(){
+    try {
+      const snap = await getDocs(query(collection(db,'plans'), orderBy('order')));
+      if(!snap.empty){
+        PLANS_DATA = snap.docs.map(d=>({id:d.id,...d.data()}));
+      } else {
+        // Seed com os planos padrão se ainda não existirem no Firestore
+        PLANS_DATA = DEFAULT_PLANS;
+        for(const p of DEFAULT_PLANS){
+          await setDoc(doc(db,'plans',p.id), p);
         }
       }
-      return clients.openWindow('https://gabriel-barber-studio.vercel.app');
-    })
-  );
-});
+    } catch(e){
+      console.error('loadPlansFromFirestore',e);
+      PLANS_DATA = DEFAULT_PLANS;
+    }
+    renderPlansSection();
+  }
+
+  const DEFAULT_PLANS = [
+    { id:'lumberjack', order:1, emoji:'🪓', name:'Lumberjack', price:'59,90', featured:false, mpLink:'',
+      benefits:['1 Corte/mês','1 Barba/mês','1 Limpeza de Sobrancelha/mês'] },
+    { id:'swift', order:2, emoji:'⚡', name:'Swift', price:'69,90', featured:true, mpLink:'',
+      benefits:['1 Corte/cada 10 dias'] },
+    { id:'ontheruler', order:3, emoji:'📏', name:'Ontheruler', price:'79,90', featured:false, mpLink:'',
+      benefits:['1 Corte/cada 10 dias','1 Limpeza de Sobrancelha/cada 10 dias'] },
+    { id:'linedup', order:4, emoji:'📐', name:'Linedup', price:'109,90', featured:false, mpLink:'',
+      benefits:['1 Corte/semana','1 Sobrancelha/semana'] },
+    { id:'gentleman', order:5, emoji:'🎩', name:'Gentleman', price:'179,90', featured:false, mpLink:'',
+      benefits:['1 Corte/semana','1 Sobrancelha/semana','1 Limpeza de Pele/mes - Grátis'] },
+  ];
+
+  function renderPlansSection(){
+    const grid = document.getElementById('plans-grid');
+    if(!grid) return;
+    grid.innerHTML = PLANS_DATA.map(p => {
+      const featuredClass = p.featured ? ' featured' : '';
+      const badge = p.featured ? '<div class="plan-badge">&#11088; Mais Popular</div>' : '';
+      const bvBadge = p.bestValue
+        ? '<div style="text-align:center;margin:6px 0 -6px;"><span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(22,163,74,0.18);color:#4ade80;border:1px solid rgba(22,163,74,0.35);padding:3px 12px;border-radius:20px;">&#128154; Melhor Custo-Ben&eacute;ficio</span></div>'
+        : '';
+      const price = p.price ? p.price.replace('.',',') : '–';
+      const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('');
+      let btnHtml;
+      if(p.mpLink){
+        btnHtml = '<button class="plan-btn" onclick="openPlanModal(this)" data-name="'
+          + p.name.replace(/"/g,'&quot;')
+          + '" data-price="R$' + price + '/m&ecirc;s" data-link="'
+          + p.mpLink.replace(/"/g,'&quot;')
+          + '">Assinar agora</button>';
+      } else {
+        btnHtml = '<button class="plan-btn" onclick="showToast(&quot;Link de assinatura em breve!&quot;,&quot;error&quot;)" style="opacity:.6;cursor:not-allowed;">Assinar agora</button>';
+      }
+      return '<div class="plan-card'+featuredClass+'">'+badge
+        +'<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'
+        +'<div class="plan-price">R$'+price+'<span>/m&ecirc;s</span></div>'
+        +bvBadge
+        +'<div class="plan-divider"></div>'
+        +'<ul class="plan-features">'+benefitsHtml+'</ul>'
+        +btnHtml
+        +'</div>';
+    }).join('');
+  }
+
+  let vipUnsubscribe = null;
+  let pendingPlanLink = null;  // link direto do MP
+  let pendingPlanName = null;
+  let waitingUnsubscribe = null;
+
+  function applyVipMode(sub){
+    const planLabel = sub.planName || 'VIP';
+    const planPrice = sub.planPrice || '';
+    // Pegar emoji do plano
+    const planData2 = PLANS_DATA.find(p=>p.name===sub.planName);
+    const planEmoji = (planData2 && planData2.emoji) ? planData2.emoji : '👑';
+    document.getElementById('vip-plan-display').textContent = planLabel + (planPrice ? ' — '+planPrice : '');
+    // Badge no topo da home VIP
+    const badgeEl = document.getElementById('vip-plan-badge-label');
+    if(badgeEl) badgeEl.textContent = '👑' + planEmoji + ' PLANO ' + planLabel.toUpperCase();
+    // Aviso inline
+    const inlineEl = document.getElementById('vip-plan-inline-name');
+    if(inlineEl) inlineEl.textContent = planLabel;
+    // Avatar hero
+    const heroAvatar = document.getElementById('vip-hero-avatar');
+    if(heroAvatar) heroAvatar.innerHTML = '<svg width="52" height="52" viewBox="0 0 24 24" fill="#111" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
+    var heroBadge = document.getElementById('vip-hero-badge');
+    if(heroBadge) heroBadge.textContent = '👑' + planEmoji;
+    // Benefícios
+    const planData = PLANS_DATA.find(p=>p.name===sub.planName);
+    const benefits = sub.benefits || (planData&&planData.benefits) || [];
+    document.getElementById('vip-benefits-list').innerHTML = benefits.map(b=>
+      '<div class="vip-benefit"><span class="vip-benefit-icon">✦</span><span>'+b+'</span></div>'
+    ).join('');
+    document.getElementById('nav-plans-btn').style.display = 'none';
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+      if((b.dataset.sec==='home'||b.dataset.sec==='booking')&&b.id!=='nav-vip-btn') b.style.display='none';
+    });
+    // Mostrar botões VIP
+    var nvip=document.getElementById('nav-vip-btn');
+    if(nvip) nvip.style.display='';
+    // Atualizar perfil nav — modo VIP
+    const avatar = document.getElementById('profile-avatar');
+    const statusLabel = document.getElementById('profile-status-label');
+    const vipBadge = document.getElementById('profile-vip-badge');
+    const vipPlanLabel = document.getElementById('profile-vip-plan-label');
+    if(avatar){ avatar.classList.add('profile-avatar-vip'); }
+    if(statusLabel){ statusLabel.textContent = planLabel; statusLabel.classList.add('profile-status-vip'); }
+    if(vipBadge) vipBadge.style.display='inline-flex';
+    if(vipPlanLabel) vipPlanLabel.textContent = '👑'+planEmoji+' Plano '+planLabel;
+  }
+
+  function clearVipMode(){
+    document.getElementById('nav-plans-btn').style.display = '';
+    // Ocultar botões VIP
+    var _nvip=document.getElementById('nav-vip-btn');
+    if(_nvip) _nvip.style.display='none';
+    // Limpar flag de boas-vindas para próxima ativação
+    var _vipKey = 'gbs_vip_welcomed_' + (loggedPhone||'').replace(/\D/g,'');
+    localStorage.removeItem(_vipKey);
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+      if(b.dataset.sec==='home'||b.dataset.sec==='booking') b.style.display='';
+    });
+    // Reset perfil nav — modo normal
+    const avatar = document.getElementById('profile-avatar');
+    const statusLabel = document.getElementById('profile-status-label');
+    const vipBadge = document.getElementById('profile-vip-badge');
+    if(avatar){ avatar.classList.remove('profile-avatar-vip'); }
+    if(statusLabel){ statusLabel.textContent='Cliente'; statusLabel.classList.remove('profile-status-vip'); }
+    if(vipBadge) vipBadge.style.display='none';
+  }
+
+  // Escuta assinatura em tempo real no Firestore pelo telefone do cliente
+  function listenSubscription(phone){
+    if(vipUnsubscribe) vipUnsubscribe();
+    const q = query(
+      collection(db,'subscriptions'),
+      where('phone','==', phone),
+      where('status','==','active')
+    );
+    vipUnsubscribe = onSnapshot(q, snap => {
+      if(!snap.empty){
+        const sub = snap.docs[0].data();
+        // Fecha modal de aguardando se estiver aberto
+        document.getElementById('waitingModal').style.display = 'none';
+        if(waitingUnsubscribe){ waitingUnsubscribe(); waitingUnsubscribe = null; }
+        applyVipMode(sub);
+        // Se estáva na home normal, vira VIP automaticamente
+        const homeNormal = document.getElementById('sec-home');
+        if(homeNormal && homeNormal.classList.contains('active')){
+          showSection('home');
+          // Mostrar boas-vindas só na primeira vez que o VIP é ativado
+          const vipWelcomeKey = 'gbs_vip_welcomed_' + (loggedPhone||'').replace(/\D/g,'');
+          if(!localStorage.getItem(vipWelcomeKey)){
+            showToast('Pagamento confirmado! Bem-vindo ao VIP! 👑','success');
+            localStorage.setItem(vipWelcomeKey, '1');
+          }
+        }
+        // Se estáva aguardando, também redireciona
+        const homeVip = document.getElementById('sec-home-vip');
+        if(homeVip && !homeVip.classList.contains('active')){
+          showSection('home');
+        }
+      } else {
+        clearVipMode();
+        // Se estáva no modo VIP, volta à home normal automaticamente
+        const homeVip = document.getElementById('sec-home-vip');
+        if(homeVip && homeVip.classList.contains('active')){
+          homeVip.classList.remove('active');
+          document.getElementById('sec-home').classList.add('active');
+          showToast('Sua assinatura foi encerrada.','error');
+        }
+      }
+    }, err => console.error('subscription listener:', err));
+  }
+
+  // Abre modal de email ao clicar "Assinar agora"
+  window.openPlanModal = function(elOrName, planPrice, mpLink){
+    // Suporta chamada via data-attributes (botão) ou direto (legacy)
+    let planName, link;
+    if(elOrName && elOrName.dataset){
+      planName = elOrName.dataset.name || '';
+      planPrice = elOrName.dataset.price || '';
+      link      = elOrName.dataset.link || '';
+    } else {
+      planName = elOrName;
+      link = mpLink;
+    }
+    pendingPlanLink = link;
+    pendingPlanName = planName;
+    document.getElementById('plan-modal-name').textContent = planName + ' — ' + planPrice;
+    document.getElementById('plan-email-input').value = '';
+    document.getElementById('planModal').style.display = 'flex';
+  };
+
+  // Cliente confirma email e vai ao MP
+  window.proceedToPlan = async function(){
+    const email = document.getElementById('plan-email-input').value.trim().toLowerCase();
+    if(!email || !email.includes('@')){ showToast('Digite um email valido','error'); return; }
+    if(!loggedPhone){ showToast('Faca login primeiro','error'); return; }
+    if(!pendingPlanLink){ showToast('Link do plano não configurado. Fale com o barbeiro.','error'); return; }
+
+    const btn = document.getElementById('plan-proceed-btn');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+
+    try {
+      // Garante que o usuário está autenticado anonimamente antes de salvar
+      if(!auth.currentUser) await signInAnonymously(auth);
+
+      // Salva vínculo email → telefone no Firestore
+      await addDoc(collection(db,'pending_subscriptions'),{
+        email:     email,
+        phone:     loggedPhone,
+        planName:  pendingPlanName||'',
+        mpLink:    pendingPlanLink||'',
+        createdAt: new Date().toISOString(),
+      });
+
+      // Fecha modal de email, abre modal de aguardando
+      document.getElementById('planModal').style.display = 'none';
+      document.getElementById('waitingModal').style.display = 'flex';
+
+      // Abre o link do MP em nova aba
+      window.open(pendingPlanLink, '_blank');
+
+      // Começa a escutar o Firestore pelo telefone
+      listenSubscription(loggedPhone);
+
+    } catch(e){
+      console.error('proceedToPlan error:', e);
+      showToast('Erro ao salvar. Tente novamente.','error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Continuar para pagamento →';
+    }
+  };
+
+  window.cancelWaiting = function(){
+    document.getElementById('waitingModal').style.display = 'none';
+    if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe = null; }
+  };
+
+  window.deactivateVip = function(){
+    // Mantido para compatibilidade — agora usa o modal
+    openCancelVipModal();
+  };
+
+  window.openCancelVipModal = function(){
+    document.getElementById('cancelVipModal').style.display='flex';
+    // Limpar estado anterior
+    document.querySelectorAll('#cancel-reasons input[type=radio]').forEach(r=>r.checked=false);
+    document.querySelectorAll('#cancel-reasons label').forEach(l=>{ l.style.background='none'; l.style.borderColor='rgba(255,255,255,0.08)'; });
+    document.getElementById('cancel-vip-text').value='';
+  };
+
+  window.closeCancelVipModal = function(){
+    document.getElementById('cancelVipModal').style.display='none';
+  };
+
+  window.selectCancelReason = function(label){
+    document.querySelectorAll('#cancel-reasons label').forEach(l=>{ l.style.background='none'; l.style.borderColor='rgba(255,255,255,0.08)'; });
+    label.style.background='rgba(201,168,76,0.1)';
+    label.style.borderColor='rgba(201,168,76,0.35)';
+  };
+
+  window.confirmCancelVip = async function(){
+    const radio = document.querySelector('#cancel-reasons input[type=radio]:checked');
+    const reason = radio ? radio.value : '';
+    const details = document.getElementById('cancel-vip-text').value.trim();
+    if(!reason){ showToast('Selecione um motivo para continuar','error'); return; }
+
+    const btn = document.getElementById('confirm-cancel-vip-btn');
+    btn.disabled=true; btn.textContent='Enviando...';
+
+    try {
+      // Usar setDoc com ID baseado no telefone+timestamp para evitar duplicatas
+      const cancelId = (loggedPhone||'unknown').replace(/\D/g,'') + '_' + Date.now();
+      // Pegar só o nome do plano (sem o preço)
+      const planDisplay = document.getElementById('vip-plan-display')?.textContent||'';
+      const planNameOnly = planDisplay.split(' — ')[0].trim();
+      await setDoc(doc(db,'cancellation_requests', cancelId),{
+        phone:       loggedPhone||'',
+        planName:    planNameOnly,
+        reason,
+        details,
+        requestedAt: new Date().toISOString(),
+        status:      'pending',
+      });
+      // Fechar modal e sair do VIP localmente
+      document.getElementById('cancelVipModal').style.display='none';
+      if(vipUnsubscribe){ vipUnsubscribe(); vipUnsubscribe=null; }
+      clearVipMode();
+      showToast('Solicitação enviada! Gabriel entrará em contato.','success');
+      showSection('home');
+    } catch(e){
+      console.error('confirmCancelVip error:', e);
+      showToast('Erro ao enviar. Verifique sua conexão.','error');
+    } finally {
+      btn.disabled=false; btn.textContent='Confirmar cancelamento';
+    }
+  };
+
+  window.showSection = function(name){
+    const isVip = document.getElementById('nav-plans-btn').style.display === 'none';
+    const actualName = (isVip && (name === 'home' || name === 'booking')) ? 'home-vip' : name;
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.sec === name));
+    const sec = document.getElementById('sec-'+actualName);
+    if(sec) sec.classList.add('active');
+    window.scrollTo(0, 0);
+    if(name === 'appointments') renderAppointments();
+    if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
+    // VIP: ao ir para home-vip via 'booking', scroll suave até o form
+    if(isVip && name === 'booking'){
+      setTimeout(function(){
+        var form = document.querySelector('.booking-card');
+        if(form) form.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 100);
+    }
+  };
+
+  document.getElementById("login-phone").addEventListener("input",function(){
+    let v=this.value.replace(/\D/g,""); if(v.length>11) v=v.slice(0,11);
+    let out=""; if(v.length>0) out="("+v.slice(0,2); if(v.length>=3) out+=") "+v.slice(2,v.length<=10?6:7); if(v.length>=7) out+="-"+v.slice(v.length<=10?6:7);
+    this.value=out;
+  });
+  document.getElementById("login-name").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-phone").focus(); });
+  document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
+
+  window.doLogin = async function(){
+    const rawName=document.getElementById("login-name").value.trim();
+    const raw=document.getElementById("login-phone").value;
+    const digits=raw.replace(/\D/g,"");
+    const errEl=document.getElementById("login-error");
+    if(!rawName){ errEl.textContent="Digite seu nome completo."; errEl.style.display="block"; return; }
+    if(digits.length<10){ errEl.textContent="Digite um número válido com DDD."; errEl.style.display="block"; return; }
+    errEl.style.display="none";
+    const formatted=formatPhone(raw);
+    try {
+      if(!auth.currentUser) await signInAnonymously(auth);
+      loggedPhone=formatted;
+      loggedName=rawName;
+      localStorage.setItem("gbs_phone",formatted);
+      localStorage.setItem("gbs_name",rawName);
+      // Salvar perfil do cliente no Firestore (não bloqueia o login se falhar)
+      setDoc(doc(db,'clients',digits),{
+        name:rawName, phone:formatted, digits,
+        lastSeen:new Date().toISOString(),
+      },{merge:true}).catch(e=>console.warn('clients setDoc:',e));
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
+      const _psl=document.getElementById("profile-status-label"); if(_psl&&!_psl.classList.contains("profile-status-vip")) _psl.textContent=rawName.split(" ")[0]||"Cliente";
+      document.getElementById("profile-dd-phone").textContent=formatted;
+      const ddName=document.getElementById("profile-dd-name"); if(ddName) ddName.textContent=rawName;
+      document.getElementById("f-phone").value=formatted;
+      subscribeAll();
+      initPushNotifications();
+    } catch(err){
+      console.error(err);
+      errEl.textContent="Erro ao autenticar. Tente novamente.";
+      errEl.style.display="block";
+    }
+  };
+
+  window.doLogout = async function(){
+    if(!confirm("Deseja sair da sua conta?")) return;
+    loggedPhone=null; localStorage.removeItem("gbs_phone");
+    document.getElementById("login-phone").value="";
+    document.getElementById("login-screen").style.display="flex";
+    try { await auth.signOut(); } catch(e){}
+  };
+
+  function subscribeAll(){
+    onSnapshot(
+      collection(db,COL),
+      snap=>{ allAppointments=snap.docs.map(d=>({id:d.id,...d.data()})); renderSlots(); },
+      err=>{ console.error("Firestore error:",err); showToast("Erro de conexao. Verifique sua internet.","error"); }
+    );
+  }
+
+  function setMinDate(){
+    const t=new Date();
+    // Avança até o próximo dia útil (não seg nem dom)
+    while(t.getDay()===0||t.getDay()===1) t.setDate(t.getDate()+1);
+    const minStr=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate());
+    const dateInput=document.getElementById("f-date");
+    dateInput.min=minStr;
+    // Aplica filtro para desabilitar seg e dom no input date via JS
+    dateInput.addEventListener('change', function(){
+      const d=new Date(this.value+'T12:00:00');
+      const dow=d.getDay();
+      const key=DOW_KEY[dow];
+      const dayCfg=key&&SCHEDULE.days[key];
+      if(!dayCfg||!dayCfg.open){
+        showToast('Não há atendimento neste dia. Selecione outro dia.','error');
+        this.value=''; document.getElementById('timeSlots').innerHTML='';
+      }
+    },{passive:true});
+  }
+
+  window.renderSlots = function(){
+    const container=document.getElementById("timeSlots");
+    const selectedDate=document.getElementById("f-date").value;
+    const service=document.getElementById("f-service").value;
+    container.innerHTML=""; document.getElementById("f-time").value="";
+    if(!selectedDate) return;
+
+    const slots=getSlotsForDate(selectedDate);
+    if(slots.length===0){
+      container.innerHTML='<p style="color:#888;font-size:13px;grid-column:1/-1;">Sem atendimento neste dia.</p>';
+      return;
+    }
+
+    const bookedTimes=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
+    const extraCount=getServiceSlots(service)-1;
+
+    slots.forEach(time=>{
+      const extras=extraCount>0?getExtraSlots(time,extraCount):[];
+      const allNeeded=[time,...extras];
+      const extrasValid=extras.every(e=>slots.includes(e));
+      const isBooked=allNeeded.some(t=>bookedTimes.includes(t));
+      const unavailable=isBooked||!extrasValid;
+
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="time-btn";
+      btn.disabled=unavailable;
+
+      if(unavailable){
+        btn.textContent=time+(isBooked?' ✗':'');
+      } else {
+        const dur=getServiceDuration(service);
+        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
+        btn.onclick=()=>{
+          document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
+          btn.classList.add("selected");
+          document.getElementById("f-time").value=time;
+          btn.dataset.extras=JSON.stringify(extras);
+        };
+      }
+      container.appendChild(btn);
+    });
+  };
+
+  // Re-renderiza slots quando serviço muda (pois duração muda)
+  document.getElementById("f-service").addEventListener("change", ()=>{ if(document.getElementById("f-date").value) renderSlots(); });
+
+  // Armazena os dados do agendamento pendente enquanto aguarda confirmação
+  let pendingBooking = null;
+
+  async function doSaveBooking(name, phone, service, date, time, justification, extraSlots){
+    const btn=document.getElementById("submit-btn");
+    btn.disabled=true; btn.textContent="Confirmando...";
+    try {
+      const data = { name, phone, service, date, time, status:"Confirmado", createdAt:new Date().toISOString() };
+      if(justification) data.justification = justification;
+      if(extraSlots&&extraSlots.length>0) data.extraSlots = extraSlots;
+      await addDoc(collection(db,COL), data);
+
+      // Salva slots extras como agendamentos bloqueados (mesmo nome, marcados como bloqueio)
+      for(const extra of (extraSlots||[])){
+        await addDoc(collection(db,COL),{ name, phone, service, date, time:extra, status:'Bloqueado', blockedBy:time, createdAt:new Date().toISOString() });
+      }
+
+      const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+      document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
+      document.getElementById("confirmBox").classList.add("show");
+      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value="";
+      renderSlots(); showToast("Agendamento confirmado!","success");
+      setTimeout(()=>showSection("appointments"),2200);
+    } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
+    finally { btn.disabled=false; btn.textContent="Confirmar Agendamento"; }
+  }
+
+  window.submitBooking = async function(){
+    const name=document.getElementById("f-name").value.trim();
+    const phone=document.getElementById("f-phone").value;
+    const service=document.getElementById("f-service").value;
+    const date=document.getElementById("f-date").value;
+    const time=document.getElementById("f-time").value;
+    if(!name){ showToast("Informe seu nome","error"); return; }
+    if(!service){ showToast("Selecione um serviço","error"); return; }
+    if(!date){ showToast("Selecione uma data","error"); return; }
+    if(!time){ showToast("Selecione um horário","error"); return; }
+
+    // Pega extras do botão selecionado
+    const selectedBtn=document.querySelector(".time-btn.selected");
+    const extraSlots=selectedBtn&&selectedBtn.dataset.extras?JSON.parse(selectedBtn.dataset.extras):[];
+    const allNeeded=[time,...extraSlots];
+
+    if(allAppointments.some(a=>a.date===date&&allNeeded.includes(a.time))){ showToast("Esse horário foi reservado. Escolha outro.","error"); renderSlots(); return; }
+
+    const today=getTodayStr();
+    const hasExisting = allAppointments.some(a=>a.phone===phone && a.date>=today && a.status!=='Bloqueado');
+    if(hasExisting){
+      pendingBooking = { name, phone, service, date, time, extraSlots };
+      document.getElementById("justifySection").style.display="none";
+      document.getElementById("justifyText").value="";
+      document.getElementById("secondBookingModal").style.display="flex";
+      return;
+    }
+
+    await doSaveBooking(name, phone, service, date, time, null, extraSlots);
+  };
+
+  window.declineSecondBooking = function(){
+    document.getElementById("secondBookingModal").style.display="none";
+    pendingBooking = null;
+  };
+
+  window.acceptSecondBooking = function(){
+    document.getElementById("justifySection").style.display="block";
+  };
+
+  window.confirmSecondBooking = async function(){
+    const justify = document.getElementById("justifyText").value.trim();
+    if(!justify){ showToast("Por favor, informe a justificativa","error"); return; }
+    document.getElementById("secondBookingModal").style.display="none";
+    const { name, phone, service, date, time, extraSlots } = pendingBooking;
+    pendingBooking = null;
+    await doSaveBooking(name, phone, service, date, time, justify, extraSlots||[]);
+  };
+
+  async function renderAppointments(){
+    const container=document.getElementById("aptList");
+    if(!loggedPhone){ container.innerHTML='<div class="no-apt"><p>Faça login para ver seus agendamentos.</p></div>'; return; }
+    container.innerHTML='<div class="no-apt"><div class="spinner" style="margin:0 auto;"></div></div>';
+    try {
+      const q=query(collection(db,COL),where("phone","==",loggedPhone),orderBy("date"),orderBy("time"));
+      const snap=await getDocs(q);
+      const mine=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.status!=='Bloqueado');
+      if(mine.length===0){ container.innerHTML='<div class="no-apt"><div class="no-apt-icon">📅</div><p>Você não possui agendamentos ainda.</p><br><button class="cta-btn" style="font-size:14px;padding:10px 28px;" onclick="showSection(\'booking\')">Agendar agora</button></div>'; return; }
+      const today=getTodayStr();
+      const doneCount=mine.filter(a=>a.date<today).length;
+      const totalCount=mine.length;
+      const counterHtml='<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">'
+        +'<div style="flex:1;min-width:120px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:10px;padding:14px 18px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">Total</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:var(--gold);line-height:1;">'+totalCount+'</div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">agendamentos</div>'
+        +'</div>'
+        +'<div style="flex:1;min-width:120px;background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:10px;padding:14px 18px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">Realizados</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:#4ade80;line-height:1;">'+doneCount+'</div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">concluídos</div>'
+        +'</div>'
+        +'</div>';
+      container.innerHTML=counterHtml+mine.map(apt=>{
+        const fmtDate=new Date(apt.date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+        const isPast=apt.date<today;
+        const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
+        return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':'')+'">'+(isPast?'Realizado':apt.status)+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+(isPast?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
+      }).join("");
+    } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
+  }
+
+  window.cancelApt = async function(id){
+    if(!confirm("Cancelar este agendamento?")) return;
+    try {
+      const mainApt = allAppointments.find(a=>a.id===id);
+      await deleteDoc(doc(db,COL,id));
+      if(mainApt){
+        const blocked = allAppointments.filter(a=>
+          a.status==='Bloqueado' &&
+          a.date===mainApt.date &&
+          a.phone===mainApt.phone &&
+          a.blockedBy===mainApt.time
+        );
+        for(const b of blocked) await deleteDoc(doc(db,COL,b.id));
+      }
+      showToast("Agendamento cancelado","success"); renderAppointments();
+    }
+    catch(err){ console.error(err); showToast("Erro ao cancelar","error"); }
+  };
+
+  // ===== AGENDAMENTO VIP (formulário na home VIP) =====
+  // Re-renderiza slots VIP quando serviço muda
+  document.getElementById("vip-f-service").addEventListener("change", ()=>{ if(document.getElementById("vip-f-date").value) renderSlotsVip(); });
+
+  window.renderSlotsVip = function(){
+    const container = document.getElementById('timeSlotsVip');
+    const selectedDate = document.getElementById('vip-f-date').value;
+    const service = document.getElementById('vip-f-service').value;
+    container.innerHTML = ''; document.getElementById('vip-f-time').value = '';
+    if(!selectedDate) return;
+
+    const slots = getSlotsForDate(selectedDate);
+    if(slots.length===0){
+      container.innerHTML='<p style="color:#888;font-size:13px;grid-column:1/-1;">Sem atendimento neste dia.</p>';
+      return;
+    }
+
+    const bookedTimes = allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
+    const extraCount = getServiceSlots(service)-1;
+
+    slots.forEach(time=>{
+      const extras = extraCount>0?getExtraSlots(time,extraCount):[];
+      const allNeeded = [time,...extras];
+      const extrasValid = extras.every(e=>slots.includes(e));
+      const isBooked = allNeeded.some(t=>bookedTimes.includes(t));
+      const unavailable = isBooked||!extrasValid;
+
+      const btn = document.createElement('button');
+      btn.type='button'; btn.className='time-btn'; btn.disabled=unavailable;
+      if(unavailable){
+        btn.textContent=time+(isBooked?' ✗':'');
+      } else {
+        const dur=getServiceDuration(service);
+        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
+        btn.onclick=()=>{
+          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('vip-f-time').value=time;
+          btn.dataset.extras=JSON.stringify(extras);
+        };
+      }
+      container.appendChild(btn);
+    });
+  };
+
+  window.submitBookingVip = async function(){
+    const name    = document.getElementById('vip-f-name').value.trim();
+    const phone   = document.getElementById('vip-f-phone').value;
+    const service = document.getElementById('vip-f-service').value;
+    const date    = document.getElementById('vip-f-date').value;
+    const time    = document.getElementById('vip-f-time').value;
+    if(!name)   { showToast('Informe seu nome','error'); return; }
+    if(!service){ showToast('Selecione um serviço','error'); return; }
+    if(!date)   { showToast('Selecione uma data','error'); return; }
+    if(!time)   { showToast('Selecione um horário','error'); return; }
+    if(allAppointments.some(a=>a.date===date&&a.time===time)){ showToast('Esse horário foi reservado. Escolha outro.','error'); renderSlotsVip(); return; }
+    const btn = document.getElementById('vip-submit-btn');
+    btn.disabled=true; btn.textContent='Confirmando...';
+    try {
+      await addDoc(collection(db,COL),{ name,phone,service,date,time,status:'Confirmado',vip:true,createdAt:new Date().toISOString() });
+      const fmtDate=new Date(date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+      document.getElementById('confirmDetails-vip').textContent=service+' - '+fmtDate+' as '+time;
+      document.getElementById('confirmBox-vip').style.display='block';
+      document.getElementById('vip-f-name').value=''; document.getElementById('vip-f-service').value=''; document.getElementById('vip-f-date').value=''; document.getElementById('vip-f-time').value='';
+      renderSlotsVip(); showToast('Agendamento confirmado!','success');
+    } catch(e){ showToast('Erro ao confirmar. Tente novamente.','error'); }
+    finally { btn.disabled=false; btn.textContent='Confirmar Agendamento'; }
+  };
+
+  window.addEventListener("DOMContentLoaded",()=>{
+    setMinDate();
+    const hideLoading = () => { document.getElementById("app-loading").style.display="none"; };
+
+    onAuthStateChanged(auth, user => {
+      hideLoading();
+      const saved = localStorage.getItem("gbs_phone");
+      const savedName = localStorage.getItem("gbs_name");
+      if(user && saved){
+        loggedPhone = saved;
+        loggedName = savedName||'';        
+        document.getElementById("nav-phone-display").textContent = maskPhone(saved);
+        document.getElementById("profile-dd-phone").textContent = saved;
+        const _ddName=document.getElementById("profile-dd-name"); if(_ddName) _ddName.textContent=savedName||'';
+        document.getElementById("f-phone").value = saved;
+        const vipPhone = document.getElementById("vip-f-phone");
+        if(vipPhone) vipPhone.value = saved;
+        const vipDate = document.getElementById("vip-f-date");
+        if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
+        loadSchedule().then(()=>{ subscribeAll(); });
+        initPushNotifications();
+        loadPlansFromFirestore();
+        loadServicesFromFirestore();
+        loadBannersFromFirestore();
+
+        // Restáura listener de assinatura VIP em tempo real ao voltar ao site
+        listenSubscription(saved);
+      } else {
+        document.getElementById("login-screen").style.display="flex";
+      }
+      loadPlansFromFirestore();
+    showSection("home");
+    });
+
+    setTimeout(hideLoading, 6000);
+  });
+
+  // ══════════════════════════════
+  // PERFIL DROPDOWN
+  // ══════════════════════════════
+  window.toggleProfileMenu = function(){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap) wrap.classList.toggle('open');
+  };
+  window.closeProfileMenu = function(){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap) wrap.classList.remove('open');
+  };
+  // Fechar ao clicar fora
+  document.addEventListener('click', function(e){
+    const wrap = document.getElementById('profile-wrap');
+    if(wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+  });
+
+
+  // ═══════════════════════════════════════
+  // PUSH NOTIFICATIONS
+  // ═══════════════════════════════════════
+  function initPushNotifications(){
+    if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    const dismissed = localStorage.getItem('gbs_push_dismissed');
+    if(Notification.permission === 'granted'){
+      // Já tem permissão — registrar SW e escutar
+      navigator.serviceWorker.register('/sw.js').then(()=>{
+        subscribeToNotifications();
+      }).catch(e=>console.warn('SW:',e));
+      return;
+    }
+    if(dismissed) return;
+    if(Notification.permission !== 'denied'){
+      setTimeout(()=>{
+        const banner = document.getElementById('push-banner');
+        if(banner) banner.style.display='flex';
+      }, 3000);
+    }
+  }
+
+  window.allowPushNotifications = async function(){
+    dismissPushBanner();
+    try {
+      // Garantir que o SW está registrado primeiro
+      if('serviceWorker' in navigator){
+        await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+      }
+      const permission = await Notification.requestPermission();
+      if(permission === 'granted'){
+        subscribeToNotifications();
+        showToast('Notificações ativadas! ✅','success');
+        // Enviar notificação de teste imediata
+        setTimeout(()=>showPushNotification(
+          'Gabriel Barber Studio 🔔',
+          'Notificações ativadas! Você será avisado sobre promoções e novidades.',
+          'https://i.imgur.com/vcPQoRh.png'
+        ), 1000);
+      } else {
+        showToast('Permissão negada. Ative nas configurações do navegador.','error');
+      }
+    } catch(e){ console.error('push permission error:', e); }
+  };
+
+  window.dismissPushBanner = function(){
+    const banner = document.getElementById('push-banner');
+    if(banner) banner.style.display='none';
+    localStorage.setItem('gbs_push_dismissed','1');
+  };
+
+  function subscribeToNotifications(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    setDoc(doc(db,'push_subscribers',digits),{
+      phone: loggedPhone, name: loggedName||'', digits,
+      permission: 'granted',
+      subscribedAt: new Date().toISOString(),
+      active: true,
+    },{merge:true}).catch(e=>console.warn('push_subscribers:',e));
+    listenForPushNotifications(digits);
+  }
+
+  let pushUnsubscribe = null;
+  function listenForPushNotifications(digits){
+    if(pushUnsubscribe) pushUnsubscribe();
+    if(Notification.permission !== 'granted') return;
+    const q = query(collection(db,'push_notifications'), orderBy('createdAt','desc'));
+    let firstLoad = true;
+    pushUnsubscribe = onSnapshot(q, snap=>{
+      if(firstLoad){ firstLoad=false; return; }
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added'){
+          const n = change.doc.data();
+          const seenKey = 'gbs_seen_'+change.doc.id;
+          if(localStorage.getItem(seenKey)) return;
+          localStorage.setItem(seenKey,'1');
+          showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'https://i.imgur.com/vcPQoRh.png');
+        }
+      });
+    }, err=>console.error('listenForPushNotifications:',err));
+  }
+
+  async function showPushNotification(title, body, icon){
+    if(Notification.permission !== 'granted') return;
+    try {
+      // Tentar via Service Worker (funciona em todos os contextos)
+      if('serviceWorker' in navigator){
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, {
+          body,
+          icon: icon||'https://i.imgur.com/vcPQoRh.png',
+          badge: icon||'https://i.imgur.com/vcPQoRh.png',
+          tag: 'gbs-notification',
+          vibrate: [200,100,200],
+        });
+      } else {
+        // Fallback para new Notification()
+        new Notification(title,{body,icon,tag:'gbs-notification'});
+      }
+    } catch(e){
+      console.warn('Notification error:',e);
+      // Último fallback
+      try { new Notification(title,{body}); } catch(e2){}
+    }
+  }
+
+
+  // ═══════════════════════════════════════
+  // PWA — INSTALAR APP
+  // ═══════════════════════════════════════
+  let deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    // Mostrar botão de instalação se não foi dispensado
+    if(!localStorage.getItem('gbs_pwa_dismissed') && !localStorage.getItem('gbs_pwa_installed')){
+      setTimeout(()=>{
+        const banner = document.getElementById('pwa-install-banner');
+        if(banner) banner.style.display='block';
+      }, 5000);
+    }
+  });
+
+  window.installPWA = async function(){
+    if(!deferredInstallPrompt) return;
+    document.getElementById('pwa-install-banner').style.display='none';
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if(outcome === 'accepted'){
+      localStorage.setItem('gbs_pwa_installed','1');
+      showToast('App instalado com sucesso! 📲','success');
+    }
+    deferredInstallPrompt = null;
+  };
+
+  window.addEventListener('appinstalled', ()=>{
+    localStorage.setItem('gbs_pwa_installed','1');
+    document.getElementById('pwa-install-banner').style.display='none';
+  });
+
+</script>
+
+<!-- Modal cancelamento de assinatura VIP -->
+<div id="cancelVipModal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:440px;margin:16px;background:#1a1a1a;border:1px solid rgba(220,38,38,0.35);border-radius:16px;padding:32px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;">
+    <div style="text-align:center;font-size:36px;margin-bottom:12px;">😔</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;text-align:center;margin-bottom:8px;color:#f87171;">Cancelar Assinatura</div>
+    <p style="text-align:center;color:#888;font-size:13px;margin-bottom:20px;line-height:1.6;">Sentimos muito em ver você partir. Por favor, nos diga o motivo do cancelamento para que possamos melhorar.</p>
+
+    <!-- Motivos rápidos -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;" id="cancel-reasons">
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Preço alto" style="accent-color:#c9a84c;"> Preço muito alto
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Não uso os benefícios" style="accent-color:#c9a84c;"> Não estou usando os benefícios
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Mudei de barbearia" style="accent-color:#c9a84c;"> Mudei de barbearia
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Problemas financeiros" style="accent-color:#c9a84c;"> Problemas financeiros
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:13px;color:#ccc;" onclick="selectCancelReason(this)">
+        <input type="radio" name="cancel-reason" value="Outro" style="accent-color:#c9a84c;"> Outro motivo
+      </label>
+    </div>
+
+    <!-- Campo de texto adicional -->
+    <textarea id="cancel-vip-text" rows="3" placeholder="Detalhes adicionais (opcional)..."
+      style="width:100%;padding:11px 14px;border-radius:9px;background:#222;border:1px solid rgba(255,255,255,0.1);color:#e5e5e5;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;margin-bottom:16px;transition:border-color .2s;"
+      onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCancelVipModal()" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:none;color:#888;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Manter assinatura
+      </button>
+      <button onclick="confirmCancelVip()" id="confirm-cancel-vip-btn" style="flex:1;padding:12px;border-radius:9px;border:1px solid rgba(220,38,38,.4);background:rgba(220,38,38,.12);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;">
+        Confirmar cancelamento
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal de permissão de notificações -->
+<div id="push-banner" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:400px;margin:16px;background:#1a1a1a;border:1px solid var(--gold-border);border-radius:20px;padding:36px 28px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:slideUp .4s ease-out;text-align:center;">
+    <div style="width:72px;height:72px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:34px;">🔔</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;margin-bottom:10px;">Ativar Notificações</div>
+    <p style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:8px;">Deseja receber avisos sobre <strong style="color:var(--gold);">promoções, novos horários e ofertas</strong> da Gabriel Barber Studio?</p>
+    <p style="color:var(--text-dim);font-size:12px;margin-bottom:28px;">As notificações aparecem no seu dispositivo mesmo com o site fechado.</p>
+    <button onclick="allowPushNotifications()" style="width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:10px;transition:opacity .2s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+      🔔 Sim, quero receber notificações
+    </button>
+    <button onclick="dismissPushBanner()" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+      Agora não
+    </button>
+  </div>
+</div>
+
+
+<!-- Botão de instalar PWA -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:20px;right:20px;z-index:300;animation:slideInUp .4s ease-out;">
+  <button id="pwa-install-btn" onclick="installPWA()" style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;border:1px solid var(--gold-border);background:#1a1a1a;color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:background .2s;">
+    <span style="font-size:20px;">📲</span>
+    <div style="text-align:left;">
+      <div style="font-size:13px;font-weight:700;color:var(--gold);">Instalar app</div>
+      <div style="font-size:11px;color:var(--text-muted);font-weight:400;">Adicionar à tela inicial</div>
+    </div>
+  </button>
+  <button onclick="document.getElementById('pwa-install-banner').style.display='none';localStorage.setItem('gbs_pwa_dismissed','1')" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:#111;color:#888;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+</div>
+
+</body>
+</html>
