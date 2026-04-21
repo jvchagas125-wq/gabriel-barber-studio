@@ -205,6 +205,22 @@
     }
     @media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
 
+    /* Campo de data customizado */
+    .date-picker-wrap { position:relative; width:100%; }
+    .date-picker-btn {
+      width:100%; padding:11px 14px; border-radius:9px;
+      background:var(--bg2); border:1px solid rgba(255,255,255,0.1);
+      color:var(--text-muted); font-size:15px; font-family:"DM Sans",sans-serif;
+      cursor:pointer; text-align:left; display:flex; align-items:center;
+      justify-content:space-between; gap:8px; transition:border-color .2s, color .2s;
+    }
+    .date-picker-btn:hover { border-color:var(--gold); color:var(--text); }
+    .date-picker-btn.has-value { color:var(--text); border-color:var(--gold); }
+    .date-picker-btn span { flex:1; }
+    .date-picker-btn svg { flex-shrink:0; opacity:.5; }
+    .date-hidden { position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; top:0; left:0; }
+
+
     @media(max-width:768px){
       .profile-info{ display:none !important; }
       .profile-chevron{ display:none !important; }
@@ -344,7 +360,14 @@
           <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="f-date" onchange="renderSlots()" onkeydown="return false" style="cursor:pointer;"></div>
+      <div class="form-group"><label class="form-label">Data</label>
+      <div class="date-picker-wrap">
+        <button type="button" class="date-picker-btn" id="f-date-btn" onclick="openDatePicker('f-date','f-date-btn')">
+          <span id="f-date-label">📅 Clique aqui para selecionar a data</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        </button>
+        <input class="date-hidden" type="date" id="f-date" onchange="onDateChange('f-date','f-date-btn','f-date-label');renderSlots();" onkeydown="return false">
+      </div></div>
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
       <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
     </div>
@@ -472,7 +495,14 @@
           <option value="">Selecione um serviço</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Data</label><input class="form-input" type="date" id="vip-f-date" onchange="renderSlotsVip()" onkeydown="return false" style="cursor:pointer;"></div>
+      <div class="form-group"><label class="form-label">Data</label>
+      <div class="date-picker-wrap">
+        <button type="button" class="date-picker-btn" id="vip-f-date-btn" onclick="openDatePicker('vip-f-date','vip-f-date-btn')">
+          <span id="vip-f-date-label">📅 Clique aqui para selecionar a data</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        </button>
+        <input class="date-hidden" type="date" id="vip-f-date" onchange="onDateChange('vip-f-date','vip-f-date-btn','vip-f-date-label');renderSlotsVip();" onkeydown="return false">
+      </div></div>
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlotsVip"></div><input type="hidden" id="vip-f-time"></div>
       <button class="submit-btn" id="vip-submit-btn" onclick="submitBookingVip()">Confirmar Agendamento</button>
     </div>
@@ -1605,6 +1635,49 @@
       }
     } catch(e){ console.warn('loadSiteConfig:',e); }
   }
+
+
+  // ═══════════════════════════════════════
+  // DATE PICKER CUSTOMIZADO
+  // ═══════════════════════════════════════
+  window.openDatePicker = function(inputId, btnId){
+    const input = document.getElementById(inputId);
+    if(!input) return;
+    // Tornar visível temporariamente para o browser abrir o picker
+    input.style.position = 'absolute';
+    input.style.opacity  = '0';
+    input.style.width    = '100%';
+    input.style.height   = '40px';
+    input.style.top      = '0';
+    input.style.left     = '0';
+    input.style.pointerEvents = 'auto';
+    input.focus();
+    try { input.showPicker(); } catch(e){ input.click(); }
+    // Restaurar depois de um tick
+    setTimeout(()=>{
+      input.style.position = 'absolute';
+      input.style.opacity  = '0';
+      input.style.pointerEvents = 'none';
+      input.style.width = '1px';
+      input.style.height = '1px';
+    }, 300);
+  };
+
+  window.onDateChange = function(inputId, btnId, labelId){
+    const input = document.getElementById(inputId);
+    const btn   = document.getElementById(btnId);
+    const label = document.getElementById(labelId);
+    if(!input || !label) return;
+    if(input.value){
+      const d = new Date(input.value + 'T12:00:00');
+      const fmt = d.toLocaleDateString('pt-BR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+      label.textContent = fmt.charAt(0).toUpperCase() + fmt.slice(1);
+      if(btn) btn.classList.add('has-value');
+    } else {
+      label.textContent = '📅 Clique aqui para selecionar a data';
+      if(btn) btn.classList.remove('has-value');
+    }
+  };
 
 </script>
 
