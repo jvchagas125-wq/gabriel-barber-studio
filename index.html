@@ -51,7 +51,7 @@
     .profile-wrap.open .profile-chevron{transform:rotate(180deg);}
     .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:8px;display:none;z-index:100;animation:fadeIn .15s ease-out;}
     .profile-wrap.open .profile-dropdown{display:block;}
-    .profile-dd-header{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:6px;}
+    .profile-dd-header{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:6px;}
     .profile-dd-name{font-size:13px;font-weight:700;color:var(--text);}
     .profile-dd-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
     .profile-dd-vip-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--gold);}
@@ -204,6 +204,13 @@
       .vip-title{font-size:36px}
     }
     @media(max-width:420px){.plans-grid{grid-template-columns:1fr}}
+
+    @media(max-width:768px){
+      .profile-info{ display:none !important; }
+      .profile-chevron{ display:none !important; }
+      .profile-btn{ padding:4px !important; border-radius:50% !important; gap:0 !important; }
+      .profile-dropdown{ right:0; left:auto; min-width:220px; }
+    }
   </style>
 
   <script>
