@@ -243,8 +243,9 @@
       </button>
       <div class="profile-dropdown" id="profile-dropdown">
         <div class="profile-dd-header">
-          <div class="profile-dd-name" id="profile-dd-phone">—</div>
-          <div class="profile-dd-sub">Minha conta</div>
+          <div class="profile-dd-name" id="profile-dd-name" style="font-size:14px;font-weight:700;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:1px;" id="profile-dd-phone">—</div>
+          <div class="profile-dd-sub" style="margin-top:2px;">Minha conta</div>
           <div class="profile-dd-vip-badge" id="profile-vip-badge" style="display:none;">👑 <span id="profile-vip-plan-label">VIP</span></div>
         </div>
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
@@ -1023,14 +1024,16 @@
       loggedName=rawName;
       localStorage.setItem("gbs_phone",formatted);
       localStorage.setItem("gbs_name",rawName);
-      // Salvar perfil do cliente no Firestore
-      await setDoc(doc(db,'clients',digits),{
+      // Salvar perfil do cliente no Firestore (não bloqueia o login se falhar)
+      setDoc(doc(db,'clients',digits),{
         name:rawName, phone:formatted, digits,
         lastSeen:new Date().toISOString(),
-      },{merge:true});
+      },{merge:true}).catch(e=>console.warn('clients setDoc:',e));
       document.getElementById("login-screen").style.display="none";
       document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
+      const _psl=document.getElementById("profile-status-label"); if(_psl&&!_psl.classList.contains("profile-status-vip")) _psl.textContent=rawName.split(" ")[0]||"Cliente";
       document.getElementById("profile-dd-phone").textContent=formatted;
+      const ddName=document.getElementById("profile-dd-name"); if(ddName) ddName.textContent=rawName;
       document.getElementById("f-phone").value=formatted;
       subscribeAll();
     } catch(err){
@@ -1333,6 +1336,7 @@
         loggedName = savedName||'';        
         document.getElementById("nav-phone-display").textContent = maskPhone(saved);
         document.getElementById("profile-dd-phone").textContent = saved;
+        const _ddName=document.getElementById("profile-dd-name"); if(_ddName) _ddName.textContent=savedName||'';
         document.getElementById("f-phone").value = saved;
         const vipPhone = document.getElementById("vip-f-phone");
         if(vipPhone) vipPhone.value = saved;
