@@ -386,8 +386,8 @@
       <button class="nav-btn" id="nav-vip-btn" onclick="showSection('home')" style="display:none;">👑 VIP</button>
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
+      <button class="nav-btn" data-sec="ranking" onclick="showSection('ranking')">🏆 Ranking</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
-        <button class="nav-btn" onclick="showSection('ranking')">🏆 Ranking</button>
     </div>
     <div class="nav-user" id="nav-user" style="display:none;"></div>
     <!-- Novo perfil dropdown -->
@@ -1227,6 +1227,7 @@
     if(sec) sec.classList.add('active');
     window.scrollTo(0, 0);
     if(name === 'appointments') renderAppointments();
+    if(name === 'ranking') loadRanking();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
     if(isVip && name === 'booking'){
@@ -1476,6 +1477,16 @@
     if(!confirm("Cancelar este agendamento?")) return;
     try {
       const mainApt = allAppointments.find(a=>a.id===id);
+      // Salvar no histórico de cancelados antes de deletar
+      if(mainApt){
+        const cancelId = 'cancel_' + id + '_' + Date.now();
+        await setDoc(doc(db,'cancelled_appointments', cancelId),{
+          ...mainApt,
+          cancelledAt: new Date().toISOString(),
+          cancelledBy: 'cliente',
+          originalId: id,
+        });
+      }
       await deleteDoc(doc(db,COL,id));
       if(mainApt){
         const blocked = allAppointments.filter(a=>
@@ -2210,7 +2221,7 @@
 
 
 <!-- Seção Ranking -->
-<div id="sec-ranking" class="sec" style="display:none;">
+<div id="sec-ranking" class="section">
   <div class="page" style="max-width:640px;">
     <div style="text-align:center;padding:32px 0 24px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">🏆 Ranking de Clientes</div>
