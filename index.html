@@ -49,7 +49,7 @@
     .profile-status-vip{color:#c9a84c;}
     .profile-chevron{font-size:10px;color:var(--text-muted);margin-left:2px;transition:transform .2s;}
     .profile-wrap.open .profile-chevron{transform:rotate(180deg);}
-    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:8px;display:none;z-index:100;animation:fadeIn .15s ease-out;}
+    .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:280px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:8px;display:none;z-index:100;animation:fadeIn .15s ease-out;}
     .profile-wrap.open .profile-dropdown{display:block;}
     .profile-dd-header{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:6px;}
     .profile-dd-name{font-size:13px;font-weight:700;color:var(--text);}
@@ -420,9 +420,14 @@
           <div class="notif-inbox" id="notif-inbox-list">
             <div class="notif-empty">Nenhuma notificação ainda.</div>
           </div>
-          <button onclick="markAllNotifsRead()" style="width:100%;margin-top:6px;padding:6px;border-radius:7px;border:none;background:rgba(201,168,76,0.1);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;">
-            ✓ Marcar todas como lidas
-          </button>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button onclick="markAllNotifsRead()" style="flex:1;padding:6px;border-radius:7px;border:none;background:rgba(201,168,76,0.1);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;">
+              ✓ Lidas
+            </button>
+            <button onclick="clearAllNotifs()" style="flex:1;padding:6px;border-radius:7px;border:1px solid rgba(220,38,38,0.3);background:none;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;">
+              🗑️ Excluir
+            </button>
+          </div>
         </div>
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
           📍 Contato
@@ -1756,15 +1761,15 @@
   // ═══════════════════════════════════════
   let deferredInstallPrompt = null;
 
-  window.addEventListener('beforeinstallprompt', e => {
+  window.addEventListener('beforeinstallprompt', e=>{
     e.preventDefault();
     deferredInstallPrompt = e;
-    // Mostrar botão de instalação se não foi dispensado
-    if(!localStorage.getItem('gbs_pwa_dismissed') && !localStorage.getItem('gbs_pwa_installed')){
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if(!isStandalone){
       setTimeout(()=>{
-        const banner = document.getElementById('pwa-install-banner');
-        if(banner) banner.style.display='block';
-      }, 5000);
+        const b = document.getElementById('pwa-install-banner');
+        if(b) b.style.display = 'block';
+      }, 4000);
     }
   });
 
@@ -1898,7 +1903,11 @@
       const all = snap.docs.map(d=>({id:d.id,...d.data()}));
 
       // Verificar notificações não vistas
-      const unseen = all.filter(n=>{
+      const clearedAt = localStorage.getItem('gbs_notifs_cleared');
+      const visible = clearedAt
+        ? all.filter(n=> n.createdAt && n.createdAt > clearedAt)
+        : all;
+      const unseen = visible.filter(n=>{
         const key = 'gbs_notif_read_'+n.id;
         return !localStorage.getItem(key);
       });
@@ -1915,7 +1924,7 @@
       }
 
       // Renderizar inbox
-      renderNotifInbox(all);
+      renderNotifInbox(visible);
 
       // Mostrar modal para notificações novas (não no primeiro load)
       if(!firstLoad){
@@ -1979,6 +1988,29 @@
       countLabel.textContent = unread > 9 ? '9+' : unread;
       countLabel.style.display = unread > 0 ? 'inline-block' : 'none';
     }
+  };
+
+  window.clearAllNotifs = function(){
+    if(!confirm('Excluir todas as notificações?')) return;
+    // Marcar todas como lidas E ocultar do inbox
+    const list = document.getElementById('notif-inbox-list');
+    if(list){
+      list.querySelectorAll('.notif-item').forEach(el=>{
+        el.style.display='none';
+      });
+      list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
+    }
+    // Salvar IDs de todas como "deletadas" no localStorage
+    document.querySelectorAll('.notif-item').forEach(el=>{
+      const id = el.dataset && el.dataset.id;
+      if(id) localStorage.setItem('gbs_notif_del_'+id,'1');
+    });
+    // Limpar badge
+    const countLabel = document.getElementById('notif-count-label');
+    if(countLabel) countLabel.style.display='none';
+    // Salvar flag de limpeza com timestamp
+    localStorage.setItem('gbs_notifs_cleared', new Date().toISOString());
+    showToast('Notificações excluídas','success');
   };
 
   window.markAllNotifsRead = function(){
