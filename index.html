@@ -182,7 +182,13 @@
         flex-direction: row !important;
         align-items: stretch !important;
         gap: 0 !important;
-        min-height: 96px !important;
+        height: 110px !important;
+        overflow: hidden !important;
+      }
+      /* Quando expandido via "ver mais", remove a altura fixa */
+      .service-card.expanded{
+        height: auto !important;
+        overflow: visible !important;
       }
       /* Lado esquerdo: ícone + nome + preço */
       .service-card-header{
@@ -804,6 +810,9 @@
     hidden.forEach(el=>{ el.style.display = isOpen ? 'none' : ''; });
     btn.dataset.open = isOpen ? '0' : '1';
     btn.textContent  = isOpen ? '+ ver mais ('+hidden.length+')' : '− ver menos';
+    // Expande/contrai o card no mobile
+    const card = btn.closest('.service-card');
+    if(card) card.classList.toggle('expanded', !isOpen);
   };
 
   function updateBookingSelects(){
