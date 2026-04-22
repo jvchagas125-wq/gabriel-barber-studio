@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/webhook", "destination": "/api/webhook.js" },
     { "source": "/api/check-subscription", "destination": "/api/check-subscription.js" },
+    { "source": "/api/notify", "destination": "/api/notify.js" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
