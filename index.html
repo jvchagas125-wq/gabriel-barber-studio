@@ -354,6 +354,137 @@
       .profile-dropdown{ position:absolute; right:0 !important; left:auto !important; min-width:220px; top:calc(100% + 8px); }
       .nav-inner{ flex-wrap:nowrap; }
     }
+
+    /* ===== MENU HAMBURGUER MOBILE ===== */
+    .hamburger-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      flex-shrink: 0;
+      z-index: 50;
+    }
+    .hamburger-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text-muted);
+      border-radius: 2px;
+      transition: all .25s ease;
+    }
+    .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); background: var(--gold); }
+    .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: var(--gold); }
+
+    .mob-menu-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+    }
+    .mob-menu-overlay.open { display: block; }
+
+    .mob-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 72vw;
+      max-width: 280px;
+      z-index: 46;
+      background: #111;
+      border-right: 1px solid rgba(201,168,76,0.2);
+      transform: translateX(-100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow-y: auto;
+    }
+    .mob-menu.open { transform: translateX(0); }
+
+    .mob-menu-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mob-menu-header img { height: 32px; object-fit: contain; }
+
+    .mob-menu-items {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 0;
+      flex: 1;
+    }
+    .mob-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: "DM Sans", sans-serif;
+      transition: background .15s, color .15s;
+      border-radius: 0;
+    }
+    .mob-menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .mob-menu-item.active { color: var(--gold); background: rgba(201,168,76,0.08); }
+    .mob-menu-item .mob-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+
+    .mob-menu-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    @media (max-width: 640px) {
+      .hamburger-btn { display: flex; }
+      .nav-links { display: none !important; }
+    }
+
+    /* ===== BOTÃO PRÓXIMA PÁGINA (só mobile) ===== */
+    .mob-next-btn {
+      display: none;
+    }
+    @media (max-width: 640px) {
+      .mob-next-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: calc(100% - 32px);
+        margin: 28px auto 8px;
+        padding: 14px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--gold-border);
+        background: var(--gold-dim);
+        color: var(--gold);
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .2s;
+      }
+      .mob-next-btn:hover { background: rgba(201,168,76,0.25); }
+      .mob-next-btn .arr { font-size: 18px; }
+    }
   </style>
 
   <script>
@@ -386,9 +517,43 @@
   </div>
 </div>
 
+<!-- Overlay e menu lateral mobile -->
+<div class="mob-menu-overlay" id="mob-overlay" onclick="closeMobMenu()"></div>
+<div class="mob-menu" id="mob-menu">
+  <div class="mob-menu-header">
+    <img src="https://i.imgur.com/vcPQoRh.png" alt="Gabriel Barber Studio">
+  </div>
+  <div class="mob-menu-items">
+    <button class="mob-menu-item active" data-sec="home" onclick="mobNav('home')">
+      <span class="mob-icon">🏠</span> Início
+    </button>
+    <button class="mob-menu-item" data-sec="booking" onclick="mobNav('booking')">
+      <span class="mob-icon">📅</span> Agendar
+    </button>
+    <button class="mob-menu-item" data-sec="appointments" onclick="mobNav('appointments')">
+      <span class="mob-icon">🕑</span> Meus Horários
+    </button>
+    <button class="mob-menu-item" id="mob-plans-btn" data-sec="plans" onclick="mobNav('plans')">
+      <span class="mob-icon">👑</span> Planos
+    </button>
+    <button class="mob-menu-item" data-sec="ranking" onclick="mobNav('ranking')">
+      <span class="mob-icon">🏆</span> Ranking
+    </button>
+    <button class="mob-menu-item" data-sec="contact" onclick="mobNav('contact')">
+      <span class="mob-icon">📞</span> Contato
+    </button>
+  </div>
+  <div class="mob-menu-footer">Gabriel Barber Studio</div>
+</div>
+
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Gabriel Barber Studio" style="height:38px;width:auto;object-fit:contain;display:block;"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobMenu()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-logo"><img src="https://i.imgur.com/vcPQoRh.png" alt="Gabriel Barber Studio" style="height:38px;width:auto;object-fit:contain;display:block;"></div>
+    </div>
     <div class="nav-links">
       <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Início</button>
       <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
@@ -464,6 +629,9 @@
       <div style="grid-column:1/-1;text-align:center;padding:32px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
+    <button class="mob-next-btn" onclick="showSection('booking')">
+      📅 Ir para Agendar <span class="arr">→</span>
+    </button>
   </div>
 </div>
 
@@ -515,6 +683,9 @@
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
       <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
     </div>
+    <button class="mob-next-btn" onclick="showSection('appointments')">
+      🕑 Ver Meus Horários <span class="arr">→</span>
+    </button>
   </div>
 </div>
 
@@ -522,6 +693,9 @@
   <div class="page" style="max-width:700px;">
     <h2 class="section-title gold-gradient">Meus Horários</h2>
     <div id="aptList"></div>
+    <button class="mob-next-btn" onclick="showSection('plans')">
+      👑 Ver Planos <span class="arr">→</span>
+    </button>
   </div>
 </div>
 
@@ -540,6 +714,9 @@
       <div id="hours-breaks-dynamic"></div>
       <!-- Dias fechados agora são controlados pelo painel admin -->
     </div>
+    <button class="mob-next-btn" onclick="showSection('home')">
+      🏠 Voltar ao Início <span class="arr">→</span>
+    </button>
   </div>
 </div>
 
@@ -557,6 +734,9 @@
       <p><strong>Obs. 1:</strong> As vantagens das assinaturas não são acumulativas. O estábelecimento não se responsabiliza pelo não aproveitamento do serviço/benefício contratado em conformidade com o plano.</p>
       <p><strong>Obs. 2:</strong> Os valores poderão passar por reajuste semestral ou anual com aviso prévio ao contratante.</p>
     </div>
+    <button class="mob-next-btn" onclick="showSection('contact')">
+      📞 Ver Contato <span class="arr">→</span>
+    </button>
   </div>
 </div>
 
@@ -1234,6 +1414,32 @@
     }
   };
 
+  // ===== MENU HAMBURGUER MOBILE =====
+  function toggleMobMenu(){
+    const menu = document.getElementById('mob-menu');
+    const overlay = document.getElementById('mob-overlay');
+    const btn = document.getElementById('hamburger-btn');
+    const isOpen = menu.classList.contains('open');
+    menu.classList.toggle('open', !isOpen);
+    overlay.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+  }
+
+  function closeMobMenu(){
+    document.getElementById('mob-menu').classList.remove('open');
+    document.getElementById('mob-overlay').classList.remove('open');
+    document.getElementById('hamburger-btn').classList.remove('open');
+  }
+
+  window.mobNav = function(sec){
+    closeMobMenu();
+    showSection(sec);
+    // Atualizar itens ativos no menu mobile
+    document.querySelectorAll('.mob-menu-item').forEach(b=>{
+      b.classList.toggle('active', b.dataset.sec === sec);
+    });
+  };
+
   window.showSection = function(name){
     const isVip = document.getElementById('nav-plans-btn').style.display === 'none';
     const actualName = (isVip && (name === 'home' || name === 'booking')) ? 'home-vip' : name;
@@ -1242,6 +1448,10 @@
     const sec = document.getElementById('sec-'+actualName);
     if(sec) sec.classList.add('active');
     window.scrollTo(0, 0);
+    // Sincronizar estado ativo no menu mobile
+    document.querySelectorAll('.mob-menu-item').forEach(b=>{
+      b.classList.toggle('active', b.dataset.sec === name);
+    });
     if(name === 'appointments') renderAppointments();
     if(name === 'ranking') loadRanking();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
