@@ -1480,12 +1480,19 @@
       // Salvar no histórico de cancelados antes de deletar
       if(mainApt){
         const cancelId = 'cancel_' + id + '_' + Date.now();
-        await setDoc(doc(db,'cancelled_appointments', cancelId),{
-          ...mainApt,
-          cancelledAt: new Date().toISOString(),
-          cancelledBy: 'cliente',
-          originalId: id,
-        });
+        const record = {
+          name:          mainApt.name          || '',
+          phone:         mainApt.phone         || '',
+          service:       mainApt.service       || '',
+          date:          mainApt.date          || '',
+          time:          mainApt.time          || '',
+          status:        mainApt.status        || '',
+          justification: mainApt.justification || '',
+          cancelledAt:   new Date().toISOString(),
+          cancelledBy:   'cliente',
+          originalId:    id,
+        };
+        await setDoc(doc(db,'cancelled_appointments', cancelId), record);
       }
       await deleteDoc(doc(db,COL,id));
       if(mainApt){
