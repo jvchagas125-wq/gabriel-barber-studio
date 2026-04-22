@@ -387,6 +387,7 @@
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
+        <button class="nav-btn" onclick="showSection('ranking')">🏆 Ranking</button>
     </div>
     <div class="nav-user" id="nav-user" style="display:none;"></div>
     <!-- Novo perfil dropdown -->
@@ -2053,6 +2054,70 @@
     clearTimeout(notifModalTimer);
   };
 
+
+  // ═══════════════════════════════════════
+  // RANKING DE CLIENTES
+  // ═══════════════════════════════════════
+  async function loadRanking(){
+    try {
+      const snap = await getDoc(doc(db,'config','ranking'));
+      if(!snap.exists()) return;
+      const { top30 } = snap.data();
+      if(!top30 || !top30.length) return;
+      renderRankingTop3(top30.slice(0,3));
+      renderRankingList(top30);
+    } catch(e){ console.warn('loadRanking:',e); }
+  }
+
+  function renderRankingTop3(top3){
+    const el = document.getElementById('rank-top3');
+    if(!el) return;
+    const medals = ['🥇','🥈','🥉'];
+    const colors = ['#c9a84c','#aaa','#cd7f32'];
+    const order  = [1,0,2]; // 2º, 1º, 3º (pódio)
+    el.innerHTML = order.map(i=>{
+      const p = top3[i];
+      if(!p) return '<div></div>';
+      const isFirst = i===0;
+      return '<div style="background:var(--bg2);border:1px solid rgba('+
+        (isFirst?'201,168,76':'255,255,255')+',0.'+(isFirst?'3':'08')+');border-radius:14px;padding:18px 12px;text-align:center;'+(isFirst?'transform:translateY(-8px);':'')+'">'
+        +'<div style="font-size:'+(isFirst?'40':'32')+'px;margin-bottom:8px;">'+medals[i]+'</div>'
+        +'<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text);">'+maskName(p.name)+'</div>'
+        +'<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:'+colors[i]+';">'+p.count+'</div>'
+        +'<div style="font-size:10px;color:var(--text-dim);">'+(p.count===1?'visita':'visitas')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+
+  function maskName(name){
+    if(!name || name==='—') return '—';
+    const parts = name.trim().split(' ');
+    if(parts.length===1) return parts[0].charAt(0).toUpperCase()+parts[0].slice(1,3)+'***';
+    return parts[0]+' '+parts[parts.length-1].charAt(0)+'.';
+  }
+
+  function renderRankingList(top30){
+    const el = document.getElementById('rank-list');
+    if(!el) return;
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;">'
+      +'<thead><tr style="background:rgba(0,0,0,0.2);">'
+      +'<th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--text-dim);font-weight:700;">#</th>'
+      +'<th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--text-dim);font-weight:700;">CLIENTE</th>'
+      +'<th style="padding:10px 14px;text-align:center;font-size:11px;color:var(--text-dim);font-weight:700;">VISITAS</th>'
+      +'</tr></thead><tbody>'
+      + top30.map((p,i)=>{
+          const pos = i+1;
+          const medal = pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'';
+          const hl = pos<=3 ? 'background:rgba(201,168,76,0.05);' : '';
+          return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);'+hl+'">'
+            +'<td style="padding:11px 14px;font-size:13px;color:var(--text-muted);">'+( medal||pos+'º')+'</td>'
+            +'<td style="padding:11px 14px;font-weight:600;font-size:13px;">'+maskName(p.name)+'</td>'
+            +'<td style="padding:11px 14px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">'+p.count+'</td>'
+            +'</tr>';
+        }).join('')
+      +'</tbody></table>';
+  }
+
 </script>
 
 <!-- Modal cancelamento de assinatura VIP -->
@@ -2141,6 +2206,27 @@
   </div>
   <div class="notif-modal-body" id="notif-modal-body"></div>
   <div class="notif-modal-time" id="notif-modal-time"></div>
+</div>
+
+
+<!-- Seção Ranking -->
+<div id="sec-ranking" class="sec" style="display:none;">
+  <div class="page" style="max-width:640px;">
+    <div style="text-align:center;padding:32px 0 24px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">🏆 Ranking de Clientes</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-top:6px;">Os clientes mais fiéis da Gabriel Barber Studio</div>
+    </div>
+
+    <!-- TOP 3 destaque -->
+    <div id="rank-top3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;"></div>
+
+    <!-- Lista TOP 30 -->
+    <div style="background:var(--bg2);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+      <div id="rank-list" style="padding:0;">
+        <div style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">Carregando ranking...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </body>
