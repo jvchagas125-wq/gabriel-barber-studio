@@ -1262,9 +1262,12 @@
       localStorage.setItem("gbs_phone",formatted);
       localStorage.setItem("gbs_name",rawName);
       // Salvar perfil do cliente no Firestore (não bloqueia o login se falhar)
+      const loginNow = new Date().toISOString();
+      // Marca o horário deste login para filtrar notificações antigas
+      localStorage.setItem('gbs_login_at_'+digits, loginNow);
       setDoc(doc(db,'clients',digits),{
         name:rawName, phone:formatted, digits,
-        lastSeen:new Date().toISOString(),
+        lastSeen:loginNow,
       },{merge:true}).catch(e=>console.warn('clients setDoc:',e));
       document.getElementById("login-screen").style.display="none";
       document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
@@ -1273,7 +1276,7 @@
       const ddName=document.getElementById("profile-dd-name"); if(ddName) ddName.textContent=rawName;
       document.getElementById("f-phone").value=formatted;
       subscribeAll();
-      initPushNotifications();
+      initPushNotifications(digits);
     } catch(err){
       console.error(err);
       errEl.textContent="Erro ao autenticar. Tente novamente.";
@@ -1639,9 +1642,11 @@
   // ═══════════════════════════════════════
   // PUSH NOTIFICATIONS
   // ═══════════════════════════════════════
-  function initPushNotifications(){
+  function initPushNotifications(digits){
     if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    const dismissed = localStorage.getItem('gbs_push_dismissed');
+    // Chave vinculada ao cliente — cada cliente tem seu próprio estado de permissão
+    const dismissKey = digits ? 'gbs_push_dismissed_'+digits : 'gbs_push_dismissed';
+    const dismissed = localStorage.getItem(dismissKey);
     if(Notification.permission === 'granted'){
       registerFCM();
       return;
@@ -1650,7 +1655,11 @@
     if(Notification.permission !== 'denied'){
       setTimeout(()=>{
         const banner = document.getElementById('push-banner');
-        if(banner) banner.style.display='flex';
+        if(banner){
+          // Guardar o digits no banner para usar no dismiss
+          banner.dataset.digits = digits||'';
+          banner.style.display='flex';
+        }
       }, 3000);
     }
   }
@@ -1714,8 +1723,11 @@
 
   window.dismissPushBanner = function(){
     const banner = document.getElementById('push-banner');
+    const digits = banner ? banner.dataset.digits : '';
     if(banner) banner.style.display='none';
-    localStorage.setItem('gbs_push_dismissed','1');
+    // Salva chave vinculada ao cliente para não mostrar novamente neste dispositivo
+    const dismissKey = digits ? 'gbs_push_dismissed_'+digits : 'gbs_push_dismissed';
+    localStorage.setItem(dismissKey,'1');
   };
 
   function subscribeToNotifications(){
@@ -1738,10 +1750,14 @@
     let firstLoad = true;
     pushUnsubscribe = onSnapshot(q, snap=>{
       if(firstLoad){ firstLoad=false; return; }
+      // Timestamp do login deste cliente neste dispositivo
+      const loginAt = localStorage.getItem('gbs_login_at_'+digits) || '';
       snap.docChanges().forEach(change=>{
         if(change.type === 'added'){
           const n = change.doc.data();
-          const seenKey = 'gbs_seen_'+change.doc.id;
+          // Ignorar notificações anteriores ao login deste cliente
+          if(loginAt && n.createdAt && n.createdAt <= loginAt) return;
+          const seenKey = 'gbs_seen_'+digits+'_'+change.doc.id;
           if(localStorage.getItem(seenKey)) return;
           localStorage.setItem(seenKey,'1');
           showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'https://i.imgur.com/vcPQoRh.png');
@@ -1921,10 +1937,13 @@
     notifUnsubscribe = onSnapshot(q, snap=>{
       const all = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-      // Verificar notificações não vistas
+      // Filtrar notificações: mostrar apenas as posteriores ao login deste cliente neste dispositivo
+      const digits2 = loggedPhone ? loggedPhone.replace(/\D/g,'') : '';
+      const loginAt2 = (digits2 && localStorage.getItem('gbs_login_at_'+digits2)) || '';
       const clearedAt = localStorage.getItem('gbs_notifs_cleared') || '';
-      // Filtrar notificações posteriores ao último clear
-      const visible = all.filter(n=> !clearedAt || (n.createdAt && n.createdAt > clearedAt));
+      // Usa o mais recente entre loginAt e clearedAt como cutoff
+      const cutoff = loginAt2 > clearedAt ? loginAt2 : clearedAt;
+      const visible = all.filter(n=> !cutoff || (n.createdAt && n.createdAt > cutoff));
       const unseen = visible.filter(n=> !localStorage.getItem('gbs_notif_read_'+n.id));
 
       // Atualizar badge
