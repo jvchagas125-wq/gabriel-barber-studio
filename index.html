@@ -23,6 +23,7 @@
       --text: #e5e5e5; --text-muted: #888; --text-dim: #555; --red: #dc2626; --green: #16a34a;
     }
     html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
+    @media (max-width: 768px) { html, body { background-attachment: scroll; } }
 
     body::before{content:'';position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.72);pointer-events:none;}
         .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
