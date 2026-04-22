@@ -4,5 +4,15 @@
     { "source": "/api/check-subscription", "destination": "/api/check-subscription.js" },
     { "source": "/api/notify", "destination": "/api/notify.js" },
     { "source": "/", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, x-notify-secret, x-webhook-secret" }
+      ]
+    }
   ]
 }
