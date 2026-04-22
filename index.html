@@ -1903,14 +1903,10 @@
       const all = snap.docs.map(d=>({id:d.id,...d.data()}));
 
       // Verificar notificações não vistas
-      const clearedAt = localStorage.getItem('gbs_notifs_cleared');
-      const visible = clearedAt
-        ? all.filter(n=> n.createdAt && n.createdAt > clearedAt)
-        : all;
-      const unseen = visible.filter(n=>{
-        const key = 'gbs_notif_read_'+n.id;
-        return !localStorage.getItem(key);
-      });
+      const clearedAt = localStorage.getItem('gbs_notifs_cleared') || '';
+      // Filtrar notificações posteriores ao último clear
+      const visible = all.filter(n=> !clearedAt || (n.createdAt && n.createdAt > clearedAt));
+      const unseen = visible.filter(n=> !localStorage.getItem('gbs_notif_read_'+n.id));
 
       // Atualizar badge
       const countLabel = document.getElementById('notif-count-label');
@@ -1942,9 +1938,12 @@
       // Ao entrar no site: mostrar modal da notificação mais recente não lida
       if(firstLoad && unseen.length > 0){
         const latest = unseen[0];
-        setTimeout(()=>{
-          showNotifModal(latest.title||'Gabriel Barber Studio', latest.body||'', latest.createdAt||'', latest.id);
-        }, 1500);
+        // Só mostrar se não foi lida ainda
+        if(!localStorage.getItem('gbs_notif_read_'+latest.id)){
+          setTimeout(()=>{
+            showNotifModal(latest.title||'Gabriel Barber Studio', latest.body||'', latest.createdAt||'', latest.id);
+          }, 1500);
+        }
       }
 
       firstLoad = false;
@@ -1992,26 +1991,20 @@
 
   window.clearAllNotifs = function(){
     if(!confirm('Excluir todas as notificações?')) return;
-    // Marcar todas como lidas E ocultar do inbox
+    // Salvar timestamp — só mostrar notificações APÓS esse momento
+    const now = new Date().toISOString();
+    localStorage.setItem('gbs_notifs_cleared', now);
+    // Limpar inbox visual
     const list = document.getElementById('notif-inbox-list');
-    if(list){
-      list.querySelectorAll('.notif-item').forEach(el=>{
-        el.style.display='none';
-      });
-      list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
-    }
-    // Salvar IDs de todas como "deletadas" no localStorage
-    document.querySelectorAll('.notif-item').forEach(el=>{
-      const id = el.dataset && el.dataset.id;
-      if(id) localStorage.setItem('gbs_notif_del_'+id,'1');
-    });
-    // Limpar badge
-    const countLabel = document.getElementById('notif-count-label');
-    if(countLabel) countLabel.style.display='none';
-    // Salvar flag de limpeza com timestamp
-    localStorage.setItem('gbs_notifs_cleared', new Date().toISOString());
+    if(list) list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
+    // Esconder inbox
+    const wrap = document.getElementById('notif-inbox-wrap');
+    if(wrap) wrap.style.display='none';
+    // Zerar badge
+    const badge = document.getElementById('notif-count-label');
+    if(badge) badge.style.display='none';
     showToast('Notificações excluídas','success');
-  };
+  };;
 
   window.markAllNotifsRead = function(){
     document.querySelectorAll('.notif-item').forEach(el=>{
