@@ -1,14 +1,26 @@
-// Vercel Serverless Function — Enviar FCM via Firebase Admin SDK
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
+function getPrivateKey() {
+  const key = process.env.FIREBASE_PRIVATE_KEY || '';
+  // Tratar todas as variações possíveis do Vercel
+  if (key.includes('\\n')) return key.replace(/\\n/g, '\n');
+  if (key.includes('\n')) return key;
+  // Chave sem quebras — adicionar manualmente
+  return key
+    .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+    .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----\n');
+}
+
 if (!getApps().length) {
+  const privateKey = getPrivateKey();
+  console.log('Key starts with:', privateKey.substring(0, 30));
   initializeApp({
     credential: cert({
       projectId:   process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey:  (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      privateKey,
     }),
   });
 }
@@ -21,7 +33,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-notify-secret');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   if (req.headers['x-notify-secret'] !== process.env.NOTIFY_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -31,24 +43,21 @@ export default async function handler(req, res) {
   if (!title) return res.status(400).json({ error: 'title obrigatorio' });
 
   try {
-    // Buscar tokens FCM ativos
     const snap = await db.collection('push_subscribers')
       .where('active', '==', true)
       .get();
 
     const tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
-    console.log('Tokens encontrados:', tokens.length);
+    console.log('Tokens:', tokens.length);
 
     if (!tokens.length) {
-      return res.status(200).json({ sent: 0, message: 'Nenhum subscriber com token FCM' });
+      return res.status(200).json({ sent: 0, message: 'Sem tokens FCM' });
     }
 
-    // Enviar via Firebase Admin SDK (multicast)
-    const message = {
+    const response = await messaging.sendEachForMulticast({
       notification: {
         title,
         body: body || '',
-        imageUrl: icon || 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png',
       },
       webpush: {
         notification: {
@@ -56,49 +65,21 @@ export default async function handler(req, res) {
           body: body || '',
           icon: icon || 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png',
           badge: 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png',
-          vibrate: [200, 100, 200],
         },
-        fcmOptions: {
-          link: 'https://gabriel-barber-studio.vercel.app',
-        },
+        fcmOptions: { link: 'https://gabriel-barber-studio.vercel.app' },
       },
       tokens,
-    };
-
-    const response = await messaging.sendEachForMulticast(message);
-    console.log('FCM success:', response.successCount, 'failed:', response.failureCount);
-
-    // Remover tokens inválidos
-    const invalidTokens = [];
-    response.responses.forEach((r, i) => {
-      if (!r.success) {
-        console.error('Token error:', tokens[i], r.error?.code);
-        if (r.error?.code === 'messaging/registration-token-not-registered' ||
-            r.error?.code === 'messaging/invalid-registration-token') {
-          invalidTokens.push(tokens[i]);
-        }
-      }
     });
 
-    // Desativar tokens inválidos no Firestore
-    if (invalidTokens.length > 0) {
-      const batch = db.batch();
-      snap.docs.forEach(d => {
-        if (invalidTokens.includes(d.data().fcmToken)) {
-          batch.update(d.ref, { active: false });
-        }
-      });
-      await batch.commit();
-    }
+    console.log('Sent:', response.successCount, 'Failed:', response.failureCount);
 
     return res.status(200).json({
-      sent: response.successCount,
+      sent:   response.successCount,
       failed: response.failureCount,
-      total: tokens.length,
+      total:  tokens.length,
     });
   } catch (e) {
-    console.error('notify handler error:', e);
+    console.error('Error:', e.message);
     return res.status(500).json({ error: e.message });
   }
 }
-
