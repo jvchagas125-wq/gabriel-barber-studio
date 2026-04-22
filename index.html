@@ -2077,13 +2077,25 @@
   // RANKING DE CLIENTES
   // ═══════════════════════════════════════
   async function loadRanking(){
+    const listEl = document.getElementById('rank-list');
+    const top3El = document.getElementById('rank-top3');
     try {
       const snap = await getDoc(doc(db,'config','ranking'));
-      if(!snap.exists()) return;
+      if(!snap.exists() || !snap.data().top30 || !snap.data().top30.length){
+        if(top3El) top3El.innerHTML = '';
+        if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:14px;">Nenhum agendamento realizado ainda.<br><span style="font-size:12px;">O ranking aparece após a conclusão dos atendimentos.</span></div>';
+        return;
+      }
       const { top30 } = snap.data();
-      if(!top30 || !top30.length) return;
-      renderRankingTop3(top30.slice(0,3));
-      renderRankingList(top30);
+      // Filtra apenas quem tem pelo menos 1 visita realizada
+      const withVisits = top30.filter(p => p.count > 0);
+      if(!withVisits.length){
+        if(top3El) top3El.innerHTML = '';
+        if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:14px;">Nenhum agendamento realizado ainda.</div>';
+        return;
+      }
+      renderRankingTop3(withVisits.slice(0,3));
+      renderRankingList(withVisits);
     } catch(e){ console.warn('loadRanking:',e); }
   }
 
