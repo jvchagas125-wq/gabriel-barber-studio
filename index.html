@@ -736,9 +736,13 @@
 
   async function loadServicesFromFirestore(){
     try {
-      const snap = await getDoc(doc(db,'config','services'));
-      if(snap.exists() && snap.data().list) SERVICES_DATA = snap.data().list;
-    } catch(e){ console.error('loadServicesFromFirestore',e); }
+      const snap = await Promise.race([
+        getDoc(doc(db,'config','services')),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))
+      ]);
+      if(snap && snap.exists && snap.exists() && snap.data().list) SERVICES_DATA = snap.data().list;
+    } catch(e){ console.warn('loadServicesFromFirestore:', e.message); }
+    // Sempre renderiza, mesmo com erro ou timeout
     renderServicesGrid();
     updateBookingSelects();
   }
@@ -1668,7 +1672,11 @@
     try {
       // Registrar o SW do Firebase Messaging
       const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      await navigator.serviceWorker.ready;
+      // Timeout de 5s para não travar caso o SW demore
+      await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('SW timeout')),5000))
+      ]);
 
       // Obter token FCM
       const token = await getToken(messaging, {
