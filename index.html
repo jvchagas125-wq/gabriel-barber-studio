@@ -459,31 +459,36 @@
       .nav-links { display: none !important; }
     }
 
-    /* ===== BOTÃO PRÓXIMA PÁGINA (só mobile) ===== */
-    .mob-next-btn {
+    /* ===== BOTÕES NAVEGAÇÃO MOBILE (só mobile) ===== */
+    .mob-nav-row {
       display: none;
     }
     @media (max-width: 640px) {
-      .mob-next-btn {
+      .mob-nav-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: calc(100% - 32px);
-        margin: 28px auto 8px;
-        padding: 14px 20px;
-        border-radius: 12px;
-        border: 1px solid var(--gold-border);
-        background: var(--gold-dim);
-        color: var(--gold);
-        font-family: "DM Sans", sans-serif;
-        font-size: 15px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: background .2s;
+        justify-content: space-between;
+        margin: 32px 16px 4px;
+        padding: 0 4px;
       }
-      .mob-next-btn:hover { background: rgba(201,168,76,0.25); }
-      .mob-next-btn .arr { font-size: 18px; }
+      .mob-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: none;
+        color: var(--text-dim);
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: color .15s, border-color .15s;
+      }
+      .mob-nav-btn:hover { color: var(--text-muted); border-color: rgba(255,255,255,0.15); }
+      .mob-nav-btn.prev { }
+      .mob-nav-btn.next { }
     }
   </style>
 
@@ -629,9 +634,7 @@
       <div style="grid-column:1/-1;text-align:center;padding:32px 0;"><div class="spinner" style="margin:0 auto;"></div></div>
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
-    <button class="mob-next-btn" onclick="showSection('booking')">
-      📅 Ir para Agendar <span class="arr">→</span>
-    </button>
+
   </div>
 </div>
 
@@ -683,9 +686,10 @@
       <div class="form-group"><label class="form-label">Horário</label><div class="time-grid" id="timeSlots"></div><input type="hidden" id="f-time"></div>
       <button class="submit-btn" id="submit-btn" onclick="submitBooking()">Confirmar Agendamento</button>
     </div>
-    <button class="mob-next-btn" onclick="showSection('appointments')">
-      🕑 Ver Meus Horários <span class="arr">→</span>
-    </button>
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn prev" onclick="showSection('home')" title="Início">← Início</button>
+      <button class="mob-nav-btn next" onclick="showSection('appointments')">🕑 Meus Horários →</button>
+    </div>
   </div>
 </div>
 
@@ -693,9 +697,10 @@
   <div class="page" style="max-width:700px;">
     <h2 class="section-title gold-gradient">Meus Horários</h2>
     <div id="aptList"></div>
-    <button class="mob-next-btn" onclick="showSection('plans')">
-      👑 Ver Planos <span class="arr">→</span>
-    </button>
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn prev" onclick="showSection('booking')" title="Agendar">← Agendar</button>
+      <button class="mob-nav-btn next" onclick="showSection('plans')">👑 Planos →</button>
+    </div>
   </div>
 </div>
 
@@ -714,9 +719,10 @@
       <div id="hours-breaks-dynamic"></div>
       <!-- Dias fechados agora são controlados pelo painel admin -->
     </div>
-    <button class="mob-next-btn" onclick="showSection('home')">
-      🏠 Voltar ao Início <span class="arr">→</span>
-    </button>
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn prev" onclick="showSection('plans')" title="Planos">← Planos</button>
+      <button class="mob-nav-btn next" onclick="showSection('home')">🏠 Início →</button>
+    </div>
   </div>
 </div>
 
@@ -734,9 +740,10 @@
       <p><strong>Obs. 1:</strong> As vantagens das assinaturas não são acumulativas. O estábelecimento não se responsabiliza pelo não aproveitamento do serviço/benefício contratado em conformidade com o plano.</p>
       <p><strong>Obs. 2:</strong> Os valores poderão passar por reajuste semestral ou anual com aviso prévio ao contratante.</p>
     </div>
-    <button class="mob-next-btn" onclick="showSection('contact')">
-      📞 Ver Contato <span class="arr">→</span>
-    </button>
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn prev" onclick="showSection('appointments')" title="Meus Horários">← Horários</button>
+      <button class="mob-nav-btn next" onclick="showSection('contact')">📞 Contato →</button>
+    </div>
   </div>
 </div>
 
@@ -1415,7 +1422,7 @@
   };
 
   // ===== MENU HAMBURGUER MOBILE =====
-  function toggleMobMenu(){
+  window.toggleMobMenu = function(){
     const menu = document.getElementById('mob-menu');
     const overlay = document.getElementById('mob-overlay');
     const btn = document.getElementById('hamburger-btn');
@@ -1423,13 +1430,13 @@
     menu.classList.toggle('open', !isOpen);
     overlay.classList.toggle('open', !isOpen);
     btn.classList.toggle('open', !isOpen);
-  }
+  };
 
-  function closeMobMenu(){
+  window.closeMobMenu = function(){
     document.getElementById('mob-menu').classList.remove('open');
     document.getElementById('mob-overlay').classList.remove('open');
     document.getElementById('hamburger-btn').classList.remove('open');
-  }
+  };
 
   window.mobNav = function(sec){
     closeMobMenu();
