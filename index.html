@@ -2076,27 +2076,29 @@
   // ═══════════════════════════════════════
   // RANKING DE CLIENTES
   // ═══════════════════════════════════════
-  async function loadRanking(){
+  let rankingUnsubscribe = null;
+  function loadRanking(){
     const listEl = document.getElementById('rank-list');
     const top3El = document.getElementById('rank-top3');
-    try {
-      const snap = await getDoc(doc(db,'config','ranking'));
-      if(!snap.exists() || !snap.data().top30 || !snap.data().top30.length){
-        if(top3El) top3El.innerHTML = '';
-        if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:14px;">Nenhum agendamento realizado ainda.<br><span style="font-size:12px;">O ranking aparece após a conclusão dos atendimentos.</span></div>';
-        return;
-      }
+
+    function showEmpty(){
+      if(top3El) top3El.innerHTML = '';
+      if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:48px 16px;color:var(--text-dim);"><div style="font-size:32px;margin-bottom:10px;">✂️</div><div style="font-size:14px;">Nenhum agendamento realizado ainda.</div><div style="font-size:12px;margin-top:6px;">O ranking aparece após a conclusão dos atendimentos.</div></div>';
+    }
+
+    // Já está ouvindo — não registra de novo
+    if(rankingUnsubscribe) return;
+
+    rankingUnsubscribe = onSnapshot(doc(db,'config','ranking'), snap => {
+      if(!snap.exists()){showEmpty();return;}
       const { top30 } = snap.data();
+      if(!top30 || !top30.length){showEmpty();return;}
       // Filtra apenas quem tem pelo menos 1 visita realizada
       const withVisits = top30.filter(p => p.count > 0);
-      if(!withVisits.length){
-        if(top3El) top3El.innerHTML = '';
-        if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:14px;">Nenhum agendamento realizado ainda.</div>';
-        return;
-      }
+      if(!withVisits.length){showEmpty();return;}
       renderRankingTop3(withVisits.slice(0,3));
       renderRankingList(withVisits);
-    } catch(e){ console.warn('loadRanking:',e); }
+    }, e => { console.warn('loadRanking:', e); showEmpty(); });
   }
 
   function renderRankingTop3(top3){
