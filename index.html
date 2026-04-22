@@ -2094,7 +2094,7 @@
         (isFirst?'201,168,76':'255,255,255')+',0.'+(isFirst?'3':'08')+');border-radius:14px;padding:18px 12px;text-align:center;'+(isFirst?'transform:translateY(-8px);':'')+'">'
         +'<div style="font-size:'+(isFirst?'40':'32')+'px;margin-bottom:8px;">'+medals[i]+'</div>'
         +'<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text);">'+maskName(p.name)+'</div>'
-        +'<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:'+colors[i]+';">'+p.count+'</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:'+colors[i]+';">'+p.count+'</div>'
         +'<div style="font-size:10px;color:var(--text-dim);">'+(p.count===1?'visita':'visitas')+'</div>'
         +'</div>';
     }).join('');
@@ -2123,7 +2123,7 @@
           return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);'+hl+'">'
             +'<td style="padding:11px 14px;font-size:13px;color:var(--text-muted);">'+( medal||pos+'º')+'</td>'
             +'<td style="padding:11px 14px;font-weight:600;font-size:13px;">'+maskName(p.name)+'</td>'
-            +'<td style="padding:11px 14px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">'+p.count+'</td>'
+            +'<td style="padding:11px 14px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--gold);">'+p.count+'</td>'
             +'</tr>';
         }).join('')
       +'</tbody></table>';
