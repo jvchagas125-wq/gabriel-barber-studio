@@ -1849,7 +1849,7 @@
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
         loadSchedule().then(()=>{ subscribeAll(); });
         loadSiteBackground();
-        initPushNotifications();
+        initPushNotifications(saved.replace(/\D/g,''));
         loadPlansFromFirestore();
         loadServicesFromFirestore();
         loadBannersFromFirestore();
@@ -1858,6 +1858,30 @@
 
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
+
+        // Listener de exclusão de conta pelo admin
+        // Se o admin remover o cliente do Firestore, o site força logout automático
+        const digits = saved.replace(/\D/g,'');
+        onSnapshot(doc(db,'clients',digits), snap => {
+          if(!snap.exists()){
+            // Conta removida pelo admin — limpar tudo e pedir novo login
+            loggedPhone = null;
+            localStorage.removeItem('gbs_phone');
+            localStorage.removeItem('gbs_name');
+            localStorage.removeItem('gbs_login_at_'+digits);
+            try { auth.signOut(); } catch(e){}
+            // Mostrar aviso e tela de login
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('login-name').value = '';
+            document.getElementById('login-phone').value = '';
+            // Pequeno aviso na tela de login
+            const errEl = document.getElementById('login-error');
+            if(errEl){
+              errEl.textContent = 'Sua conta foi removida. Cadastre-se novamente para continuar.';
+              errEl.style.display = 'block';
+            }
+          }
+        }, () => {}); // ignora erros silenciosamente
       } else {
         document.getElementById("login-screen").style.display="flex";
       }
