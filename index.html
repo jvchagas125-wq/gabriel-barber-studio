@@ -3023,14 +3023,17 @@ let rankingUnsubscribe = null;
         status:       'pending',
       });
 
-      // Debita do saldo local (via bonus negativo no Firestore)
+      // Debita do saldo no Firestore (campo 'balance')
       const walletRef = doc(db,'wallets',digits);
       const ws = await getDoc(walletRef);
-      const currentBonus = ws.exists() ? (ws.data().bonus||0) : 0;
-      await setDoc(walletRef, { bonus: currentBonus - product.cost, updatedAt: new Date().toISOString() }, {merge:true});
+      const currentBalance = ws.exists() ? (ws.data().balance||0) : 0;
+      const newBalance = Math.max(0, currentBalance - product.cost);
+      await setDoc(walletRef, { balance: newBalance, updatedAt: new Date().toISOString() }, {merge:true});
 
-      gbBalance -= product.cost;
-      document.getElementById('wallet-balance').textContent = gbBalance;
+      gbBalance = newBalance;
+      const balEl = document.getElementById('wallet-balance');
+      const brlEl = document.getElementById('wallet-brl');
+      if(balEl) balEl.textContent = gbBalance;
       renderStoreGrid();
       showToast(`"${product.name}" resgatado! O Gabriel vai confirmar em breve. 🎉`,'success');
     } catch(e){
