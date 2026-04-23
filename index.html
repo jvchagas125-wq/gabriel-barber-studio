@@ -2119,21 +2119,13 @@
       } else {
         btn.textContent=extraCount>0?(time+' + '+getServiceDuration(service)+'min'):time;
         btn.onclick=()=>{
-          // Remove seleção anterior
-          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>{
-            b.classList.remove('selected','selected-extra');
-            b.style.outline='';
-          });
-          // Seleciona o botão principal
+          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected','selected-extra'));
           btn.classList.add('selected');
           document.getElementById('vip-f-time').value=time;
           btn.dataset.extras=JSON.stringify(extras);
-          // Destaca visualmente os slots extras
           extras.forEach(extraTime=>{
             document.querySelectorAll('#timeSlotsVip .time-btn:not(:disabled)').forEach(b=>{
-              if(b.textContent.startsWith(extraTime)){
-                b.classList.add('selected-extra');
-              }
+              if(b.textContent.startsWith(extraTime)) b.classList.add('selected-extra');
             });
           });
         };
