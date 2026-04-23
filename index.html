@@ -1884,24 +1884,19 @@
     const bookedTimes=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
     const extraCount=getServiceSlots(service)-1;
 
-    // Pre-calculate all slots consumed by already-booked appointments
-    // A slot is "occupied" if it's booked OR if it's needed as an extra by a booked slot
+    // Calcular todos os slots ocupados: agendados + seus extras
     const occupiedTimes = new Set(bookedTimes);
     bookedTimes.forEach(bt=>{
-      const btExtras = getExtraSlots(bt, extraCount);
-      btExtras.forEach(e=>occupiedTimes.add(e));
+      getExtraSlots(bt, extraCount).forEach(e=>occupiedTimes.add(e));
     });
-    // Also mark slots that are needed as extras by PRECEDING available slots
-    // i.e. if 10:00 needs 10:15 and 10:30, those can't be starting points
+    // Calcular slots usados como extra por slots disponíveis que vêm antes
+    // Ex: se 10:00 precisa de 10:15 e 10:30, esses não podem ser ponto de início
     const usedAsExtra = new Set();
     slots.forEach(time=>{
+      if(occupiedTimes.has(time)) return;
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
-      const allNeeded=[time,...extras];
-      const extrasValid=extras.every(e=>slots.includes(e));
-      const isOccupied=allNeeded.some(t=>occupiedTimes.has(t));
-      if(!isOccupied && extrasValid){
-        extras.forEach(e=>usedAsExtra.add(e));
-      }
+      const extrasValid=extras.every(e=>slots.includes(e)&&!occupiedTimes.has(e));
+      if(extrasValid) extras.forEach(e=>usedAsExtra.add(e));
     });
 
     slots.forEach(time=>{
@@ -1909,8 +1904,7 @@
       const allNeeded=[time,...extras];
       const extrasValid=extras.every(e=>slots.includes(e));
       const isBooked=allNeeded.some(t=>occupiedTimes.has(t));
-      // Can't start here if this slot is needed as extra by a preceding slot
-      const isNeededAsExtra = usedAsExtra.has(time);
+      const isNeededAsExtra=usedAsExtra.has(time);
       const unavailable=isBooked||!extrasValid||isNeededAsExtra;
 
       const btn=document.createElement("button");
@@ -2129,18 +2123,14 @@
 
     const occupiedTimesVip = new Set(bookedTimes);
     bookedTimes.forEach(bt=>{
-      const btExtras = getExtraSlots(bt, extraCount);
-      btExtras.forEach(e=>occupiedTimesVip.add(e));
+      getExtraSlots(bt, extraCount).forEach(e=>occupiedTimesVip.add(e));
     });
     const usedAsExtraVip = new Set();
     slots.forEach(time=>{
+      if(occupiedTimesVip.has(time)) return;
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
-      const allNeeded=[time,...extras];
-      const extrasValid=extras.every(e=>slots.includes(e));
-      const isOccupied=allNeeded.some(t=>occupiedTimesVip.has(t));
-      if(!isOccupied && extrasValid){
-        extras.forEach(e=>usedAsExtraVip.add(e));
-      }
+      const extrasValid=extras.every(e=>slots.includes(e)&&!occupiedTimesVip.has(e));
+      if(extrasValid) extras.forEach(e=>usedAsExtraVip.add(e));
     });
 
     slots.forEach(time=>{
