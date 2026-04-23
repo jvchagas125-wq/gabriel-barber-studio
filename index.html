@@ -2104,13 +2104,21 @@
     e.preventDefault();
     deferredInstallPrompt = e;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if(!isStandalone){
+    const installed = localStorage.getItem('gbs_pwa_installed');
+    if(!isStandalone && !installed){
       setTimeout(()=>{
         const b = document.getElementById('pwa-install-banner');
         if(b) b.style.display = 'block';
-      }, 4000);
+      }, 2000);
     }
   });
+
+  window.dismissPWABanner = function(){
+    const b = document.getElementById('pwa-install-banner');
+    if(b) b.style.display = 'none';
+    // Não salva dismissed permanentemente — volta a aparecer na próxima visita
+    // só esconde na sessão atual
+  };
 
   window.installPWA = async function(){
     if(!deferredInstallPrompt) return;
@@ -2540,15 +2548,18 @@
 
 
 <!-- Botão de instalar PWA -->
-<div id="pwa-install-banner" style="display:none;position:fixed;bottom:20px;right:20px;z-index:300;animation:slideInUp .4s ease-out;">
-  <button id="pwa-install-btn" onclick="installPWA()" style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;border:1px solid var(--gold-border);background:#1a1a1a;color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:background .2s;">
-    <span style="font-size:20px;">📲</span>
-    <div style="text-align:left;">
-      <div style="font-size:13px;font-weight:700;color:var(--gold);">Instalar app</div>
-      <div style="font-size:11px;color:var(--text-muted);font-weight:400;">Adicionar à tela inicial</div>
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:350;animation:slideInUp .4s ease-out;">
+  <div style="background:#111;border-top:1px solid var(--gold-border);padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 -4px 24px rgba(0,0,0,.5);">
+    <img src="https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);">Gabriel Barber Studio</div>
+      <div style="font-size:11px;color:var(--text-muted);">Adicione à tela inicial para acesso rápido</div>
     </div>
-  </button>
-  <button onclick="document.getElementById('pwa-install-banner').style.display='none';localStorage.setItem('gbs_pwa_dismissed','1')" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:#111;color:#888;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <button id="pwa-install-btn" onclick="installPWA()" style="flex-shrink:0;padding:9px 16px;border-radius:9px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:opacity .2s;">
+      📲 Instalar
+    </button>
+    <button onclick="dismissPWABanner()" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);background:none;color:#888;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
 </div>
 
 
