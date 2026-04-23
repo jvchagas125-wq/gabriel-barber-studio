@@ -762,7 +762,7 @@
       <span class="mob-icon">📅</span> Agendar
     </button>
     <button class="mob-menu-item" data-sec="appointments" onclick="mobNav('appointments')">
-      <span class="mob-icon">🕑</span> Meus Horários
+      <span class="mob-icon">🕑</span> Meus Agendamentos
     </button>
     <button class="mob-menu-item" id="mob-plans-btn" data-sec="plans" onclick="mobNav('plans')">
       <span class="mob-icon">👑</span> Planos
@@ -792,9 +792,9 @@
       <button class="nav-btn active" data-sec="home" onclick="showSection('home')">Início</button>
       <button class="nav-btn" data-sec="booking" onclick="showSection('booking')">Agendar</button>
       <button class="nav-btn" id="nav-vip-btn" onclick="showSection('home')" style="display:none;">👑 VIP</button>
-      <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
+      <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Agendamentos</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
-      <button class="nav-btn" data-sec="store" onclick="showSection('store')">🛍️ Produtos</button>
+      <button class="nav-btn" data-sec="store" onclick="showSection('store')">Produtos</button>
       <button class="nav-btn" data-sec="ranking" onclick="showSection('ranking')">Ranking</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
@@ -918,14 +918,14 @@
     </div>
     <div class="mob-nav-row">
       <button class="mob-nav-btn prev" onclick="showSection('home')" title="Início">← Início</button>
-      <button class="mob-nav-btn next" onclick="showSection('appointments')">🕑 Meus Horários →</button>
+      <button class="mob-nav-btn next" onclick="showSection('appointments')">🕑 Meus Agendamentos →</button>
     </div>
   </div>
 </div>
 
 <div class="section" id="sec-appointments">
   <div class="page" style="max-width:700px;">
-    <h2 class="section-title gold-gradient">Meus Horários</h2>
+    <h2 class="section-title gold-gradient">Meus Agendamentos</h2>
     <div id="aptList"></div>
     <div class="mob-nav-row">
       <button class="mob-nav-btn prev" onclick="showSection('booking')" title="Agendar">← Agendar</button>
@@ -971,7 +971,7 @@
       <p><strong>Obs. 2:</strong> Os valores poderão passar por reajuste semestral ou anual com aviso prévio ao contratante.</p>
     </div>
     <div class="mob-nav-row">
-      <button class="mob-nav-btn prev" onclick="showSection('appointments')" title="Meus Horários">← Horários</button>
+      <button class="mob-nav-btn prev" onclick="showSection('appointments')" title="Meus Agendamentos">← Agendamentos</button>
       <button class="mob-nav-btn next" onclick="showSection('contact')">📞 Contato →</button>
     </div>
   </div>
@@ -3108,7 +3108,7 @@ let rankingUnsubscribe = null;
   <div class="page" style="max-width:640px;">
     <div style="text-align:center;padding:32px 0 24px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">🏆 Ranking de Clientes</div>
-      <div style="color:var(--text-muted);font-size:14px;margin-top:6px;">Os clientes mais fiéis da Gabriel Barber Studio</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-top:6px;">Top 30 dos clientes que mais frequentam e confiam em nosso serviço.</div>
     </div>
 
     <!-- TOP 3 destaque -->
