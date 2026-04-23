@@ -619,6 +619,103 @@
     .custom-cal-footer .cal-clear:hover { color: var(--text-muted); }
     .custom-cal-footer .cal-today { color: var(--gold); }
     .custom-cal-footer .cal-today:hover { background: var(--gold-dim); }
+
+    /* ===== SISTEMA GB$ ===== */
+    .gb-wallet {
+      background: linear-gradient(135deg, #1a1508, #2a2010);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .gb-wallet::before {
+      content: 'GB$';
+      position: absolute;
+      right: -10px;
+      top: -10px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 80px;
+      color: rgba(201,168,76,0.07);
+      pointer-events: none;
+      line-height: 1;
+    }
+    .gb-wallet-icon { font-size: 40px; flex-shrink: 0; }
+    .gb-wallet-info { flex: 1; }
+    .gb-wallet-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+    .gb-wallet-amount { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--gold); line-height: 1; }
+    .gb-wallet-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .gb-filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .gb-filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: none; color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+    .gb-filter-btn:hover { border-color: var(--gold-border); color: var(--gold); }
+    .gb-filter-btn.active { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
+    .gb-store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .gb-item-card { background: var(--bg2); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; transition: border-color .2s, transform .2s; }
+    .gb-item-card:hover { border-color: var(--gold-border); transform: translateY(-2px); }
+    .gb-item-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: var(--bg3); }
+    .gb-item-img-placeholder { width: 100%; aspect-ratio: 1; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .gb-item-cat { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
+    .gb-item-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .gb-item-price { display: flex; align-items: center; gap: 6px; }
+    .gb-item-price-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold); }
+    .gb-item-price-label { font-size: 11px; color: var(--text-dim); font-weight: 600; }
+    .gb-redeem-btn { margin-top: auto; padding: 10px; border-radius: 9px; border: none; background: var(--gold); color: #111; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity .2s; }
+    .gb-redeem-btn:hover { opacity: .88; }
+    .gb-redeem-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-dim); cursor: not-allowed; opacity: 1; }
+    .gb-empty { text-align: center; padding: 48px 0; color: var(--text-muted); }
+    .gb-empty-icon { font-size: 40px; margin-bottom: 12px; }
+    @media (max-width: 640px) { .gb-store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .gb-wallet-amount { font-size: 36px; } }
+
+    /* ===== LOJA GB$ ===== */
+    .wallet-card {
+      background: linear-gradient(135deg, #1a160a, #1e1a0e);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .wallet-icon { font-size: 42px; flex-shrink: 0; }
+    .wallet-info { flex: 1; }
+    .wallet-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .wallet-balance { font-family: "Bebas Neue", sans-serif; font-size: 52px; color: var(--gold); line-height: 1; }
+    .wallet-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+    .store-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .store-filter-btn {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+      background: none; color: var(--text-muted); font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: "DM Sans", sans-serif; transition: all .15s;
+    }
+    .store-filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .store-filter-btn.active { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
+    .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .store-card {
+      background: var(--bg2); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px;
+      transition: border-color .2s, transform .2s;
+    }
+    .store-card:hover { border-color: var(--gold-border); transform: translateY(-2px); }
+    .store-card-img { width: 100%; height: 100px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.03); }
+    .store-card-img-placeholder { width: 100%; height: 100px; border-radius: 8px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+    .store-card-cat { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
+    .store-card-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .store-card-cost { font-family: "Bebas Neue", sans-serif; font-size: 22px; color: var(--gold); }
+    .store-card-cost span { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-dim); font-weight: 500; }
+    .store-redeem-btn {
+      width: 100%; padding: 10px; border-radius: 9px; border: none;
+      background: var(--gold); color: #111; font-family: "DM Sans", sans-serif;
+      font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity .2s; margin-top: auto;
+    }
+    .store-redeem-btn:hover { opacity: .88; }
+    .store-redeem-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-dim); cursor: not-allowed; opacity: 1; }
+    @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } }
+    @media (max-width: 380px) { .store-grid { grid-template-columns: 1fr; } }
   </style>
 
   <script>
@@ -670,6 +767,9 @@
     <button class="mob-menu-item" id="mob-plans-btn" data-sec="plans" onclick="mobNav('plans')">
       <span class="mob-icon">👑</span> Planos
     </button>
+    <button class="mob-menu-item" data-sec="store" onclick="mobNav('store')">
+      <span class="mob-icon">🛍️</span> Produtos
+    </button>
     <button class="mob-menu-item" data-sec="ranking" onclick="mobNav('ranking')">
       <span class="mob-icon">🏆</span> Ranking
     </button>
@@ -694,6 +794,7 @@
       <button class="nav-btn" id="nav-vip-btn" onclick="showSection('home')" style="display:none;">👑 VIP</button>
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Horários</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
+      <button class="nav-btn" data-sec="store" onclick="showSection('store')">🛍️ Produtos</button>
       <button class="nav-btn" data-sec="ranking" onclick="showSection('ranking')">Ranking</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
@@ -906,6 +1007,42 @@
 </div>
 
 <!-- Home VIP -->
+
+<!-- ===== SEÇÃO LOJA / PRODUTOS ===== -->
+<div class="section" id="sec-store">
+  <div class="page" style="max-width:900px;">
+    <h2 class="section-title gold-gradient">🛍️ Produtos & Cupons</h2>
+
+    <!-- Carteira -->
+    <div class="wallet-card" id="store-wallet">
+      <div class="wallet-icon">🪙</div>
+      <div class="wallet-info">
+        <div class="wallet-label">Seu saldo</div>
+        <div class="wallet-balance" id="wallet-balance">0</div>
+        <div class="wallet-sub">GB$ — Ganhe 1 moeda a cada atendimento concluído</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="store-filters" id="store-filters">
+      <button class="store-filter-btn active" data-cat="all" onclick="filterStore('all')">Todos</button>
+    </div>
+
+    <!-- Grid de produtos -->
+    <div class="store-grid" id="store-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-dim);">
+        <div class="spinner" style="margin:0 auto 12px;"></div>
+        Carregando produtos...
+      </div>
+    </div>
+
+    <div class="mob-nav-row">
+      <button class="mob-nav-btn prev" onclick="showSection('plans')" title="Planos">← Planos</button>
+      <button class="mob-nav-btn next" onclick="showSection('ranking')">🏆 Ranking →</button>
+    </div>
+  </div>
+</div>
+
 <div class="section" id="sec-home-vip">
   <div class="page" style="max-width:640px;">
     <!-- Hero VIP -->
@@ -1260,9 +1397,7 @@
   let loggedName = null;
   let allAppointments = [];
 
-  function pad(n){ return String(n).padStart(2,"0"); }
-  function getTodayStr(){ const t=new Date(); return t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
-  function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function pad(n){ return String(n).padStart(2,"0"); }function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function maskPhone(p){ const d=p.replace(/\D/g,""); return d.length>=9?"("+d.slice(0,2)+") *****-"+d.slice(-4):p; }
   function formatPhone(raw){ const d=raw.replace(/\D/g,""); if(d.length===11) return "("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7); if(d.length===10) return "("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6); return raw; }
 
@@ -1632,6 +1767,7 @@
     });
     if(name === 'appointments') renderAppointments();
     if(name === 'ranking') loadRanking();
+    if(name === 'store') loadStore();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
     if(isVip && name === 'booking'){
@@ -1867,6 +2003,8 @@
         const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
         return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':'')+'">'+(isPast?'Realizado':apt.status)+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+(isPast?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
       }).join("");
+      // Sincroniza moedas GB$ com agendamentos concluídos
+      syncGBCoins();
     } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
   }
 
@@ -2005,6 +2143,8 @@
 
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
+        // Atualiza saldo GB$ sempre que agendamentos mudarem
+        onSnapshot(collection(db,'appointments'), ()=>{ updateGBBalanceFromAppointments(); });
 
         // Listener de exclusão de conta pelo admin
         // Se o admin remover o cliente do Firestore, o site força logout automático
@@ -2606,7 +2746,46 @@
   // ═══════════════════════════════════════
   // RANKING DE CLIENTES
   // ═══════════════════════════════════════
-  let rankingUnsubscribe = null;
+
+  // ═══════════════════════════════════════
+  // SISTEMA GB$ — CARTEIRA E LOJA
+  // ═══════════════════════════════════════
+  let gbStoreItems = [];
+  let gbStoreFilter = 'all';
+  let gbStoreUnsubscribe = null;
+
+  function getTodayStr(){ const t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }function renderGBFilters(){
+    const filterEl = document.getElementById('gb-filters');
+    if(!filterEl) return;
+    const cats = ['all', ...new Set(gbStoreItems.map(i=>i.category).filter(Boolean))];
+    const catLabels = {all:'Todos', coupon:'Cupons', product:'Produtos'};
+    filterEl.innerHTML = cats.map(c=>
+      `<button class="gb-filter-btn ${gbStoreFilter===c?'active':''}" data-cat="${c}" onclick="filterGBStore('${c}')">${catLabels[c]||c}</button>`
+    ).join('');
+  }
+;
+window.redeemGBItem = async function(itemId){
+    if(!loggedPhone){ showToast('Faça login para resgatar.','error'); return; }
+    const item = gbStoreItems.find(i=>i.id===itemId);
+    if(!item) return;
+    const balance = await getGBBalance();
+    if(balance < (item.cost||0)){ showToast('Créditos insuficientes!','error'); return; }
+    if(!confirm('Resgatar "'+item.name+'" por '+item.cost+' GB$?')) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    try {
+      await setDoc(doc(db,'wallets',digits),{
+        balance: balance - item.cost, phone: loggedPhone, digits, updatedAt: new Date().toISOString(),
+      },{merge:true});
+      const redeemId = 'redeem_'+digits+'_'+Date.now();
+      await setDoc(doc(db,'redemptions',redeemId),{
+        clientPhone: loggedPhone, clientName: loggedName||'', digits,
+        itemId, itemName: item.name, itemCost: item.cost, category: item.category||'',
+        redeemedAt: new Date().toISOString(), status: 'pending',
+      });
+      showToast('Resgate realizado! Gabriel entrará em contato. 🎉','success');
+    } catch(e){ console.error(e); showToast('Erro ao resgatar: '+e.message,'error'); }
+  };
+let rankingUnsubscribe = null;
   function loadRanking(){
     const listEl = document.getElementById('rank-list');
     const top3El = document.getElementById('rank-top3');
@@ -2678,6 +2857,157 @@
             +'</tr>';
         }).join('')
       +'</tbody></table>';
+  }
+
+
+  // ═══════════════════════════════════════
+  // SISTEMA GB$ — MOEDA VIRTUAL
+  // ═══════════════════════════════════════
+  let storeProducts = [];
+  let storeActiveFilter = 'all';
+  let gbBalance = 0;
+  let storeUnsubscribe = null;
+  let balanceUnsubscribe = null;
+
+  // Calcula GB$ do cliente: 1 por agendamento concluído (data passada)
+  function calcGBBalance(digits){
+    const today = new Date().toISOString().slice(0,10);
+    return allAppointments.filter(a =>
+      (a.phone||'').replace(/\D/g,'') === digits &&
+      a.status !== 'Bloqueado' &&
+      a.date < today
+    ).length;
+  }
+
+  async function loadStore(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+
+    // Calcula saldo local a partir dos agendamentos
+    gbBalance = calcGBBalance(digits);
+
+    // Também busca saldo salvo no Firestore (pode ter bônus do admin)
+    try {
+      const walletSnap = await getDoc(doc(db,'wallets',digits));
+      if(walletSnap.exists()){
+        const bonus = walletSnap.data().bonus || 0;
+        gbBalance += bonus;
+      }
+    } catch(e){}
+
+    document.getElementById('wallet-balance').textContent = gbBalance;
+
+    // Escuta produtos em tempo real
+    if(storeUnsubscribe) storeUnsubscribe();
+    storeUnsubscribe = onSnapshot(collection(db,'store_products'), snap => {
+      storeProducts = snap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .filter(p=>p.active!==false)
+        .sort((a,b)=>(a.cost||0)-(b.cost||0));
+      renderStoreFilters();
+      renderStoreGrid();
+    }, e=>console.warn('store:', e));
+  }
+
+  function renderStoreFilters(){
+    const cats = ['all', ...new Set(storeProducts.map(p=>p.category||'Geral').filter(Boolean))];
+    const filtersEl = document.getElementById('store-filters');
+    if(!filtersEl) return;
+    filtersEl.innerHTML = cats.map(c=>
+      `<button class="store-filter-btn${storeActiveFilter===c?' active':''}" data-cat="${c}" onclick="filterStore('${c}')">${c==='all'?'Todos':c}</button>`
+    ).join('');
+  }
+
+  window.filterStore = function(cat){
+    storeActiveFilter = cat;
+    document.querySelectorAll('.store-filter-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.cat===cat);
+    });
+    renderStoreGrid();
+  };
+
+  function renderStoreGrid(){
+    const grid = document.getElementById('store-grid');
+    if(!grid) return;
+    const filtered = storeActiveFilter==='all'
+      ? storeProducts
+      : storeProducts.filter(p=>(p.category||'Geral')===storeActiveFilter);
+
+    if(!filtered.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-dim);">Nenhum produto disponível ainda.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(p=>{
+      const canAfford = gbBalance >= (p.cost||0);
+      const imgHtml = p.imageUrl
+        ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
+        : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
+      return `<div class="store-card">
+        ${imgHtml}
+        <div class="store-card-cat">${p.category||'Geral'}</div>
+        <div class="store-card-name">${p.name||'Produto'}</div>
+        <div class="store-card-cost">${p.cost||0} <span>GB$</span></div>
+        <button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:'disabled'}>
+          ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  window.redeemProduct = async function(productId){
+    if(!loggedPhone) return;
+    const product = storeProducts.find(p=>p.id===productId);
+    if(!product) return;
+    if(gbBalance < product.cost){
+      showToast('GB$ insuficiente para resgatar!','error'); return;
+    }
+    if(!confirm(`Resgatar "${product.name}" por ${product.cost} GB$?`)) return;
+
+    try {
+      const digits = loggedPhone.replace(/\D/g,'');
+      // Registra o resgate
+      await setDoc(doc(db,'redemptions', digits+'_'+productId+'_'+Date.now()),{
+        clientPhone:  loggedPhone,
+        clientName:   loggedName||'—',
+        digits,
+        productId,
+        productName:  product.name||'—',
+        productCost:  product.cost||0,
+        category:     product.category||'Geral',
+        redeemedAt:   new Date().toISOString(),
+        status:       'pending',
+      });
+
+      // Debita do saldo local (via bonus negativo no Firestore)
+      const walletRef = doc(db,'wallets',digits);
+      const ws = await getDoc(walletRef);
+      const currentBonus = ws.exists() ? (ws.data().bonus||0) : 0;
+      await setDoc(walletRef, { bonus: currentBonus - product.cost, updatedAt: new Date().toISOString() }, {merge:true});
+
+      gbBalance -= product.cost;
+      document.getElementById('wallet-balance').textContent = gbBalance;
+      renderStoreGrid();
+      showToast(`"${product.name}" resgatado! O Gabriel vai confirmar em breve. 🎉`,'success');
+    } catch(e){
+      console.error('redeem error:', e);
+      showToast('Erro ao resgatar: '+e.message,'error');
+    }
+  };
+
+  // Atualiza saldo quando agendamentos mudam
+  function updateGBBalanceFromAppointments(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    const earned = calcGBBalance(digits);
+    // Re-busca bonus e atualiza
+    getDoc(doc(db,'wallets',digits)).then(ws=>{
+      const bonus = ws.exists() ? (ws.data().bonus||0) : 0;
+      gbBalance = earned + bonus;
+      const el = document.getElementById('wallet-balance');
+      if(el) el.textContent = gbBalance;
+      renderStoreGrid();
+    }).catch(()=>{});
   }
 
 </script>
@@ -2774,7 +3104,6 @@
 </div>
 
 
-<!-- Seção Ranking -->
 <div id="sec-ranking" class="section">
   <div class="page" style="max-width:640px;">
     <div style="text-align:center;padding:32px 0 24px;">
