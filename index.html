@@ -1881,14 +1881,22 @@
       return;
     }
 
-    const bookedTimes=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
+    const bookedRaw=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
     const extraCount=getServiceSlots(service)-1;
+
+    // Expandir bookedTimes para incluir os extras de cada agendamento existente
+    // Cada agendamento ocupa seu horário + os extras do serviço que foi agendado
+    const bookedTimes = new Set(bookedRaw);
+    allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
+      const svcSlots = getServiceSlots(a.service||service) - 1;
+      if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
+    });
 
     slots.forEach(time=>{
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
       const allNeeded=[time,...extras];
       const extrasValid=extras.every(e=>slots.includes(e));
-      const isBooked=allNeeded.some(t=>bookedTimes.includes(t));
+      const isBooked=allNeeded.some(t=>bookedTimes.has(t));
       const unavailable=isBooked||!extrasValid;
 
       const btn=document.createElement("button");
@@ -2102,14 +2110,21 @@
       return;
     }
 
-    const bookedTimes = allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
+    const bookedRawVip=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
     const extraCount = getServiceSlots(service)-1;
+
+    // Expandir para incluir os extras de cada agendamento existente
+    const bookedTimes = new Set(bookedRawVip);
+    allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
+      const svcSlots = getServiceSlots(a.service||service) - 1;
+      if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
+    });
 
     slots.forEach(time=>{
       const extras = extraCount>0?getExtraSlots(time,extraCount):[];
       const allNeeded = [time,...extras];
       const extrasValid = extras.every(e=>slots.includes(e));
-      const isBooked = allNeeded.some(t=>bookedTimes.includes(t));
+      const isBooked = allNeeded.some(t=>bookedTimes.has(t));
       const unavailable = isBooked||!extrasValid;
 
       const btn = document.createElement('button');
