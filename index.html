@@ -741,6 +741,8 @@
     <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
     <label class="login-label" for="login-name">Nome completo</label>
     <input class="login-input" type="text" id="login-name" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
+    <label class="login-label" for="login-birth">Data de nascimento</label>
+    <input class="login-input" type="date" id="login-birth" autocomplete="bday" style="margin-bottom:14px;color-scheme:dark;">
     <label class="login-label" for="login-phone">Número de telefone</label>
     <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
@@ -1789,7 +1791,8 @@
     let out=""; if(v.length>0) out="("+v.slice(0,2); if(v.length>=3) out+=") "+v.slice(2,v.length<=10?6:7); if(v.length>=7) out+="-"+v.slice(v.length<=10?6:7);
     this.value=out;
   });
-  document.getElementById("login-name").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-phone").focus(); });
+  document.getElementById("login-name").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-birth").focus(); });
+  document.getElementById("login-birth").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-phone").focus(); });
   document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
 
   window.doLogin = async function(){
@@ -1811,9 +1814,11 @@
       const loginNow = new Date().toISOString();
       // Marca o horário deste login para filtrar notificações antigas
       localStorage.setItem('gbs_login_at_'+digits, loginNow);
+      const birthVal = document.getElementById('login-birth')?.value||'';
       setDoc(doc(db,'clients',digits),{
         name:rawName, phone:formatted, digits,
         lastSeen:loginNow,
+        ...(birthVal ? {birthdate: birthVal} : {}),
       },{merge:true}).catch(e=>console.warn('clients setDoc:',e));
       document.getElementById("login-screen").style.display="none";
       document.getElementById("nav-phone-display").textContent=maskPhone(formatted);
