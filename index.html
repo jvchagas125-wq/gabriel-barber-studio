@@ -742,7 +742,13 @@
     <label class="login-label" for="login-name">Nome completo</label>
     <input class="login-input" type="text" id="login-name" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
     <label class="login-label" for="login-birth">Data de nascimento</label>
-    <input class="login-input" type="date" id="login-birth" autocomplete="bday" style="margin-bottom:14px;color-scheme:dark;">
+    <div style="position:relative;margin-bottom:14px;">
+      <button type="button" id="login-birth-btn" onclick="openBirthPicker()" style="width:100%;padding:12px 16px;border-radius:10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:16px;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s;">
+        <span id="login-birth-label">📅 Selecionar data</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
+      <input type="hidden" id="login-birth">
+    </div>
     <label class="login-label" for="login-phone">Número de telefone</label>
     <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
@@ -2475,6 +2481,105 @@
   // ═══════════════════════════════════════
   // DATE PICKER CUSTOMIZADO
   // ═══════════════════════════════════════
+
+  // ===== CALENDÁRIO NASCIMENTO =====
+  let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
+  let birthYearPickerOpen = false;
+
+  function renderBirthCal(){
+    const yr = birthCalDate.getFullYear();
+    const mo = birthCalDate.getMonth();
+    const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('birth-cal-title').textContent = monthNames[mo] + ' de ' + yr + ' ▾';
+    const firstDay = new Date(yr, mo, 1).getDay();
+    const daysInMonth = new Date(yr, mo+1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const selVal = document.getElementById('login-birth').value;
+    let html = '';
+    for(let i=0; i<firstDay; i++) html += '<div class="custom-cal-day empty"></div>';
+    for(let d=1; d<=daysInMonth; d++){
+      const date = new Date(yr, mo, d);
+      const dateStr = yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const isFuture = date > today;
+      const isSel = dateStr === selVal;
+      let cls = 'custom-cal-day';
+      if(isFuture) cls += ' past'; // reuse past style (grayed out)
+      if(isSel) cls += ' selected';
+      html += `<button class="${cls}" ${isFuture?'disabled':''} onclick="selectBirthDay('${dateStr}')" tabindex="-1">${d}</button>`;
+    }
+    document.getElementById('birth-cal-days').innerHTML = html;
+  }
+
+  function renderBirthYearPicker(){
+    const curYr = birthCalDate.getFullYear();
+    const thisYr = new Date().getFullYear();
+    let html = '';
+    for(let y = thisYr; y >= 1930; y--){
+      html += `<button onclick="selectBirthYear(${y})" style="padding:6px 4px;border-radius:6px;border:none;background:${y===curYr?'var(--gold)':'rgba(255,255,255,0.06)'};color:${y===curYr?'#111':'var(--text-muted)'};font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">${y}</button>`;
+    }
+    document.getElementById('birth-year-list').innerHTML = html;
+  }
+
+  window.toggleBirthYearPicker = function(){
+    birthYearPickerOpen = !birthYearPickerOpen;
+    const picker = document.getElementById('birth-year-picker');
+    picker.style.display = birthYearPickerOpen ? 'block' : 'none';
+    if(birthYearPickerOpen) renderBirthYearPicker();
+  };
+
+  window.selectBirthYear = function(yr){
+    birthCalDate = new Date(yr, birthCalDate.getMonth(), 1);
+    birthYearPickerOpen = false;
+    document.getElementById('birth-year-picker').style.display = 'none';
+    renderBirthCal();
+  };
+
+  window.openBirthPicker = function(){
+    const curVal = document.getElementById('login-birth').value;
+    birthCalDate = curVal ? new Date(curVal+'T12:00:00') : new Date(1995, 0, 1);
+    birthYearPickerOpen = false;
+    document.getElementById('birth-year-picker').style.display = 'none';
+    renderBirthCal();
+    document.getElementById('birth-cal-overlay').classList.add('open');
+  };
+
+  window.selectBirthDay = function(dateStr){
+    document.getElementById('login-birth').value = dateStr;
+    const [yr, mo, dy] = dateStr.split('-');
+    const label = document.getElementById('login-birth-label');
+    const btn = document.getElementById('login-birth-btn');
+    if(label) label.textContent = dy+'/'+mo+'/'+yr;
+    if(label) label.style.color = 'var(--text)';
+    if(btn) btn.style.borderColor = 'var(--gold)';
+    closeBirthCal();
+  };
+
+  window.closeBirthCal = function(){
+    document.getElementById('birth-cal-overlay').classList.remove('open');
+  };
+
+  window.birthCalNav = function(dir){
+    birthCalDate = new Date(birthCalDate.getFullYear(), birthCalDate.getMonth()+dir, 1);
+    renderBirthCal();
+  };
+
+  window.clearBirthCal = function(){
+    document.getElementById('login-birth').value = '';
+    const label = document.getElementById('login-birth-label');
+    const btn = document.getElementById('login-birth-btn');
+    if(label){ label.textContent='📅 Selecionar data'; label.style.color='var(--text-muted)'; }
+    if(btn) btn.style.borderColor = 'rgba(255,255,255,0.1)';
+    closeBirthCal();
+  };
+
+  window.birthCalGoToday = function(){
+    birthCalDate = new Date();
+    birthYearPickerOpen = false;
+    document.getElementById('birth-year-picker').style.display = 'none';
+    renderBirthCal();
+  };
+
+
   // ===== CALENDÁRIO CUSTOMIZADO =====
   let calCurrentDate = new Date();
   let calTargetInputId = '';
@@ -3197,6 +3302,35 @@ let rankingUnsubscribe = null;
     <div class="custom-cal-footer">
       <button class="cal-clear" onclick="clearCustomCal()">Limpar</button>
       <button class="cal-today" onclick="goToToday()">Hoje</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendário Nascimento -->
+<div class="custom-cal-overlay" id="birth-cal-overlay" onclick="if(event.target===this)closeBirthCal()" style="z-index:600;">
+  <div class="custom-cal">
+    <div class="custom-cal-header">
+      <button class="custom-cal-nav" onclick="birthCalNav(-1)">‹</button>
+      <div id="birth-cal-title" class="custom-cal-title" style="cursor:pointer;" onclick="toggleBirthYearPicker()"></div>
+      <button class="custom-cal-nav" onclick="birthCalNav(1)">›</button>
+    </div>
+    <!-- Seletor de ano rápido -->
+    <div id="birth-year-picker" style="display:none;max-height:200px;overflow-y:auto;margin-bottom:10px;">
+      <div id="birth-year-list" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;"></div>
+    </div>
+    <div class="custom-cal-weekdays">
+      <div class="custom-cal-weekday">D</div>
+      <div class="custom-cal-weekday">S</div>
+      <div class="custom-cal-weekday">T</div>
+      <div class="custom-cal-weekday">Q</div>
+      <div class="custom-cal-weekday">Q</div>
+      <div class="custom-cal-weekday">S</div>
+      <div class="custom-cal-weekday">S</div>
+    </div>
+    <div class="custom-cal-days" id="birth-cal-days"></div>
+    <div class="custom-cal-footer">
+      <button class="cal-clear" onclick="clearBirthCal()">Limpar</button>
+      <button class="cal-today" onclick="birthCalGoToday()">Hoje</button>
     </div>
   </div>
 </div>
