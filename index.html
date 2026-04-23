@@ -1899,7 +1899,7 @@
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
         const dur=getServiceDuration(service);
-        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
+        btn.textContent=time;
         btn.onclick=()=>{
           document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
@@ -2104,8 +2104,7 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        const dur=getServiceDuration(service);
-        btn.textContent=dur>15?(time+' + '+dur+'min'):time;
+        btn.textContent=time;
         btn.onclick=()=>{
           document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
           btn.classList.add('selected');
