@@ -108,6 +108,7 @@
     .form-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
     .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
     .time-btn{padding:9px 6px;border-radius:8px;border:1px solid rgba(201,168,76,.3);background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;transition:all .15s}
+    .time-btn.selected-extra{background:rgba(201,168,76,0.2)!important;border-color:var(--gold)!important;color:var(--gold)!important;}
     .time-btn:hover:not(:disabled){background:var(--gold);color:#1a1a1a;font-weight:600} .time-btn.selected{background:var(--gold);color:#1a1a1a;font-weight:700}
     .time-btn:disabled{background:#222;color:var(--text-dim);cursor:not-allowed;opacity:.5;font-size:11px}
     .submit-btn{width:100%;padding:14px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px;transition:opacity .2s,transform .1s;font-family:"DM Sans",sans-serif}
@@ -1899,12 +1900,26 @@
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
         const dur=getServiceDuration(service);
-        btn.textContent=time;
+        const dur=getServiceDuration(service);
+        btn.textContent=extraCount>0?(time+' + '+getServiceDuration(service)+'min'):time;
         btn.onclick=()=>{
-          document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("selected"));
+          // Remove seleção anterior
+          document.querySelectorAll(".time-btn").forEach(b=>{
+            b.classList.remove("selected","selected-extra");
+            b.style.outline='';
+          });
+          // Seleciona o botão principal
           btn.classList.add("selected");
           document.getElementById("f-time").value=time;
           btn.dataset.extras=JSON.stringify(extras);
+          // Destaca visualmente os slots extras
+          extras.forEach(extraTime=>{
+            document.querySelectorAll(".time-btn:not(:disabled)").forEach(b=>{
+              if(b.textContent.startsWith(extraTime)){
+                b.classList.add("selected-extra");
+              }
+            });
+          });
         };
       }
       container.appendChild(btn);
@@ -2104,12 +2119,25 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        btn.textContent=time;
+        btn.textContent=extraCount>0?(time+' + '+getServiceDuration(service)+'min'):time;
         btn.onclick=()=>{
-          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected'));
+          // Remove seleção anterior
+          document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>{
+            b.classList.remove('selected','selected-extra');
+            b.style.outline='';
+          });
+          // Seleciona o botão principal
           btn.classList.add('selected');
           document.getElementById('vip-f-time').value=time;
           btn.dataset.extras=JSON.stringify(extras);
+          // Destaca visualmente os slots extras
+          extras.forEach(extraTime=>{
+            document.querySelectorAll('#timeSlotsVip .time-btn:not(:disabled)').forEach(b=>{
+              if(b.textContent.startsWith(extraTime)){
+                b.classList.add('selected-extra');
+              }
+            });
+          });
         };
       }
       container.appendChild(btn);
