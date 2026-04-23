@@ -1045,12 +1045,41 @@
         <div class="hours-time">${g.start} - ${g.end}</div>
       </div>`).join('');
 
-    // Mostra intervalos especiais
-    const breaks = (SCHEDULE.breaks||[]).filter(b=>b.label&&b.days&&b.days.length>0);
-    breaksEl.innerHTML = breaks.map(b=>{
-      const dayNames = (b.days||[]).map(k=>DAY_LABELS[k]||k).join(', ');
-      return `<p class="hours-closed" style="margin-top:10px;color:#f0d78c;font-size:13px;">⚠️ ${b.label}: intervalo das ${b.start} as ${b.end} (${dayNames})</p>`;
-    }).join('');
+    // Mostra intervalos agrupados no estilo da foto
+    const breaks = (SCHEDULE.breaks||[]).filter(b=>b.days&&b.days.length>0&&b.start&&b.end);
+    if(!breaks.length){ breaksEl.innerHTML=''; }
+    else {
+      // Agrupa por horário (mesmos horários = mesma linha)
+      const groups = {};
+      breaks.forEach(b=>{
+        const key = b.start+'–'+b.end;
+        if(!groups[key]) groups[key]={start:b.start,end:b.end,days:[]};
+        groups[key].days.push(...(b.days||[]));
+      });
+      // Remove duplicatas de dias
+      Object.values(groups).forEach(g=>{ g.days=[...new Set(g.days)]; });
+
+      const DAY_SHORT = {mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado',sun:'Domingo'};
+      const DAY_ORDER = ['mon','tue','wed','thu','fri','sat','sun'];
+
+      const linesHtml = Object.values(groups).map(g=>{
+        const sortedDays = [...g.days].sort((a,b)=>DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b));
+        const names = sortedDays.map(k=>DAY_SHORT[k]||k);
+        // "TERÇA, QUARTA E QUINTA" ou "SEXTA"
+        let dayStr;
+        if(names.length===1) dayStr = names[0].toUpperCase();
+        else dayStr = names.slice(0,-1).join(', ').toUpperCase() + ' E ' + names[names.length-1].toUpperCase();
+        return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">`
+          +`<span style="font-size:13px;font-weight:700;color:#f0d78c;">${dayStr}:</span>`
+          +`<span style="font-size:13px;font-weight:600;color:var(--text-muted);">${g.start} ÀS ${g.end}</span>`
+          +`</div>`;
+      }).join('');
+
+      breaksEl.innerHTML = `<div style="margin-top:18px;padding:14px 16px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:10px;">`
+        +`<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">ℹ️ Intervalos:</div>`
+        +linesHtml
+        +`</div>`;
+    }
   }
 
   const DOW_KEY = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
