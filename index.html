@@ -2716,11 +2716,11 @@
     const yrPicker = document.getElementById('birth-year-picker');
     if(yrPicker) yrPicker.style.display = 'none';
     renderBirthCal();
+    // Temporarily hide fill-data-modal so it doesn't interfere
+    const fillModal = document.getElementById('fill-data-modal');
+    if(fillModal) fillModal.style.visibility = 'hidden';
     const overlay = document.getElementById('birth-cal-overlay');
-    if(overlay){
-      overlay.classList.add('open');
-      overlay.style.display = 'flex'; // force display in case CSS not applied
-    }
+    if(overlay){ overlay.classList.add('open'); overlay.style.display = 'flex'; }
   };
 
   window.selectBirthDay = function(dateStr){
@@ -2737,6 +2737,9 @@
   window.closeBirthCal = function(){
     const overlay = document.getElementById('birth-cal-overlay');
     if(overlay){ overlay.classList.remove('open'); overlay.style.display=''; }
+    // Restore fill-data-modal
+    const fillModal = document.getElementById('fill-data-modal');
+    if(fillModal) fillModal.style.visibility = '';
   };
 
   window.birthCalNav = function(dir){
