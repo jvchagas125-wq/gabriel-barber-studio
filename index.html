@@ -2716,9 +2716,9 @@
     const yrPicker = document.getElementById('birth-year-picker');
     if(yrPicker) yrPicker.style.display = 'none';
     renderBirthCal();
-    // Temporarily hide fill-data-modal so it doesn't interfere
+    // Fechar modal completamente e abrir calendário
     const fillModal = document.getElementById('fill-data-modal');
-    if(fillModal) fillModal.style.visibility = 'hidden';
+    if(fillModal) fillModal.style.display = 'none';
     const overlay = document.getElementById('birth-cal-overlay');
     if(overlay){ overlay.classList.add('open'); overlay.style.display = 'flex'; }
   };
@@ -2736,10 +2736,10 @@
 
   window.closeBirthCal = function(){
     const overlay = document.getElementById('birth-cal-overlay');
-    if(overlay){ overlay.classList.remove('open'); overlay.style.display=''; }
-    // Restore fill-data-modal
+    if(overlay){ overlay.classList.remove('open'); overlay.style.display='none'; }
+    // Reabrir o modal de dados
     const fillModal = document.getElementById('fill-data-modal');
-    if(fillModal) fillModal.style.visibility = '';
+    if(fillModal) fillModal.style.display = 'flex';
   };
 
   window.birthCalNav = function(dir){
