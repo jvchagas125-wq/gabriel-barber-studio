@@ -2620,35 +2620,6 @@
     document.getElementById('fill-data-overlay').style.display='none';
   };
 
-  window.confirmFillData = async function(){
-    const dateVal = document.getElementById('fill-birth-input')?.value;
-    if(!dateVal){ showToast('Selecione sua data de nascimento primeiro.','error'); return; }
-    if(!loggedPhone){ showToast('Faça login primeiro.','error'); return; }
-    const digits = loggedPhone.replace(/\D/g,'');
-    try {
-      // Check if birthdate already saved (to avoid giving GB$ twice)
-      const snap = await getDoc(doc(db,'clients',digits));
-      const alreadyHasBirth = snap.exists() && snap.data().birthdate;
-      const alreadyGotBirthBonus = snap.exists() && snap.data().birthBonus;
-      // Save birthdate
-      await setDoc(doc(db,'clients',digits),{ birthdate: dateVal },{merge:true});
-      // Give 1 GB$ if first time filling birthdate
-      if(!alreadyHasBirth || !alreadyGotBirthBonus){
-        const walRef = doc(db,'wallets',digits);
-        const walSnap = await getDoc(walRef);
-        const cur = walSnap.exists() ? (walSnap.data().balance||0) : 0;
-        await setDoc(walRef,{ balance: cur+1, phone: loggedPhone, digits, updatedAt: new Date().toISOString() },{merge:true});
-        await setDoc(doc(db,'clients',digits),{ birthBonus: true },{merge:true});
-        showToast('🎂 Data salva! +1 GB$ adicionado à sua carteira!','success');
-      } else {
-        showToast('Data de nascimento atualizada!','success');
-      }
-      // Hide fill data button if completed
-      const fillBtn = document.getElementById('profile-fill-data-btn');
-      if(fillBtn) fillBtn.style.display='none';
-      closeFillDataModal();
-    } catch(e){ console.error(e); showToast('Erro ao salvar: '+e.message,'error'); }
-  };
 
   // Hide "Preencha seus dados" btn if client already has birthdate
   async function checkFillDataBtnVisibility(){
