@@ -504,7 +504,7 @@
       align-items: center;
       justify-content: center;
     }
-    .custom-cal-overlay.open { display: flex; }
+    .custom-cal-overlay.open { display: flex !important; }
     .custom-cal {
       background: #1a1a1a;
       border: 1px solid var(--gold-border);
@@ -2709,12 +2709,18 @@
   };
 
   window.openBirthPicker = function(){
-    const curVal = document.getElementById('login-birth').value;
+    const inp = document.getElementById('login-birth');
+    const curVal = inp ? inp.value : '';
     birthCalDate = curVal ? new Date(curVal+'T12:00:00') : new Date(1995, 0, 1);
     birthYearPickerOpen = false;
-    document.getElementById('birth-year-picker').style.display = 'none';
+    const yrPicker = document.getElementById('birth-year-picker');
+    if(yrPicker) yrPicker.style.display = 'none';
     renderBirthCal();
-    document.getElementById('birth-cal-overlay').classList.add('open');
+    const overlay = document.getElementById('birth-cal-overlay');
+    if(overlay){
+      overlay.classList.add('open');
+      overlay.style.display = 'flex'; // force display in case CSS not applied
+    }
   };
 
   window.selectBirthDay = function(dateStr){
@@ -2729,7 +2735,8 @@
   };
 
   window.closeBirthCal = function(){
-    document.getElementById('birth-cal-overlay').classList.remove('open');
+    const overlay = document.getElementById('birth-cal-overlay');
+    if(overlay){ overlay.classList.remove('open'); overlay.style.display=''; }
   };
 
   window.birthCalNav = function(dir){
@@ -3532,7 +3539,7 @@ let rankingUnsubscribe = null;
 </div>
 
 <!-- Modal Preencha seus dados -->
-<div id="fill-data-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeFillDataModal()">
+<div id="fill-data-modal" style="display:none;position:fixed;inset:0;z-index:550;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeFillDataModal()">
   <div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:380px;animation:slideUp .3s ease-out;position:relative;">
     <!-- Fechar -->
     <button onclick="closeFillDataModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;">✕</button>
