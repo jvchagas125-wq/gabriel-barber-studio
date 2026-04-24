@@ -2708,7 +2708,8 @@
     renderBirthCal();
   };
 
-  window.openBirthPicker = function(){
+  window.openBirthPicker = function(e){
+    if(e) e.stopPropagation();
     const inp = document.getElementById('login-birth');
     const curVal = inp ? inp.value : '';
     birthCalDate = curVal ? new Date(curVal+'T12:00:00') : new Date(1995, 0, 1);
@@ -2716,9 +2717,6 @@
     const yrPicker = document.getElementById('birth-year-picker');
     if(yrPicker) yrPicker.style.display = 'none';
     renderBirthCal();
-    // Fechar modal completamente e abrir calendário
-    const fillModal = document.getElementById('fill-data-modal');
-    if(fillModal) fillModal.style.display = 'none';
     const overlay = document.getElementById('birth-cal-overlay');
     if(overlay){ overlay.classList.add('open'); overlay.style.display = 'flex'; }
   };
@@ -2736,10 +2734,7 @@
 
   window.closeBirthCal = function(){
     const overlay = document.getElementById('birth-cal-overlay');
-    if(overlay){ overlay.classList.remove('open'); overlay.style.display='none'; }
-    // Reabrir o modal de dados
-    const fillModal = document.getElementById('fill-data-modal');
-    if(fillModal) fillModal.style.display = 'flex';
+    if(overlay){ overlay.classList.remove('open'); overlay.style.display=''; }
   };
 
   window.birthCalNav = function(dir){
@@ -3492,7 +3487,7 @@ let rankingUnsubscribe = null;
 </div>
 
 <!-- Calendário Nascimento -->
-<div class="custom-cal-overlay" id="birth-cal-overlay" onclick="if(event.target===this)closeBirthCal()" style="z-index:700;">
+<div class="custom-cal-overlay" id="birth-cal-overlay" onclick="if(event.target===this)closeBirthCal()" style="z-index:900;">
   <div class="custom-cal">
     <div class="custom-cal-header">
       <button class="custom-cal-nav" onclick="birthCalNav(-1)">‹</button>
@@ -3542,31 +3537,21 @@ let rankingUnsubscribe = null;
 </div>
 
 <!-- Modal Preencha seus dados -->
-<div id="fill-data-modal" style="display:none;position:fixed;inset:0;z-index:550;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeFillDataModal()">
+<div id="fill-data-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;" onclick="if(event.target===this)closeFillDataModal()">
   <div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:380px;animation:slideUp .3s ease-out;position:relative;">
-    <!-- Fechar -->
     <button onclick="closeFillDataModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;">✕</button>
-    <!-- Ícone moeda -->
-    <div style="text-align:center;margin-bottom:16px;">
-      <img id="fill-modal-coin-img" src="https://i.imgur.com/FzLPpDt.jpeg" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 16px rgba(201,168,76,0.4);">
-    </div>
-    <!-- Título -->
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:10px;">Preencha seus dados</div>
-    <!-- Frase -->
     <p style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6;margin-bottom:20px;">
       Coloque aqui a sua data de nascimento e já ganhe <strong style="color:var(--gold);">1 moeda GB$</strong> para resgatar nossos produtos e cupons na loja! 🎁
     </p>
-    <!-- Botão calendário nascimento -->
-    <button type="button" id="fill-birth-btn" onclick="openBirthPicker()" style="width:100%;padding:13px 16px;border-radius:11px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:15px;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s;margin-bottom:16px;">
+    <input type="hidden" id="login-birth">
+    <button type="button" id="fill-birth-btn" onclick="openBirthPicker(event)" style="width:100%;padding:13px 16px;border-radius:11px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:14px;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s,color .2s;margin-bottom:16px;">
       <span id="fill-birth-label">🗓️ Selecione a data do seu nascimento</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     </button>
-    <input type="hidden" id="login-birth">
-    <!-- Botão Concluído -->
-    <button onclick="confirmFillData()" style="width:100%;padding:13px;border-radius:11px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:opacity .2s;">
+    <button onclick="confirmFillData()" style="width:100%;padding:13px;border-radius:11px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">
       ✅ Concluído
     </button>
-    <!-- Mensagem de sucesso -->
     <div id="fill-data-success" style="display:none;text-align:center;margin-top:14px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);border-radius:10px;padding:10px;font-size:13px;color:#4ade80;font-weight:600;">
       🎉 Data salva! +1 GB$ adicionado à sua carteira!
     </div>
