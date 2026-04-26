@@ -1362,6 +1362,8 @@
 
   function getServiceSlots(service){
     const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
+    // Serviços de 15min não precisam de buffer — o próximo cliente pode entrar em 15min
+    if(dur <= 15) return 1;
     const buf = SCHEDULE.buffer||5;
     return Math.ceil((dur+buf)/15);
   }
