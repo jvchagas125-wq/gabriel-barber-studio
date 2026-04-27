@@ -1361,11 +1361,12 @@
   const DOW_KEY = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
 
   function getServiceSlots(service){
-    const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : 15;
-    // Serviços de 15min não precisam de buffer — o próximo cliente pode entrar em 15min
-    if(dur <= 15) return 1;
+    const interval = SCHEDULE.slotInterval||15;
+    const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : interval;
+    // Serviços com duração igual ao intervalo não precisam de buffer
+    if(dur <= interval) return 1;
     const buf = SCHEDULE.buffer||5;
-    return Math.ceil((dur+buf)/15);
+    return Math.ceil((dur+buf)/interval);
   }
 
   function getServiceDuration(service){
@@ -1374,11 +1375,12 @@
 
   function makeSlots(startStr, endStr){
     const slots=[];
+    const interval = SCHEDULE.slotInterval||15;
     let [h,m]=startStr.split(':').map(Number);
     const [eh,em]=endStr.split(':').map(Number);
     while(h<eh||(h===eh&&m<em)){
       slots.push(pad(h)+':'+pad(m));
-      m+=15; if(m>=60){m=0;h++;}
+      m+=interval; if(m>=60){h+=Math.floor(m/60);m=m%60;}
     }
     return slots;
   }
@@ -1400,7 +1402,7 @@
   }
 
   function getExtraSlots(startTime, extraCount){
-    const all = makeSlots('10:00','21:00');
+    const all = makeSlots('00:00','24:00');
     const idx = all.indexOf(startTime);
     if(idx<0) return [];
     return all.slice(idx+1, idx+extraCount+1);
