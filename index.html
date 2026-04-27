@@ -2122,12 +2122,21 @@
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
+    // Verificar se a data selecionada é hoje para bloquear horários passados
+    const todayStr = getTodayStr();
+    const isToday = selectedDate === todayStr;
+    const nowMinutes = isToday ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
+
     slots.forEach(time=>{
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
       const allNeeded=[time,...extras];
       const extrasValid=extras.every(e=>slots.includes(e));
       const isBooked=allNeeded.some(t=>bookedTimes.has(t));
-      const unavailable=isBooked||!extrasValid;
+      // Bloquear horários já passados quando a data é hoje
+      const [slotH, slotM] = time.split(':').map(Number);
+      const slotMinutes = slotH*60 + slotM;
+      const isPastTime = isToday && slotMinutes <= nowMinutes;
+      const unavailable=isBooked||!extrasValid||isPastTime;
 
       const btn=document.createElement("button");
       btn.type="button";
@@ -2340,12 +2349,20 @@
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
+    // Bloquear horários passados para hoje
+    const todayStrVip = getTodayStr();
+    const isTodayVip = selectedDate === todayStrVip;
+    const nowMinutesVip = isTodayVip ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
+
     slots.forEach(time=>{
       const extras = extraCount>0?getExtraSlots(time,extraCount):[];
       const allNeeded = [time,...extras];
       const extrasValid = extras.every(e=>slots.includes(e));
       const isBooked = allNeeded.some(t=>bookedTimes.has(t));
-      const unavailable = isBooked||!extrasValid;
+      const [slotHV, slotMV] = time.split(':').map(Number);
+      const slotMinutesV = slotHV*60 + slotMV;
+      const isPastTimeV = isTodayVip && slotMinutesV <= nowMinutesVip;
+      const unavailable = isBooked||!extrasValid||isPastTimeV;
 
       const btn = document.createElement('button');
       btn.type='button'; btn.className='time-btn'; btn.disabled=unavailable;
