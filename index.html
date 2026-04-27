@@ -696,12 +696,20 @@
     .store-filter-btn:hover { border-color: var(--gold); color: var(--gold); }
     .store-filter-btn.active { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
     .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-    .store-card {
-      background: var(--bg2); border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px;
-      transition: border-color .2s, transform .2s;
-    }
-    .store-card:hover { border-color: var(--gold-border); transform: translateY(-2px); }
+    /* ── FLIP CARD ── */
+    .store-card { perspective: 1000px; background: none !important; border: none !important; transform: none !important; padding: 0 !important; }
+    .store-card-inner { position: relative; width: 100%; min-height: 290px; transition: transform .55s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d; }
+    .store-card.flipped .store-card-inner { transform: rotateY(180deg); }
+    .store-card-front, .store-card-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 14px; border: 1px solid rgba(255,255,255,0.07); background: var(--bg2); display: flex; flex-direction: column; padding: 14px; gap: 8px; }
+    .store-card-front { transition: border-color .2s; }
+    .store-card-front:hover { border-color: var(--gold-border); }
+    .store-card-back { transform: rotateY(180deg); background: linear-gradient(135deg,#1a1508,#1e1a0a); border-color: var(--gold-border); justify-content: space-between; }
+    .store-card-back-title { font-family:'Bebas Neue',sans-serif; font-size:17px; color:var(--gold); }
+    .store-card-back-desc { font-size:13px; color:var(--text-muted); line-height:1.6; flex:1; overflow-y:auto; }
+    .flip-btn { width:100%; padding:7px; border-radius:8px; border:1px solid var(--gold-border); background:var(--gold-dim); color:var(--gold); font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background .15s; margin-top:auto; }
+    .flip-btn:hover { background:rgba(201,168,76,0.2); }
+    .flip-btn-back { width:100%; padding:7px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:none; color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
+    .flip-btn-back:hover { border-color:var(--gold-border); color:var(--gold); }
     .store-card-img { width: 100%; height: 100px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.03); }
     .store-card-img-placeholder { width: 100%; height: 100px; border-radius: 8px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; font-size: 36px; }
     .store-card-cat { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
@@ -3444,20 +3452,41 @@ let rankingUnsubscribe = null;
 
     grid.innerHTML = filtered.map(p=>{
       const canAfford = gbBalance >= (p.cost||0);
+      const hasDesc = !!(p.description||'').trim();
       const imgHtml = p.imageUrl
         ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
         : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
-      return `<div class="store-card">
+      const front = `
         ${imgHtml}
         <div class="store-card-cat">${p.category||'Geral'}</div>
         <div class="store-card-name">${p.name||'Produto'}</div>
         <div class="store-card-cost">${p.cost||0} <span>GB$</span></div>
-        <button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:'disabled'}>
+        ${hasDesc?`<button class="flip-btn" onclick="flipCard(event,'${p.id}')">📖 Leia a descrição antes de resgatar</button>`:''}
+        <button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
+          ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
+        </button>`;
+      const back = hasDesc ? `
+        <div class="store-card-back-title">📋 ${p.name||'Produto'}</div>
+        <div class="store-card-back-desc">${esc(p.description||'')}</div>
+        <button class="store-redeem-btn" style="margin-bottom:6px;" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
           ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
         </button>
+        <button class="flip-btn-back" onclick="flipCard(event,'${p.id}')">← Voltar</button>` : '';
+      return `<div class="store-card" id="sc-${p.id}">
+        <div class="store-card-inner">
+          <div class="store-card-front">${front}</div>
+          ${hasDesc?`<div class="store-card-back">${back}</div>`:''}
+        </div>
       </div>`;
     }).join('');
   }
+
+
+  window.flipCard = function(e, id){
+    e.stopPropagation();
+    const card = document.getElementById('sc-'+id);
+    if(card) card.classList.toggle('flipped');
+  };
 
   window.redeemProduct = async function(productId){
     if(!loggedPhone) return;
