@@ -715,7 +715,7 @@
     }
     .store-redeem-btn:hover { opacity: .88; }
     .store-redeem-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-dim); cursor: not-allowed; opacity: 1; }
-    @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } }
+    @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } .wallet-card { flex-wrap: wrap; } .wallet-divider { display: none !important; } .wallet-side-text { flex: 1 1 100% !important; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: 4px; } }
     @media (max-width: 380px) { .store-grid { grid-template-columns: 1fr; } }
 
     /* ===== SELEÇÃO MÚLTIPLA DE SERVIÇOS ===== */
@@ -1078,9 +1078,9 @@
         <div class="wallet-balance" id="wallet-balance">0</div>
       </div>
       <!-- Divisor -->
-      <div style="width:1px;background:rgba(255,255,255,0.08);align-self:stretch;margin:0 6px;flex-shrink:0;"></div>
+      <div class="wallet-divider" style="width:1px;background:rgba(255,255,255,0.08);align-self:stretch;margin:0 6px;flex-shrink:0;"></div>
       <!-- Frase ao lado -->
-      <div style="flex:1;min-width:0;">
+      <div class="wallet-side-text" style="flex:1;min-width:0;">
         <div class="wallet-sub" id="wallet-sub-text" style="font-size:13px;line-height:1.55;color:var(--text-muted);">Acumule, aproveite e gaste seus créditos com nossos produtos ou cupons! 🪙→🎁</div>
       </div>
     </div>
