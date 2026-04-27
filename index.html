@@ -1068,14 +1068,20 @@
     <h2 class="section-title gold-gradient">🛍️ Produtos & Cupons</h2>
 
     <!-- Carteira -->
-    <div class="wallet-card" id="store-wallet">
+    <div class="wallet-card" id="store-wallet" style="align-items:center;">
       <div class="wallet-icon">
         <img id="gb-coin-img" src="https://i.imgur.com/FzLPpDt.jpeg" alt="GB$" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.4);">
       </div>
-      <div class="wallet-info">
+      <!-- Saldo -->
+      <div class="wallet-info" style="flex:0 0 auto;">
         <div class="wallet-label">Seu saldo</div>
         <div class="wallet-balance" id="wallet-balance">0</div>
-        <div class="wallet-sub" id="wallet-sub-text">Cada agendamento concluído ganha 1 moeda GB$ (igual a R$0,25 centavos).</div>
+      </div>
+      <!-- Divisor -->
+      <div style="width:1px;background:rgba(255,255,255,0.08);align-self:stretch;margin:0 6px;flex-shrink:0;"></div>
+      <!-- Frase ao lado -->
+      <div style="flex:1;min-width:0;">
+        <div class="wallet-sub" id="wallet-sub-text" style="font-size:13px;line-height:1.55;color:var(--text-muted);">Acumule, aproveite e gaste seus créditos com nossos produtos ou cupons! 🪙→🎁</div>
       </div>
     </div>
 
