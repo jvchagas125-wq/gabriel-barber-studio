@@ -717,6 +717,20 @@
     .store-redeem-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-dim); cursor: not-allowed; opacity: 1; }
     @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } }
     @media (max-width: 380px) { .store-grid { grid-template-columns: 1fr; } }
+
+    /* ===== SELEÇÃO MÚLTIPLA DE SERVIÇOS ===== */
+    .svc-picker { display:flex; flex-direction:column; gap:0; border:1px solid rgba(255,255,255,0.1); border-radius:10px; overflow:hidden; background:var(--bg3); }
+    .svc-picker-item { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; transition:background .15s; border-bottom:1px solid rgba(255,255,255,0.05); user-select:none; }
+    .svc-picker-item:last-child { border-bottom:none; }
+    .svc-picker-item:hover { background:rgba(201,168,76,0.06); }
+    .svc-picker-item.selected { background:rgba(201,168,76,0.1); }
+    .svc-picker-check { width:18px; height:18px; border-radius:5px; border:2px solid rgba(255,255,255,0.2); background:none; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; transition:all .15s; }
+    .svc-picker-item.selected .svc-picker-check { background:var(--gold); border-color:var(--gold); color:#111; }
+    .svc-picker-name { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+    .svc-picker-info { font-size:12px; color:var(--text-dim); display:flex; gap:8px; }
+    .svc-picker-info span { background:rgba(255,255,255,0.05); padding:2px 7px; border-radius:10px; }
+    .svc-summary { margin-top:8px; padding:10px 14px; background:var(--gold-dim); border:1px solid var(--gold-border); border-radius:9px; font-size:13px; color:var(--gold); font-weight:700; display:none; }
+    .svc-summary.show { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
   </style>
 
   <script>
@@ -899,16 +913,13 @@
     <div class="booking-card">
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
-      <div class="form-group"><label class="form-label">Serviço</label>
-        <select class="form-input" id="f-service">
-          <option value="">Selecione um serviço</option>
-          <option value="Cabelo">Cabelo - R$ 30,00</option>
-          <option value="Barba">Barba - R$ 25,00</option>
-          <option value="Pezinho">Pezinho - R$ 15,00</option>
-          <option value="Cabelo & Barba">Cabelo &amp; Barba - R$ 50,00</option>
-          <option value="Raspar Cabeça">Raspar Cabeça - R$ 20,00</option>
-          <option value="Sobrancelha">Sobrancelha - R$ 15,00</option>
-        </select>
+      <div class="form-group">
+        <label class="form-label">Serviços <span id="f-svc-count" style="font-size:11px;color:var(--text-dim);font-weight:400;"></span></label>
+        <div class="svc-picker" id="f-svc-picker">
+          <div style="padding:12px 14px;font-size:13px;color:var(--text-dim);">Carregando serviços...</div>
+        </div>
+        <div class="svc-summary" id="f-svc-summary"></div>
+        <input type="hidden" id="f-service" value="">
       </div>
       <div class="form-group"><label class="form-label">Data</label>
       <div class="date-picker-wrap">
@@ -1098,10 +1109,13 @@
       <h3 style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#c9a84c;margin-bottom:20px;text-align:center;">Agendar meu Horário</h3>
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="vip-f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="vip-f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
-      <div class="form-group"><label class="form-label">Serviço</label>
-        <select class="form-input" id="vip-f-service">
-          <option value="">Selecione um serviço</option>
-        </select>
+      <div class="form-group">
+        <label class="form-label">Serviços <span id="vip-svc-count" style="font-size:11px;color:var(--text-dim);font-weight:400;"></span></label>
+        <div class="svc-picker" id="vip-svc-picker">
+          <div style="padding:12px 14px;font-size:13px;color:var(--text-dim);">Carregando serviços...</div>
+        </div>
+        <div class="svc-summary" id="vip-svc-summary"></div>
+        <input type="hidden" id="vip-f-service" value="">
       </div>
       <div class="form-group"><label class="form-label">Data</label>
       <div class="date-picker-wrap">
@@ -1279,15 +1293,17 @@
     if(card) card.classList.toggle('expanded', !isOpen);
   };
 
+  let adminServicesCache = [];
+
   function updateBookingSelects(){
-    const opts = '<option value="">Selecione um serviço</option>' +
-      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name} - R$ ${s.price}</option>`).join('');
-    const optsSvc = '<option value="">Selecione um serviço</option>' +
-      SERVICES_DATA.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-    const fSvc = document.getElementById('f-service');
-    const vipSvc = document.getElementById('vip-f-service');
-    if(fSvc) fSvc.innerHTML = opts;
-    if(vipSvc) vipSvc.innerHTML = opts;
+    adminServicesCache = SERVICES_DATA;
+    // Render multi-service pickers
+    renderSvcPicker(adminServicesCache,'f-svc-picker','f-svc-summary','f-svc-count','f-service', ()=>{
+      if(document.getElementById('f-date').value) renderSlots();
+    });
+    renderSvcPicker(adminServicesCache,'vip-svc-picker','vip-svc-summary','vip-svc-count','vip-f-service', ()=>{
+      if(document.getElementById('vip-f-date').value) renderSlotsVip();
+    });
     // Atualiza SCHEDULE.services com duração atual dos serviços carregados
     SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
   }
@@ -1362,11 +1378,27 @@
 
   function getServiceSlots(service){
     const interval = SCHEDULE.slotInterval||15;
-    const dur = (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : interval;
-    // Serviços com duração igual ao intervalo não precisam de buffer
+    // If called with a combined service name or multi-selection, use total duration
+    const dur = getTotalSelectedDuration(service, interval);
     if(dur <= interval) return 1;
     const buf = SCHEDULE.buffer||5;
     return Math.ceil((dur+buf)/interval);
+  }
+
+  function getTotalSelectedDuration(service, interval){
+    // Check if we have multi-selected services (non-VIP)
+    if(selectedServices && selectedServices.length>0){
+      return selectedServices.reduce((s,x)=>s+(x.duration||interval),0);
+    }
+    // Fallback: single service from SCHEDULE
+    return (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : (interval||15);
+  }
+
+  function getTotalSelectedDurationVip(service, interval){
+    if(selectedServicesVip && selectedServicesVip.length>0){
+      return selectedServicesVip.reduce((s,x)=>s+(x.duration||interval),0);
+    }
+    return (SCHEDULE.services&&SCHEDULE.services[service]) ? SCHEDULE.services[service].duration : (interval||15);
   }
 
   function getServiceDuration(service){
@@ -1910,6 +1942,92 @@
     } catch(e){}
   }
 
+
+  // ═══════════════════════════════════════
+  // SELEÇÃO MÚLTIPLA DE SERVIÇOS
+  // ═══════════════════════════════════════
+  let selectedServices = [];    // [{name, price, duration}]
+  let selectedServicesVip = [];
+
+  function renderSvcPicker(services, pickerId, summaryId, countId, hiddenId, onChanged){
+    const picker = document.getElementById(pickerId);
+    if(!picker) return;
+    if(!services||!services.length){
+      picker.innerHTML='<div style="padding:12px 14px;font-size:13px;color:var(--text-dim);">Nenhum serviço cadastrado.</div>';
+      return;
+    }
+    const selected = hiddenId==='f-service' ? selectedServices : selectedServicesVip;
+    picker.innerHTML = services.map(svc=>{
+      const isSel = selected.some(s=>s.name===svc.name);
+      return `<div class="svc-picker-item${isSel?' selected':''}" onclick="toggleSvc('${hiddenId==='f-service'?'normal':'vip'}','${svc.name.replace(/'/g,"\\'")}',${svc.duration||15},${parseFloat((svc.price||'0').replace(',','.'))||0})">
+        <div class="svc-picker-check">${isSel?'✓':''}</div>
+        <div class="svc-picker-name">${svc.name}</div>
+        <div class="svc-picker-info">
+          <span>R$ ${(svc.price||'0,00')}</span>
+          <span>${svc.duration||15}min</span>
+        </div>
+      </div>`;
+    }).join('');
+    updateSvcSummary(hiddenId, summaryId, countId, onChanged);
+  }
+
+  function updateSvcSummary(hiddenId, summaryId, countId, onChanged){
+    const isVip = hiddenId !== 'f-service';
+    const selected = isVip ? selectedServicesVip : selectedServices;
+    const totalDur = selected.reduce((s,x)=>s+(x.duration||0),0);
+    const totalPrice = selected.reduce((s,x)=>s+(x.price||0),0);
+
+    // Update hidden input with comma-separated names
+    const hid = document.getElementById(hiddenId);
+    if(hid) hid.value = selected.map(s=>s.name).join(', ');
+
+    // Update count label
+    const countEl = document.getElementById(countId);
+    if(countEl) countEl.textContent = selected.length ? `(${selected.length} selecionado${selected.length>1?'s':''})` : '';
+
+    // Update summary bar
+    const sumEl = document.getElementById(summaryId);
+    if(sumEl){
+      if(selected.length){
+        sumEl.classList.add('show');
+        sumEl.innerHTML = `<span>⏱ ${totalDur} min total</span><span>R$ ${totalPrice.toFixed(2).replace('.',',')}</span>`;
+      } else {
+        sumEl.classList.remove('show');
+      }
+    }
+    if(onChanged) onChanged();
+  }
+
+  window.toggleSvc = function(formType, name, duration, price){
+    const isVip = formType==='vip';
+    const arr = isVip ? selectedServicesVip : selectedServices;
+    const idx = arr.findIndex(s=>s.name===name);
+    if(idx>=0){ arr.splice(idx,1); }
+    else { arr.push({name, duration, price}); }
+    if(isVip){
+      selectedServicesVip = arr;
+      renderSvcPicker(adminServicesCache,'vip-svc-picker','vip-svc-summary','vip-svc-count','vip-f-service',()=>{
+        if(document.getElementById('vip-f-date').value) renderSlotsVip();
+      });
+    } else {
+      selectedServices = arr;
+      renderSvcPicker(adminServicesCache,'f-svc-picker','f-svc-summary','f-svc-count','f-service',()=>{
+        if(document.getElementById('f-date').value) renderSlots();
+      });
+    }
+  };
+
+  // Computed total duration for selected services
+  function getSelectedDuration(isVip){
+    const arr = isVip ? selectedServicesVip : selectedServices;
+    return arr.reduce((s,x)=>s+(x.duration||0),0);
+  }
+
+  function getSelectedServiceName(isVip){
+    const arr = isVip ? selectedServicesVip : selectedServices;
+    return arr.map(s=>s.name).join(' + ');
+  }
+
   window.doLogout = async function(){
     if(!confirm("Deseja sair da sua conta?")) return;
     loggedPhone=null; localStorage.removeItem("gbs_phone");
@@ -1939,7 +2057,7 @@
   window.renderSlots = function(){
     const container=document.getElementById("timeSlots");
     const selectedDate=document.getElementById("f-date").value;
-    const service=document.getElementById("f-service").value;
+    const service = selectedServices.length ? selectedServices.map(s=>s.name).join(' + ') : document.getElementById("f-service").value;
     container.innerHTML=""; document.getElementById("f-time").value="";
     if(!selectedDate) return;
 
@@ -1950,7 +2068,9 @@
     }
 
     const bookedRaw=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    const extraCount=getServiceSlots(service)-1;
+    const interval = SCHEDULE.slotInterval||15;
+    const totalDur = getTotalSelectedDuration(service, interval);
+    const extraCount = totalDur <= interval ? 0 : Math.ceil((totalDur+(SCHEDULE.buffer||5))/interval)-1;
 
     // Expandir bookedTimes para incluir os extras de cada agendamento existente
     // Cada agendamento ocupa seu horário + os extras do serviço que foi agendado
@@ -1975,7 +2095,7 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        btn.textContent=extraCount>0?(time+' + '+getServiceDuration(service)+'min'):time;
+        btn.textContent=extraCount>0?(time+' + '+totalDur+'min'):time;
         btn.onclick=()=>{
           // Remove seleção anterior
           document.querySelectorAll(".time-btn").forEach(b=>{
@@ -2023,7 +2143,7 @@
       const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
       document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
       document.getElementById("confirmBox").classList.add("show");
-      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value="";
+      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value=""; selectedServices=[]; updateBookingSelects();
       renderSlots(); showToast("Agendamento confirmado!","success");
       setTimeout(()=>showSection("appointments"),2200);
     } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
@@ -2179,7 +2299,9 @@
     }
 
     const bookedRawVip=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
-    const extraCount = getServiceSlots(service)-1;
+    const intervalVip = SCHEDULE.slotInterval||15;
+    const totalDurVip = getTotalSelectedDurationVip(service, intervalVip);
+    const extraCount = totalDurVip <= intervalVip ? 0 : Math.ceil((totalDurVip+(SCHEDULE.buffer||5))/intervalVip)-1;
 
     // Expandir para incluir os extras de cada agendamento existente
     const bookedTimes = new Set(bookedRawVip);
@@ -2200,7 +2322,7 @@
       if(unavailable){
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
-        btn.textContent=extraCount>0?(time+' + '+getServiceDuration(service)+'min'):time;
+        btn.textContent=extraCount>0?(time+' + '+totalDurVip+'min'):time;
         btn.onclick=()=>{
           document.querySelectorAll('#timeSlotsVip .time-btn').forEach(b=>b.classList.remove('selected','selected-extra'));
           btn.classList.add('selected');
