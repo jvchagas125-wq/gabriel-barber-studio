@@ -906,6 +906,14 @@
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
 
+    <!-- Avisos página inicial -->
+    <div id="home-notices-wrap" style="display:none;margin-top:24px;">
+      <div class="hours-card" style="background:var(--bg2);border:1px solid rgba(255,255,255,0.07);padding:22px 24px;">
+        <h3 style="font-family:Bebas Neue,sans-serif;font-size:22px;margin-bottom:14px;">📢 Avisos e Informações</h3>
+        <div id="home-notices-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1840,8 +1848,9 @@
     });
     if(name === 'appointments') renderAppointments();
     if(name === 'ranking') loadRanking();
-    if(name === 'contact') loadContactNotices();
+
     if(name === 'store') loadStore();
+    if(name === 'home' || name === 'contact') loadContactNotices();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
     if(isVip && name === 'booking'){
@@ -2770,23 +2779,33 @@
 
 
   // ===== AVISOS DE CONTATO =====
+  function renderNotices(list, wrapId, listId){
+    const typeLabels = { aviso:'⚠️ Aviso', info:'ℹ️ Informação', promo:'🎉 Promoção', lembrete:'📌 Lembrete' };
+    const wrap = document.getElementById(wrapId);
+    const el   = document.getElementById(listId);
+    if(!wrap||!el) return;
+    if(!list||!list.length){ wrap.style.display='none'; return; }
+    wrap.style.display='block';
+    el.innerHTML = list.map(n=>`
+      <div class="notice-card">
+        <div class="notice-type">${typeLabels[n.type]||'📢 Aviso'}</div>
+        <div class="notice-text">${esc(n.text)}</div>
+      </div>`).join('');
+  }
+
+  let noticesUnsubscribe = null;
   function loadContactNotices(){
-    onSnapshot(collection(db,'config'), snap=>{
-      const noticesDoc = snap.docs.find(d=>d.id==='notices');
-      if(!noticesDoc || !noticesDoc.data().list || !noticesDoc.data().list.length){
-        document.getElementById('contact-notices-wrap').style.display='none';
-        return;
-      }
-      const list = noticesDoc.data().list.filter(n=>n.text&&n.active!==false);
-      if(!list.length){ document.getElementById('contact-notices-wrap').style.display='none'; return; }
-      document.getElementById('contact-notices-wrap').style.display='block';
-      const typeLabels = { aviso:'⚠️ Aviso', info:'ℹ️ Informação', promo:'🎉 Promoção', lembrete:'📌 Lembrete' };
-      document.getElementById('contact-notices-list').innerHTML = list.map(n=>`
-        <div class="notice-card">
-          <div class="notice-type">${typeLabels[n.type]||'📢 Aviso'}</div>
-          <div class="notice-text">${esc(n.text)}</div>
-        </div>`).join('');
-    }, e=>console.warn('notices:',e));
+    if(noticesUnsubscribe) return;
+    // Listen home notices
+    onSnapshot(doc(db,'config','notices_home'), snap=>{
+      const list = snap.exists() ? (snap.data().list||[]).filter(n=>n.text&&n.active!==false) : [];
+      renderNotices(list,'home-notices-wrap','home-notices-list');
+    }, e=>console.warn('notices_home:',e));
+    // Listen contact notices
+    noticesUnsubscribe = onSnapshot(doc(db,'config','notices_contact'), snap=>{
+      const list = snap.exists() ? (snap.data().list||[]).filter(n=>n.text&&n.active!==false) : [];
+      renderNotices(list,'contact-notices-wrap','contact-notices-list');
+    }, e=>console.warn('notices_contact:',e));
   }
 
   // ===== CALENDÁRIO NASCIMENTO =====
