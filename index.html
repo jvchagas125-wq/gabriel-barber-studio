@@ -731,6 +731,28 @@
     .svc-picker-info span { background:rgba(255,255,255,0.05); padding:2px 7px; border-radius:10px; }
     .svc-summary { margin-top:8px; padding:10px 14px; background:var(--gold-dim); border:1px solid var(--gold-border); border-radius:9px; font-size:13px; color:var(--gold); font-weight:700; display:none; }
     .svc-summary.show { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+
+    /* ===== AVISOS CONTATO ===== */
+    .notice-card {
+      background: var(--bg3);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 10px 10px 0;
+      padding: 14px 16px;
+    }
+    .notice-card .notice-type {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .notice-card .notice-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
   </style>
 
   <script>
@@ -965,6 +987,14 @@
       <div id="hours-breaks-dynamic"></div>
       <!-- Dias fechados agora são controlados pelo painel admin -->
     </div>
+    <!-- Avisos e informações -->
+    <div id="contact-notices-wrap" style="display:none;margin-top:20px;">
+      <div class="hours-card" style="background:var(--bg2);border:1px solid rgba(255,255,255,0.07);">
+        <h3 style="font-family:Bebas Neue,sans-serif;font-size:24px;margin-bottom:16px;">📢 Avisos e Informações</h3>
+        <div id="contact-notices-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+    </div>
+
     <div class="mob-nav-row">
       <button class="mob-nav-btn prev" onclick="showSection('plans')" title="Planos">← Planos</button>
       <button class="mob-nav-btn next" onclick="showSection('home')">🏠 Início →</button>
@@ -1810,6 +1840,7 @@
     });
     if(name === 'appointments') renderAppointments();
     if(name === 'ranking') loadRanking();
+    if(name === 'contact') loadContactNotices();
     if(name === 'store') loadStore();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
@@ -2736,6 +2767,27 @@
     checkFillDataBtn();
   }
 
+
+
+  // ===== AVISOS DE CONTATO =====
+  function loadContactNotices(){
+    onSnapshot(collection(db,'config'), snap=>{
+      const noticesDoc = snap.docs.find(d=>d.id==='notices');
+      if(!noticesDoc || !noticesDoc.data().list || !noticesDoc.data().list.length){
+        document.getElementById('contact-notices-wrap').style.display='none';
+        return;
+      }
+      const list = noticesDoc.data().list.filter(n=>n.text&&n.active!==false);
+      if(!list.length){ document.getElementById('contact-notices-wrap').style.display='none'; return; }
+      document.getElementById('contact-notices-wrap').style.display='block';
+      const typeLabels = { aviso:'⚠️ Aviso', info:'ℹ️ Informação', promo:'🎉 Promoção', lembrete:'📌 Lembrete' };
+      document.getElementById('contact-notices-list').innerHTML = list.map(n=>`
+        <div class="notice-card">
+          <div class="notice-type">${typeLabels[n.type]||'📢 Aviso'}</div>
+          <div class="notice-text">${esc(n.text)}</div>
+        </div>`).join('');
+    }, e=>console.warn('notices:',e));
+  }
 
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
