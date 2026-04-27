@@ -1961,10 +1961,16 @@
       const clientSnap = await getDoc(doc(db,'clients',digits));
       const alreadyRewarded = clientSnap.exists() && clientSnap.data().birthdateRewarded;
       if(!alreadyRewarded){
+        // Buscar quantas moedas dar pelo aniversário
+        let birthCoins = 1;
+        try {
+          const cfgSnap = await getDoc(doc(db,'config','gb_store'));
+          if(cfgSnap.exists() && cfgSnap.data().birthCoins) birthCoins = parseInt(cfgSnap.data().birthCoins)||1;
+        } catch(e){}
         const walRef = doc(db,'wallets',digits);
         const walSnap = await getDoc(walRef);
         const cur = walSnap.exists() ? (walSnap.data().balance||0) : 0;
-        await setDoc(walRef,{ balance: cur+1, phone: loggedPhone, digits, updatedAt: new Date().toISOString() },{merge:true});
+        await setDoc(walRef,{ balance: cur+birthCoins, phone: loggedPhone, digits, updatedAt: new Date().toISOString() },{merge:true});
         await setDoc(doc(db,'clients',digits),{ birthdateRewarded: true },{merge:true});
       }
       document.getElementById('fill-data-success').style.display = 'block';
