@@ -1031,16 +1031,12 @@
 
     <!-- Carteira -->
     <div class="wallet-card" id="store-wallet">
-      <div class="wallet-icon" style="cursor:pointer;position:relative;" onclick="toggleCoinTooltip()" title="1 GB$ = R$0,25">
+      <div class="wallet-icon">
         <img id="gb-coin-img" src="https://i.imgur.com/FzLPpDt.jpeg" alt="GB$" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.4);">
-        <div id="coin-tooltip" style="display:none;position:absolute;left:64px;top:50%;transform:translateY(-50%);background:#1a1a1a;border:1px solid var(--gold-border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.5);">1 GB$ = R$0,25</div>
       </div>
       <div class="wallet-info">
         <div class="wallet-label">Seu saldo</div>
-        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-          <div class="wallet-balance" id="wallet-balance">0</div>
-          <div style="font-size:13px;color:var(--text-muted);font-weight:600;">GB$ <span style="color:var(--text-dim);font-size:11px;">= </span><span id="wallet-brl" style="color:#4ade80;font-weight:700;">R$0,00</span></div>
-        </div>
+        <div class="wallet-balance" id="wallet-balance">0</div>
         <div class="wallet-sub" id="wallet-sub-text">Cada agendamento concluído ganha 1 moeda GB$ (igual a R$0,25 centavos).</div>
       </div>
     </div>
@@ -2232,18 +2228,6 @@
     } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
   }
 
-  window.toggleCoinTooltip = function(){
-    const t = document.getElementById('coin-tooltip');
-    if(t) t.style.display = t.style.display==='none' ? 'block' : 'none';
-  };
-  // Desktop: show tooltip on hover
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const icon = document.querySelector('.wallet-icon');
-    if(icon){
-      icon.addEventListener('mouseenter', ()=>{ const t=document.getElementById('coin-tooltip'); if(t) t.style.display='block'; });
-      icon.addEventListener('mouseleave', ()=>{ const t=document.getElementById('coin-tooltip'); if(t) t.style.display='none'; });
-    }
-  });
 
   window.cancelApt = async function(id){
     if(!confirm("Cancelar este agendamento?")) return;
@@ -3313,19 +3297,14 @@ let rankingUnsubscribe = null;
       gbBalance = walletSnap.exists() ? (walletSnap.data().balance||0) : 0;
     } catch(e){ gbBalance = 0; }
 
-    const brl = (gbBalance * coinValue).toFixed(2).replace('.',',');
     const balEl = document.getElementById('wallet-balance');
-    const brlEl = document.getElementById('wallet-brl');
     if(balEl) balEl.textContent = gbBalance;
-    if(brlEl) brlEl.textContent = 'R$' + brl;
 
     // Escuta saldo em tempo real
     if(balanceUnsubscribe) balanceUnsubscribe();
     balanceUnsubscribe = onSnapshot(doc(db,'wallets',digits), snap => {
       gbBalance = snap.exists() ? (snap.data().balance||0) : 0;
-      const brl2 = (gbBalance * coinValue).toFixed(2).replace('.',',');
       if(balEl) balEl.textContent = gbBalance;
-      if(brlEl) brlEl.textContent = 'R$' + brl2;
     });
 
     // Escuta produtos em tempo real
