@@ -3531,8 +3531,13 @@ let rankingUnsubscribe = null;
     // Escuta saldo em tempo real
     if(balanceUnsubscribe) balanceUnsubscribe();
     balanceUnsubscribe = onSnapshot(doc(db,'wallets',digits), snap => {
-      gbBalance = snap.exists() ? (snap.data().balance||0) : 0;
-      if(balEl) balEl.textContent = gbBalance;
+      const newBalance = snap.exists() ? (snap.data().balance||0) : 0;
+      if(newBalance !== gbBalance){
+        gbBalance = newBalance;
+        if(balEl) balEl.textContent = gbBalance;
+        // Re-render grid para atualizar botões habilitados/desabilitados em tempo real
+        renderStoreGrid();
+      }
     });
 
     // Escuta produtos em tempo real
