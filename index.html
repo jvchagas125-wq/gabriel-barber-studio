@@ -2857,22 +2857,39 @@
   let gbPackagesData = [];
   let selectedGBPackage = null;
 
+  const DEFAULT_GB_PACKAGES = [
+    { id:'pkg1', price:10,  coins:11,  bonus:1,   link:'https://mpago.la/1ntVSHj', active:true },
+    { id:'pkg2', price:25,  coins:30,  bonus:5,   link:'https://mpago.la/1utPXfQ', active:true },
+    { id:'pkg3', price:50,  coins:70,  bonus:20,  link:'https://mpago.la/11fNQU1', active:true },
+    { id:'pkg4', price:150, coins:250, bonus:100, link:'https://mpago.la/1V2C2BC', active:true },
+  ];
+
   async function loadGBPackagesClient(){
     try {
       const snap = await getDoc(doc(db,'config','gb_packages'));
-      if(snap.exists()){
-        gbPackagesData = (snap.data().packages||[]).filter(p=>p.active!==false);
+      if(snap.exists() && snap.data().packages && snap.data().packages.length){
+        gbPackagesData = snap.data().packages.filter(p=>p.active!==false);
         const phrase = document.getElementById('buy-gbs-phrase');
         if(phrase && snap.data().phrase) phrase.textContent = snap.data().phrase;
+      } else {
+        // Usar pacotes padrão se não existir configuração no Firestore
+        gbPackagesData = DEFAULT_GB_PACKAGES;
       }
-    } catch(e){ console.warn('loadGBPackagesClient:',e); }
+    } catch(e){
+      console.warn('loadGBPackagesClient:',e);
+      gbPackagesData = DEFAULT_GB_PACKAGES;
+    }
   }
 
   window.openBuyGBsModal = async function(){
-    document.getElementById('buy-gbs-modal').style.display = 'flex';
+    // Reset completo do modal
+    selectedGBPackage = null;
+    document.getElementById('buy-gbs-packages').style.display = 'flex';
     document.getElementById('buy-gbs-email-section').style.display = 'none';
     document.getElementById('buy-gbs-waiting').style.display = 'none';
-    selectedGBPackage = null;
+    const emailEl = document.getElementById('buy-gbs-email');
+    if(emailEl) emailEl.value = '';
+    document.getElementById('buy-gbs-modal').style.display = 'flex';
     if(!gbPackagesData.length) await loadGBPackagesClient();
     renderGBPackagesClient();
   };
