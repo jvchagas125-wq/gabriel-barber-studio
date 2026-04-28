@@ -3467,7 +3467,7 @@ let rankingUnsubscribe = null;
         <div class="store-card-cat">${p.category||'Geral'}</div>
         <div class="store-card-name">${p.name||'Produto'}</div>
         <div class="store-card-cost">${p.cost||0} <span>GB$</span></div>
-        ${hasDesc?`<button class="flip-btn" onclick="flipCard(event,'${p.id}')">📖 Clique aqui e leia a descrição antes de resgatar</button>`:''}
+        ${hasDesc?`<button class="flip-btn" onclick="flipCard(event,'${p.id}')">📖 Leia a descrição</button>`:''}
         <button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
           ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
         </button>`;
