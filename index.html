@@ -1093,6 +1093,11 @@
       </div>
     </div>
 
+    <!-- Botão comprar GB$ -->
+    <button id="buy-gbs-btn" onclick="openBuyGBsModal()" style="width:100%;padding:11px;border-radius:11px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:16px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;">
+      🛒 Compre aqui +GB$
+    </button>
+
     <!-- Filtros -->
     <div class="store-filters" id="store-filters">
       <button class="store-filter-btn active" data-cat="all" onclick="filterStore('all')">Todos</button>
@@ -2845,6 +2850,104 @@
     }, e=>console.warn('notices_contact:',e));
   }
 
+
+  // ═══════════════════════════════════════
+  // COMPRAR GB$ — SITE CLIENTE
+  // ═══════════════════════════════════════
+  let gbPackagesData = [];
+  let selectedGBPackage = null;
+
+  async function loadGBPackagesClient(){
+    try {
+      const snap = await getDoc(doc(db,'config','gb_packages'));
+      if(snap.exists()){
+        gbPackagesData = (snap.data().packages||[]).filter(p=>p.active!==false);
+        const phrase = document.getElementById('buy-gbs-phrase');
+        if(phrase && snap.data().phrase) phrase.textContent = snap.data().phrase;
+      }
+    } catch(e){ console.warn('loadGBPackagesClient:',e); }
+  }
+
+  window.openBuyGBsModal = async function(){
+    document.getElementById('buy-gbs-modal').style.display = 'flex';
+    document.getElementById('buy-gbs-email-section').style.display = 'none';
+    document.getElementById('buy-gbs-waiting').style.display = 'none';
+    selectedGBPackage = null;
+    if(!gbPackagesData.length) await loadGBPackagesClient();
+    renderGBPackagesClient();
+  };
+
+  window.closeBuyGBsModal = function(){
+    document.getElementById('buy-gbs-modal').style.display = 'none';
+  };
+
+  function renderGBPackagesClient(){
+    const el = document.getElementById('buy-gbs-packages');
+    if(!el) return;
+    if(!gbPackagesData.length){
+      el.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:20px;">Nenhum pacote disponível.</div>';
+      return;
+    }
+    el.innerHTML = gbPackagesData.map(p=>`
+      <div onclick="selectGBPackage('${p.id}')" id="pkg-card-${p.id}" style="cursor:pointer;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:var(--bg3);transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);">R$${(p.price||0).toFixed(2).replace('.',',')} <span style="font-size:16px;">→ ${p.coins||0} GB$</span></div>
+          ${p.bonus?`<div style="font-size:12px;color:#4ade80;font-weight:700;">+${p.bonus} GB$ de bônus inclusos!</div>`:''}
+        </div>
+        <div style="width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;" id="pkg-check-${p.id}"></div>
+      </div>`).join('');
+  }
+
+  window.selectGBPackage = function(pkgId){
+    selectedGBPackage = gbPackagesData.find(p=>p.id===pkgId);
+    // Update visual selection
+    gbPackagesData.forEach(p=>{
+      const card = document.getElementById('pkg-card-'+p.id);
+      const check = document.getElementById('pkg-check-'+p.id);
+      if(p.id===pkgId){
+        if(card){ card.style.borderColor='var(--gold)'; card.style.background='rgba(201,168,76,0.08)'; }
+        if(check){ check.style.borderColor='var(--gold)'; check.style.background='var(--gold)'; check.textContent='✓'; check.style.color='#111'; check.style.fontWeight='700'; }
+      } else {
+        if(card){ card.style.borderColor='rgba(255,255,255,0.08)'; card.style.background='var(--bg3)'; }
+        if(check){ check.style.borderColor='rgba(255,255,255,0.15)'; check.style.background=''; check.textContent=''; }
+      }
+    });
+    // Show email section
+    document.getElementById('buy-gbs-email-section').style.display = 'block';
+    document.getElementById('buy-gbs-email').focus();
+  };
+
+  window.confirmBuyGBs = async function(){
+    if(!selectedGBPackage){ showToast('Selecione um pacote.','error'); return; }
+    const email = (document.getElementById('buy-gbs-email')?.value||'').trim();
+    if(!email||!email.includes('@')){ showToast('Informe um e-mail válido.','error'); return; }
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    try {
+      // Register purchase request
+      const purchaseId = 'gbp_'+digits+'_'+Date.now();
+      await setDoc(doc(db,'gb_purchases',purchaseId),{
+        clientName:  loggedName||'',
+        phone:       loggedPhone,
+        digits,
+        email,
+        packageId:   selectedGBPackage.id,
+        price:       selectedGBPackage.price,
+        coins:       selectedGBPackage.coins,
+        bonus:       selectedGBPackage.bonus||0,
+        link:        selectedGBPackage.link,
+        status:      'pending',
+        createdAt:   new Date().toISOString(),
+      });
+      // Redirect to Mercado Pago in new tab
+      window.open(selectedGBPackage.link, '_blank');
+      // Show waiting screen
+      document.getElementById('buy-gbs-email-section').style.display = 'none';
+      document.getElementById('buy-gbs-packages').style.display = 'none';
+      document.getElementById('buy-gbs-waiting').style.display = 'block';
+    } catch(e){ showToast('Erro ao registrar pedido: '+e.message,'error'); }
+  };
+
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
   let birthYearPickerOpen = false;
@@ -3760,6 +3863,37 @@ let rankingUnsubscribe = null;
     </button>
     <div id="fill-data-success" style="display:none;text-align:center;margin-top:14px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);border-radius:10px;padding:10px;font-size:13px;color:#4ade80;font-weight:600;">
       🎉 Data salva! +1 GB$ adicionado à sua carteira!
+    </div>
+  </div>
+</div>
+
+<!-- Modal Comprar GB$ -->
+<div id="buy-gbs-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;" onclick="if(event.target===this)closeBuyGBsModal()">
+  <div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:0;width:90%;max-width:420px;animation:slideUp .3s ease-out;overflow:hidden;max-height:90vh;overflow-y:auto;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1a1508,#2a2010);padding:20px 22px 16px;border-bottom:1px solid var(--gold-border);position:relative;">
+      <button onclick="closeBuyGBsModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">🪙 Comprar GB$</div>
+      <div id="buy-gbs-phrase" style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Compre aqui seus GB$ caso esteja com vontade de resgatar os cupons e produtos de forma rápida.</div>
+    </div>
+    <!-- Pacotes -->
+    <div style="padding:18px 22px;">
+      <div id="buy-gbs-packages" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+        <div style="text-align:center;padding:20px;color:var(--text-dim);">Carregando...</div>
+      </div>
+      <!-- Email input -->
+      <div id="buy-gbs-email-section" style="display:none;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Informe seu e-mail para confirmar a compra:</div>
+        <input type="email" id="buy-gbs-email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+        <button onclick="confirmBuyGBs()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">Continuar para pagamento →</button>
+        <button onclick="document.getElementById('buy-gbs-email-section').style.display='none';selectedGBPackage=null;" style="width:100%;padding:8px;border-radius:10px;border:none;background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:6px;">← Voltar</button>
+      </div>
+      <!-- Aguardando -->
+      <div id="buy-gbs-waiting" style="display:none;text-align:center;padding:16px 0;">
+        <div style="font-size:32px;margin-bottom:10px;">⏳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:6px;">Aguardando confirmação</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">Seu pedido foi registrado. Após o pagamento, Gabriel irá aprovar e seus GB$ serão creditados automaticamente.</div>
+      </div>
     </div>
   </div>
 </div>
