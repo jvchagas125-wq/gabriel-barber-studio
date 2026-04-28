@@ -1930,12 +1930,18 @@
 
   // ===== MODAL PREENCHA SEUS DADOS =====
   window.openFillDataModal = async function(){
-    // Load coin image from config
+    // Load coin image and birthCoins from config
     try {
       const cfgSnap = await getDoc(doc(db,'config','gb_store'));
-      if(cfgSnap.exists() && cfgSnap.data().coinImage){
-        const img = document.getElementById('fill-modal-coin-img');
-        if(img) img.src = cfgSnap.data().coinImage;
+      if(cfgSnap.exists()){
+        const d = cfgSnap.data();
+        if(d.coinImage){
+          const img = document.getElementById('fill-modal-coin-img');
+          if(img) img.src = d.coinImage;
+        }
+        const birthCoins = parseInt(d.birthCoins)||1;
+        const descEl = document.getElementById('fill-modal-desc');
+        if(descEl) descEl.innerHTML = 'Coloque aqui a sua data de nascimento e já ganhe <strong style="color:var(--gold);">'+birthCoins+' GB$</strong> para resgatar nossos produtos e cupons na loja! 🎁';
       }
     } catch(e){}
     // Reset state
@@ -3895,7 +3901,7 @@ let rankingUnsubscribe = null;
     <button onclick="closeFillDataModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:10px;">Preencha seus dados</div>
     <p style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6;margin-bottom:20px;">
-      Coloque aqui a sua data de nascimento e já ganhe <strong style="color:var(--gold);">1 moeda GB$</strong> para resgatar nossos produtos e cupons na loja! 🎁
+      <span id="fill-modal-desc">Coloque aqui a sua data de nascimento e já ganhe <strong style="color:var(--gold);">1 GB$</strong> para resgatar nossos produtos e cupons na loja! 🎁</span>
     </p>
     <input type="hidden" id="login-birth">
     <button type="button" id="fill-birth-btn" onclick="openBirthPicker(event)" style="width:100%;padding:13px 16px;border-radius:11px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);font-size:14px;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s,color .2s;margin-bottom:16px;">
