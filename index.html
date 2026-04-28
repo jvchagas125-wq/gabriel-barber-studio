@@ -2788,6 +2788,13 @@
     if(input) input.value = '';
     if(label){ label.textContent='🗓️ Selecione a data do seu nascimento'; label.style.color='var(--text-muted)'; }
     if(btn) btn.style.borderColor='rgba(255,255,255,0.1)';
+    // Update phrase with birthCoins from config
+    try {
+      const cfgSnap = await getDoc(doc(db,'config','gb_store'));
+      const birthCoins = cfgSnap.exists() ? (parseInt(cfgSnap.data().birthCoins)||1) : 1;
+      const descEl = document.getElementById('fill-data-desc');
+      if(descEl) descEl.innerHTML = 'Coloque aqui a sua data de nascimento e já ganhe <strong style="color:var(--gold);">'+birthCoins+' GB$</strong> para resgatar nossos produtos e cupons na loja! 🎁';
+    } catch(e){}
     // Check if already filled
     if(!loggedPhone) return;
     const digits = loggedPhone.replace(/\D/g,'');
