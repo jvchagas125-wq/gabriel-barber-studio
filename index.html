@@ -2658,37 +2658,53 @@
   function listenForPushNotifications(digits){
     if(pushUnsubscribe) pushUnsubscribe();
     if(Notification.permission !== 'granted') return;
-    const q = query(collection(db,'push_notifications'), orderBy('createdAt','desc'));
-    let firstLoad = true;
-    pushUnsubscribe = onSnapshot(q, snap=>{
-      if(firstLoad){ firstLoad=false; return; }
-      // Timestamp do login deste cliente neste dispositivo
-      const loginAt = localStorage.getItem('gbs_login_at_'+digits) || '';
-      snap.docChanges().forEach(change=>{
-        if(change.type === 'added'){
-          const n = change.doc.data();
-          // Ignorar notificações anteriores ao login deste cliente
+    const loginAt = localStorage.getItem('gbs_login_at_'+digits) || '';
+
+    // Listen to personal notifications (for this client only)
+    const personalUnsub = onSnapshot(
+      doc(db,'push_notifications_personal',digits),
+      snap=>{
+        if(!snap.exists()) return;
+        const list = snap.data().list||[];
+        list.forEach(n=>{
           if(loginAt && n.createdAt && n.createdAt <= loginAt) return;
-          const seenKey = 'gbs_seen_'+digits+'_'+change.doc.id;
+          const seenKey = 'gbs_pseen_'+digits+'_'+(n.id||n.createdAt);
           if(localStorage.getItem(seenKey)) return;
           localStorage.setItem(seenKey,'1');
-          showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'https://i.imgur.com/vcPQoRh.png');
-          // Se pending=true, enviar FCM para todos (app fechado) — só uma vez
-          if(n.pending){
-            fetch('/api/notify',{
-              method:'POST',
-              headers:{'Content-Type':'application/json','x-notify-secret':'gbs-notify-2026'},
-              body:JSON.stringify({title:n.title,body:n.body,icon:n.icon}),
-            }).then(()=>{
-              // Marcar como enviado no Firestore
-              import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(({updateDoc,doc:fdoc})=>{
-                updateDoc(fdoc(db,'push_notifications',change.doc.id),{pending:false}).catch(()=>{});
-              });
-            }).catch(()=>{});
-          }
+          showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
+        });
+      }, ()=>{}
+    );
+
+    // Listen to broadcast notifications (for all clients)
+    const q = query(collection(db,'push_notifications'),
+      where('broadcast','==',true),
+      orderBy('createdAt','desc'));
+    let firstLoad = true;
+    const broadcastUnsub = onSnapshot(q, snap=>{
+      if(firstLoad){ firstLoad=false; return; }
+      snap.docChanges().forEach(change=>{
+        if(change.type !== 'added') return;
+        const n = change.doc.data();
+        if(loginAt && n.createdAt && n.createdAt <= loginAt) return;
+        const seenKey = 'gbs_seen_'+digits+'_'+change.doc.id;
+        if(localStorage.getItem(seenKey)) return;
+        localStorage.setItem(seenKey,'1');
+        showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
+        // FCM: só o primeiro cliente que ver dispara (pending:true → false)
+        if(n.pending){
+          fetch('/api/notify',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','x-notify-secret':'gbs-notify-2026'},
+            body:JSON.stringify({title:n.title,body:n.body,icon:n.icon}),
+          }).then(()=>{
+            updateDoc(doc(db,'push_notifications',change.doc.id),{pending:false}).catch(()=>{});
+          }).catch(()=>{});
         }
       });
-    }, err=>console.error('listenForPushNotifications:',err));
+    }, ()=>{});
+
+    pushUnsubscribe = ()=>{ personalUnsub(); broadcastUnsub(); };
   }
 
   async function showPushNotification(title, body, icon){
