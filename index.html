@@ -761,6 +761,15 @@
       line-height: 1.6;
       white-space: pre-line;
     }
+
+    /* ===== COMENTÁRIOS ===== */
+    .review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-top:20px; }
+    .review-img-card { border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); background:var(--bg2); cursor:pointer; transition:transform .2s,border-color .2s; }
+    .review-img-card:hover { transform:translateY(-2px); border-color:var(--gold-border); }
+    .review-img-card img { width:100%; display:block; object-fit:cover; }
+    .maps-review-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px 20px; border-radius:12px; border:none; background:linear-gradient(135deg,#1a6634,#22863a); color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; cursor:pointer; margin-bottom:24px; transition:opacity .15s; box-shadow:0 4px 16px rgba(22,163,74,0.25); }
+    .maps-review-btn:hover { opacity:.9; }
+    @media(max-width:640px){ .review-grid { grid-template-columns:1fr 1fr; gap:10px; } }
   </style>
 
   <script>
@@ -842,6 +851,7 @@
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="store" onclick="showSection('store')">Produtos</button>
       <button class="nav-btn" data-sec="ranking" onclick="showSection('ranking')">Ranking</button>
+      <button class="nav-btn" data-sec="reviews" onclick="showSection('reviews')">Comentários</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
     <div class="nav-user" id="nav-user" style="display:none;"></div>
@@ -985,6 +995,36 @@
       <button class="mob-nav-btn prev" onclick="showSection('booking')" title="Agendar">← Agendar</button>
       <button class="mob-nav-btn next" onclick="showSection('plans')">👑 Planos →</button>
     </div>
+  </div>
+</div>
+
+<div class="section" id="sec-reviews">
+  <div class="section-title">⭐ Comentários e Avaliações</div>
+
+  <!-- Botão avaliar no Google Maps -->
+  <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;">
+    <button class="maps-review-btn">
+      <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><path d="M44 24.5c0-10.77-8.73-19.5-19.5-19.5S5 13.73 5 24.5c0 9.61 6.95 17.58 16.13 19.18V30.19h-4.85v-5.69h4.85v-4.34c0-4.79 2.85-7.44 7.22-7.44 2.09 0 4.28.37 4.28.37v4.71h-2.41c-2.37 0-3.11 1.47-3.11 2.98v3.72h5.3l-.85 5.69H27.11v13.49C36.05 42.08 44 34.11 44 24.5z" fill="#1877F2"/><path d="M31.56 30.19l.85-5.69h-5.3v-3.72c0-1.51.74-2.98 3.11-2.98h2.41v-4.71s-2.19-.37-4.28-.37c-4.37 0-7.22 2.65-7.22 7.44v4.34h-4.85v5.69h4.85v13.49a19.6 19.6 0 006.38 0V30.19h4.05z" fill="#fff"/></svg>
+      ⭐ Avaliar no Google Maps
+    </button>
+  </a>
+
+  <!-- Grid de comentários/avaliações -->
+  <div id="reviews-grid" class="review-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-dim);">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      Carregando avaliações...
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="review-lightbox" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;" onclick="this.style.display='none'">
+    <img id="review-lightbox-img" src="" alt="" style="max-width:92vw;max-height:88vh;border-radius:10px;object-fit:contain;">
+  </div>
+
+  <div class="mob-nav-row">
+    <button class="mob-nav-btn prev" onclick="showSection('ranking')" title="Ranking">← Ranking</button>
+    <button class="mob-nav-btn next" onclick="showSection('contact')">📞 Contato →</button>
   </div>
 </div>
 
@@ -1886,6 +1926,7 @@
 
     if(name === 'store') loadStore();
     if(name === 'home' || name === 'contact') loadContactNotices();
+    if(name === 'reviews') loadReviews();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
     if(isVip && name === 'booking'){
@@ -3033,6 +3074,30 @@
       document.getElementById('buy-gbs-packages').style.display = 'none';
       document.getElementById('buy-gbs-waiting').style.display = 'block';
     } catch(e){ showToast('Erro ao registrar pedido: '+e.message,'error'); }
+  };
+
+
+  // ===== COMENTÁRIOS / AVALIAÇÕES =====
+  function loadReviews(){
+    const grid = document.getElementById('reviews-grid');
+    if(!grid) return;
+    onSnapshot(doc(db,'config','reviews'), snap=>{
+      const list = snap.exists() ? (snap.data().list||[]) : [];
+      if(!list.length){
+        grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-dim);">Nenhuma avaliação adicionada ainda.</div>';
+        return;
+      }
+      grid.innerHTML = list.filter(r=>r.url).map(r=>`
+        <div class="review-img-card" onclick="openReviewLightbox('${r.url}')">
+          <img src="${r.url}" alt="Avaliação" loading="lazy">
+        </div>`).join('');
+    }, e=>console.warn('reviews:',e));
+  }
+
+  window.openReviewLightbox = function(url){
+    const lb = document.getElementById('review-lightbox');
+    const img = document.getElementById('review-lightbox-img');
+    if(lb&&img){ img.src=url; lb.style.display='flex'; }
   };
 
   // ===== CALENDÁRIO NASCIMENTO =====
