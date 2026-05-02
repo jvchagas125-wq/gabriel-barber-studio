@@ -2,7 +2,6 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
-// CORS headers aplicados em TODAS as respostas
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -15,15 +14,12 @@ function setCorHeaders(res) {
 
 function getFirebaseApp() {
   if (getApps().length) return getApps()[0];
-
   let privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
-  privateKey = privateKey.replace(/^"|"$/g, '');   // remove aspas externas
-  privateKey = privateKey.replace(/\\n/g, '\n');    // converte \n literal em quebra real
-
+  privateKey = privateKey.replace(/^"|"$/g, '');
+  privateKey = privateKey.replace(/\\n/g, '\n');
   if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
     throw new Error('FIREBASE_PRIVATE_KEY inválida — verifique a variável no Vercel');
   }
-
   return initializeApp({
     credential: cert({
       projectId:   process.env.FIREBASE_PROJECT_ID,
@@ -34,27 +30,16 @@ function getFirebaseApp() {
 }
 
 export default async function handler(req, res) {
-  // 1. CORS — sempre primeiro, antes de qualquer lógica
   setCorHeaders(res);
-
-  // 2. Preflight OPTIONS — responde imediatamente sem tocar no Firebase
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // 3. Autenticação
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (req.headers['x-notify-secret'] !== process.env.NOTIFY_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { title, body, icon } = req.body || {};
+  const { title, body, icon, digits } = req.body || {};
   if (!title) return res.status(400).json({ error: 'title obrigatório' });
 
-  // 4. Inicializar Firebase DENTRO do handler (só no POST autenticado)
   let db, messaging;
   try {
     const app = getFirebaseApp();
@@ -65,13 +50,24 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erro de configuração Firebase: ' + initErr.message });
   }
 
-  // 5. Buscar tokens e enviar
   try {
-    const snap = await db.collection('push_subscribers')
-      .where('active', '==', true).get();
+    let tokens = [];
 
-    const tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
-    console.log('Tokens encontrados:', tokens.length);
+    if (digits) {
+      // Personal notification — only tokens for this specific client
+      const snap = await db.collection('push_subscribers')
+        .where('active', '==', true)
+        .where('digits', '==', digits)
+        .get();
+      tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
+      console.log(`Personal FCM for ${digits}: ${tokens.length} token(s)`);
+    } else {
+      // Broadcast — all active subscribers
+      const snap = await db.collection('push_subscribers')
+        .where('active', '==', true).get();
+      tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
+      console.log(`Broadcast FCM: ${tokens.length} token(s)`);
+    }
 
     if (!tokens.length) {
       return res.status(200).json({ sent: 0, message: 'Nenhum subscriber ativo' });
@@ -90,8 +86,6 @@ export default async function handler(req, res) {
     });
 
     console.log('Enviados:', response.successCount, '| Falhos:', response.failureCount);
-
-    // Log tokens com falha para debug
     response.responses.forEach((r, i) => {
       if (!r.success) console.error('Token falhou:', tokens[i], r.error?.code);
     });
