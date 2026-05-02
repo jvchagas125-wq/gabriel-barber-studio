@@ -279,7 +279,7 @@
     .notif-empty{text-align:center;padding:20px 0;color:var(--text-dim);font-size:12px;}
 
     /* Modal de nova notificação */
-    .notif-modal{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:500;width:calc(100% - 32px);max-width:420px;background:#1a1a1a;border:1px solid var(--gold-border);border-radius:14px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.7);animation:slideInDown .4s ease-out;display:none;}
+    .notif-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:500;width:calc(100% - 32px);max-width:380px;background:#1a1a1a;border:1px solid var(--gold-border);border-radius:16px;padding:20px 22px;box-shadow:0 16px 48px rgba(0,0,0,.85);animation:slideUp .35s ease-out;display:none;}
     @keyframes slideInDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
     .notif-modal-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
     .notif-modal-icon{font-size:24px;flex-shrink:0;}
@@ -763,8 +763,8 @@
     }
 
     /* ===== COMENTÁRIOS ===== */
-    .review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-top:20px; }
-    .review-img-card { border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); background:var(--bg2); cursor:pointer; transition:transform .2s,border-color .2s; }
+    .review-grid { display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:20px; }
+    .review-img-card { width:100%; max-width:500px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); background:var(--bg2); cursor:pointer; transition:transform .2s,border-color .2s; }
     .review-img-card:hover { transform:translateY(-2px); border-color:var(--gold-border); }
     .review-img-card img { width:100%; display:block; object-fit:cover; }
     .maps-review-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:10px; border:none; background:linear-gradient(135deg,#1a6634,#22863a); color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:24px; transition:opacity .15s; box-shadow:0 3px 12px rgba(22,163,74,0.25); }
