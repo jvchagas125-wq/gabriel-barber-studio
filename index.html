@@ -2154,8 +2154,9 @@
     // Expandir bookedTimes para incluir os extras de cada agendamento existente
     // Cada agendamento ocupa seu horário + os extras do serviço que foi agendado
     const bookedTimes = new Set(bookedRaw);
-    allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
-      // Use duration from SCHEDULE.services if available, else from stored appointment service
+    allAppointments.filter(a=>a.date===selectedDate && a.status!=='Bloqueado').forEach(a=>{
+      // Skip 'Bloqueado' entries — they're already in bookedRaw
+      // Only calculate extras for main 'Confirmado' appointments
       const aptInterval = SCHEDULE.slotInterval||15;
       const aptDur = (SCHEDULE.services&&SCHEDULE.services[a.service]) ? SCHEDULE.services[a.service].duration : aptInterval;
       const aptBuf = SCHEDULE.buffer||5;
@@ -2386,8 +2387,9 @@
 
     // Expandir para incluir os extras de cada agendamento existente
     const bookedTimes = new Set(bookedRawVip);
-    allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
-      // Use duration from SCHEDULE.services if available, else from stored appointment service
+    allAppointments.filter(a=>a.date===selectedDate && a.status!=='Bloqueado').forEach(a=>{
+      // Skip 'Bloqueado' entries — they're already in bookedRaw
+      // Only calculate extras for main 'Confirmado' appointments
       const aptInterval = SCHEDULE.slotInterval||15;
       const aptDur = (SCHEDULE.services&&SCHEDULE.services[a.service]) ? SCHEDULE.services[a.service].duration : aptInterval;
       const aptBuf = SCHEDULE.buffer||5;
