@@ -1568,7 +1568,11 @@
         ? '<div style="text-align:center;margin:6px 0 -6px;"><span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(22,163,74,0.18);color:#4ade80;border:1px solid rgba(22,163,74,0.35);padding:3px 12px;border-radius:20px;">&#128154; Melhor Custo-Ben&eacute;ficio</span></div>'
         : '';
       const price = p.price ? p.price.replace('.',',') : '–';
-      const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('');
+      // Benefícios + bônus GB$ extras
+      const extraGBItems = [];
+      if(p.gbSignup>0) extraGBItems.push('<li style="color:var(--gold);font-weight:600;">🪙 +'+p.gbSignup+' GB$ no ato da assinatura</li>');
+      if(p.gbMonthly>0) extraGBItems.push('<li style="color:var(--gold);font-weight:600;">🪙 +'+p.gbMonthly+' GB$ todo mês</li>');
+      const benefitsHtml = (p.benefits||[]).map(b=>'<li>'+b+'</li>').join('') + extraGBItems.join('');
 
       // Preço cortado e badge de desconto
       let priceOldHtml = '';
