@@ -2651,6 +2651,19 @@
           if(localStorage.getItem(seenKey)) return;
           localStorage.setItem(seenKey,'1');
           showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'https://i.imgur.com/vcPQoRh.png');
+          // Se pending=true, enviar FCM para todos (app fechado) — só uma vez
+          if(n.pending){
+            fetch('/api/notify',{
+              method:'POST',
+              headers:{'Content-Type':'application/json','x-notify-secret':'gbs-notify-2026'},
+              body:JSON.stringify({title:n.title,body:n.body,icon:n.icon}),
+            }).then(()=>{
+              // Marcar como enviado no Firestore
+              import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(({updateDoc,doc:fdoc})=>{
+                updateDoc(fdoc(db,'push_notifications',change.doc.id),{pending:false}).catch(()=>{});
+              });
+            }).catch(()=>{});
+          }
         }
       });
     }, err=>console.error('listenForPushNotifications:',err));
