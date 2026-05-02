@@ -767,8 +767,9 @@
     .review-img-card { border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); background:var(--bg2); cursor:pointer; transition:transform .2s,border-color .2s; }
     .review-img-card:hover { transform:translateY(-2px); border-color:var(--gold-border); }
     .review-img-card img { width:100%; display:block; object-fit:cover; }
-    .maps-review-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px 20px; border-radius:12px; border:none; background:linear-gradient(135deg,#1a6634,#22863a); color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; cursor:pointer; margin-bottom:24px; transition:opacity .15s; box-shadow:0 4px 16px rgba(22,163,74,0.25); }
+    .maps-review-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:10px; border:none; background:linear-gradient(135deg,#1a6634,#22863a); color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:24px; transition:opacity .15s; box-shadow:0 3px 12px rgba(22,163,74,0.25); }
     .maps-review-btn:hover { opacity:.9; }
+    .maps-review-btn-wrap { text-align:center; }
     @media(max-width:640px){ .review-grid { grid-template-columns:1fr 1fr; gap:10px; } }
   </style>
 
@@ -1002,12 +1003,11 @@
   <div class="section-title">⭐ Comentários e Avaliações</div>
 
   <!-- Botão avaliar no Google Maps -->
-  <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;">
-    <button class="maps-review-btn">
-      <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><path d="M44 24.5c0-10.77-8.73-19.5-19.5-19.5S5 13.73 5 24.5c0 9.61 6.95 17.58 16.13 19.18V30.19h-4.85v-5.69h4.85v-4.34c0-4.79 2.85-7.44 7.22-7.44 2.09 0 4.28.37 4.28.37v4.71h-2.41c-2.37 0-3.11 1.47-3.11 2.98v3.72h5.3l-.85 5.69H27.11v13.49C36.05 42.08 44 34.11 44 24.5z" fill="#1877F2"/><path d="M31.56 30.19l.85-5.69h-5.3v-3.72c0-1.51.74-2.98 3.11-2.98h2.41v-4.71s-2.19-.37-4.28-.37c-4.37 0-7.22 2.65-7.22 7.44v4.34h-4.85v5.69h4.85v13.49a19.6 19.6 0 006.38 0V30.19h4.05z" fill="#fff"/></svg>
-      ⭐ Avaliar no Google Maps
-    </button>
-  </a>
+  <div class="maps-review-btn-wrap">
+    <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;">
+      <button class="maps-review-btn">⭐ Avaliar no Google Maps</button>
+    </a>
+  </div>
 
   <!-- Grid de comentários/avaliações -->
   <div id="reviews-grid" class="review-grid">
