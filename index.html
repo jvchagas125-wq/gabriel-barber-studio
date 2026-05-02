@@ -1233,12 +1233,18 @@
     buffer: 5,
   };
 
-  async function loadSchedule(){
-    try {
-      const snap = await getDoc(doc(db,'config','schedule'));
+  function loadSchedule(){
+    // Listener em tempo real — atualiza automaticamente quando Gabriel salva no admin
+    onSnapshot(doc(db,'config','schedule'), snap=>{
       if(snap.exists()) SCHEDULE = snap.data();
-    } catch(e){ console.error('loadSchedule error',e); }
-    renderHoursDisplay();
+      renderHoursDisplay();
+      // Re-renderiza slots se já tiver data selecionada
+      if(document.getElementById('f-date')?.value) renderSlots();
+      if(document.getElementById('vip-f-date')?.value) renderSlotsVip();
+      // Atualiza calendário customizado (dias abertos/fechados)
+      const calOverlay = document.getElementById('custom-cal-overlay');
+      if(calOverlay?.classList.contains('open')) renderCustomCal();
+    }, e=>{ console.error('loadSchedule error',e); });
   }
 
   // Carrega serviços do Firestore e atualiza grid + selects de agendamento
@@ -2454,7 +2460,7 @@
         if(vipPhone) vipPhone.value = saved;
         const vipDate = document.getElementById("vip-f-date");
         if(vipDate){ const t=new Date(); vipDate.min=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate()); }
-        loadSchedule().then(()=>{ subscribeAll(); });
+        loadSchedule(); subscribeAll();
         loadSiteBackground();
         initPushNotifications(saved.replace(/\D/g,''));
         loadPlansFromFirestore();
