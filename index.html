@@ -1236,7 +1236,12 @@
   function loadSchedule(){
     // Listener em tempo real — atualiza automaticamente quando Gabriel salva no admin
     onSnapshot(doc(db,'config','schedule'), snap=>{
-      if(snap.exists()) SCHEDULE = snap.data();
+      if(snap.exists()){
+        SCHEDULE = snap.data();
+        // Restore services durations from SERVICES_DATA (they're stored separately)
+        if(!SCHEDULE.services) SCHEDULE.services = {};
+        SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
+      }
       renderHoursDisplay();
       // Re-renderiza slots se já tiver data selecionada
       if(document.getElementById('f-date')?.value) renderSlots();
@@ -1364,7 +1369,8 @@
       if(document.getElementById('vip-f-date').value) renderSlotsVip();
     });
     // Atualiza SCHEDULE.services com duração atual dos serviços carregados
-    SERVICES_DATA.forEach(s=>{ if(SCHEDULE.services) SCHEDULE.services[s.name]={duration:s.duration}; });
+    if(!SCHEDULE.services) SCHEDULE.services={};
+    SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
   }
 
   const DAY_LABELS = {mon:'Segunda-feira',tue:'Terça-feira',wed:'Quarta-feira',thu:'Quinta-feira',fri:'Sexta-feira',sat:'Sábado',sun:'Domingo'};
@@ -2149,7 +2155,12 @@
     // Cada agendamento ocupa seu horário + os extras do serviço que foi agendado
     const bookedTimes = new Set(bookedRaw);
     allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
-      const svcSlots = getServiceSlots(a.service||service) - 1;
+      // Use duration from SCHEDULE.services if available, else from stored appointment service
+      const aptInterval = SCHEDULE.slotInterval||15;
+      const aptDur = (SCHEDULE.services&&SCHEDULE.services[a.service]) ? SCHEDULE.services[a.service].duration : aptInterval;
+      const aptBuf = SCHEDULE.buffer||5;
+      const aptSlots = aptDur <= aptInterval ? 1 : Math.ceil((aptDur+aptBuf)/aptInterval);
+      const svcSlots = aptSlots - 1;
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
@@ -2376,7 +2387,12 @@
     // Expandir para incluir os extras de cada agendamento existente
     const bookedTimes = new Set(bookedRawVip);
     allAppointments.filter(a=>a.date===selectedDate).forEach(a=>{
-      const svcSlots = getServiceSlots(a.service||service) - 1;
+      // Use duration from SCHEDULE.services if available, else from stored appointment service
+      const aptInterval = SCHEDULE.slotInterval||15;
+      const aptDur = (SCHEDULE.services&&SCHEDULE.services[a.service]) ? SCHEDULE.services[a.service].duration : aptInterval;
+      const aptBuf = SCHEDULE.buffer||5;
+      const aptSlots = aptDur <= aptInterval ? 1 : Math.ceil((aptDur+aptBuf)/aptInterval);
+      const svcSlots = aptSlots - 1;
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
