@@ -2651,24 +2651,63 @@
   // ═══════════════════════════════════════
   function initPushNotifications(digits){
     if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    // Chave vinculada ao cliente — cada cliente tem seu próprio estado de permissão
-    const dismissKey = digits ? 'gbs_push_dismissed_'+digits : 'gbs_push_dismissed';
-    const dismissed = localStorage.getItem(dismissKey);
+    // Se já concedido, só registra FCM e escuta
     if(Notification.permission === 'granted'){
       registerFCM();
+      listenForPushNotifications(digits);
       return;
     }
-    if(dismissed) return;
-    if(Notification.permission !== 'denied'){
-      setTimeout(()=>{
-        const banner = document.getElementById('push-banner');
-        if(banner){
-          // Guardar o digits no banner para usar no dismiss
-          banner.dataset.digits = digits||'';
-          banner.style.display='flex';
+    // Se bloqueado pelo navegador, não pergunta
+    if(Notification.permission === 'denied') return;
+    // Verifica se já perguntou para este cliente neste dispositivo
+    const askedKey = 'gbs_push_asked_'+digits;
+    if(localStorage.getItem(askedKey)) return;
+    // Mostra modal de permissão após 1.5s do login
+    setTimeout(()=>showNotifPermissionModal(digits), 1500);
+  }
+
+  function showNotifPermissionModal(digits){
+    // Remove modal anterior se existir
+    const old = document.getElementById('notif-perm-modal');
+    if(old) old.remove();
+    const modal = document.createElement('div');
+    modal.id = 'notif-perm-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;';
+    modal.innerHTML = `
+      <div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:360px;animation:slideUp .3s ease-out;text-align:center;">
+        <div style="font-size:40px;margin-bottom:12px;">🔔</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);margin-bottom:8px;">Ativar Notificações</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:22px;">
+          Deseja receber notificações sobre <strong style="color:var(--text);">novos horários, promoções e atualizações</strong> da barbearia?<br><br>
+          Você também será avisado sobre <strong style="color:var(--text);">seus agendamentos, GB$, resgates e assinatura</strong> de forma personalizada.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button id="notif-allow-btn" style="width:100%;padding:13px;border-radius:11px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">✅ Sim, quero receber</button>
+          <button id="notif-deny-btn" style="width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Agora não</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#notif-allow-btn').onclick = async ()=>{
+      modal.remove();
+      localStorage.setItem('gbs_push_asked_'+digits, '1');
+      try {
+        const permission = await Notification.requestPermission();
+        if(permission === 'granted'){
+          await registerFCM();
+          listenForPushNotifications(digits);
+          showToast('Notificações ativadas! 🔔','success');
+          setTimeout(()=>showPushNotification(
+            'Gabriel Barber Studio 🔔',
+            'Notificações ativadas! Você receberá avisos mesmo com o app fechado.',
+            'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
+          ), 800);
         }
-      }, 3000);
-    }
+      } catch(e){ console.warn('push permission:',e); }
+    };
+    modal.querySelector('#notif-deny-btn').onclick = ()=>{
+      modal.remove();
+      localStorage.setItem('gbs_push_asked_'+digits, '1');
+    };
   }
 
   async function registerFCM(){
@@ -2713,35 +2752,22 @@
           n.icon  || 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
         );
       });
+      // Iniciar listener de notificações pessoais e broadcast
+      if(loggedPhone) listenForPushNotifications(loggedPhone.replace(/\D/g,''));
 
     } catch(e){ console.warn('FCM registerFCM error:', e); }
   }
 
   window.allowPushNotifications = async function(){
-    dismissPushBanner();
-    try {
-      const permission = await Notification.requestPermission();
-      if(permission === 'granted'){
-        await registerFCM();
-        showToast('Notificações ativadas! 🔔','success');
-        setTimeout(()=>showPushNotification(
-          'Gabriel Barber Studio 🔔',
-          'Notificações ativadas! Você receberá avisos mesmo com o app fechado.',
-          'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
-        ), 1000);
-      } else {
-        showToast('Permissão negada. Ative nas configurações do navegador.','error');
-      }
-    } catch(e){ console.error('push permission error:', e); }
+    // Kept for backward compatibility
+    const banner = document.getElementById('push-banner');
+    if(banner) banner.style.display='none';
+    if(loggedPhone) showNotifPermissionModal(loggedPhone.replace(/\D/g,''));
   };
 
   window.dismissPushBanner = function(){
     const banner = document.getElementById('push-banner');
-    const digits = banner ? banner.dataset.digits : '';
     if(banner) banner.style.display='none';
-    // Salva chave vinculada ao cliente para não mostrar novamente neste dispositivo
-    const dismissKey = digits ? 'gbs_push_dismissed_'+digits : 'gbs_push_dismissed';
-    localStorage.setItem(dismissKey,'1');
   };
 
   function subscribeToNotifications(){
