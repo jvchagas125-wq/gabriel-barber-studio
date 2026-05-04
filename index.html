@@ -2816,8 +2816,9 @@
     e.preventDefault();
     deferredInstallPrompt = e;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const installed = localStorage.getItem('gbs_pwa_installed');
-    if(!isStandalone && !installed){
+    // Se não está rodando como app instalado, limpa o flag (pode ter sido desinstalado)
+    if(!isStandalone) localStorage.removeItem('gbs_pwa_installed');
+    if(!isStandalone){
       setTimeout(()=>{
         const b = document.getElementById('pwa-install-banner');
         if(b) b.style.display = 'block';
