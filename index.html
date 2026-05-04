@@ -2,6 +2,34 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <!-- Detecta Instagram/Facebook WebView e redireciona para navegador nativo -->
+  <script>
+    (function(){
+      var ua = navigator.userAgent || '';
+      var isInstagram = ua.indexOf('Instagram') > -1;
+      var isFacebook  = ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1;
+      if(isInstagram || isFacebook){
+        var url = window.location.href;
+        // iOS: tenta abrir no Safari
+        if(/iPhone|iPad|iPod/i.test(ua)){
+          window.location.href = 'googlechrome://navigate?url=' + encodeURIComponent(url);
+          setTimeout(function(){
+            window.location.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'openext=1';
+          }, 500);
+        }
+        // Android: tenta abrir no Chrome via intent
+        else if(/Android/i.test(ua)){
+          var intent = 'intent://' + url.replace(/^https?:\/\//, '') +
+            '#Intent;scheme=https;package=com.android.chrome;end';
+          window.location.href = intent;
+          setTimeout(function(){
+            window.location.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'openext=1';
+          }, 1500);
+        }
+      }
+    })();
+  </script>
+
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#c9a84c">
@@ -12,6 +40,12 @@
   <link rel="apple-touch-icon" href="https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png">
   <meta name="application-name" content="Gabriel Barber Studio">
   <link rel="icon" type="image/png" href="https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png">
+  <!-- Open Graph / Instagram preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Gabriel Barber Studio">
+  <meta property="og:description" content="Agende seu corte, acompanhe seus agendamentos e aproveite benefícios exclusivos.">
+  <meta property="og:image" content="https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png">
+  <meta property="og:url" content="https://gabriel-barber-studio.vercel.app">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gabriel Barber Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
