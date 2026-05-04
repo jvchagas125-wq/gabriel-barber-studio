@@ -8,33 +8,6 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
-  <!-- Detecta Instagram/Facebook WebView e redireciona para navegador nativo -->
-  <script>
-    (function(){
-      var ua = navigator.userAgent || '';
-      var isInstagram = ua.indexOf('Instagram') > -1;
-      var isFacebook  = ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1;
-      if(isInstagram || isFacebook){
-        var url = window.location.href;
-        // iOS: tenta abrir no Safari
-        if(/iPhone|iPad|iPod/i.test(ua)){
-          window.location.href = 'googlechrome://navigate?url=' + encodeURIComponent(url);
-          setTimeout(function(){
-            window.location.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'openext=1';
-          }, 500);
-        }
-        // Android: tenta abrir no Chrome via intent
-        else if(/Android/i.test(ua)){
-          var intent = 'intent://' + url.replace(/^https?:\/\//, '') +
-            '#Intent;scheme=https;package=com.android.chrome;end';
-          window.location.href = intent;
-          setTimeout(function(){
-            window.location.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'openext=1';
-          }, 1500);
-        }
-      }
-    })();
-  </script>
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
