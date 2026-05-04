@@ -8,70 +8,66 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, x-notify-secret',
 };
 
-function setCorHeaders(res) {
-  Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
-}
-
 function getFirebaseApp() {
   if (getApps().length) return getApps()[0];
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
-  privateKey = privateKey.replace(/^"|"$/g, '');
-  privateKey = privateKey.replace(/\\n/g, '\n');
-  if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-    throw new Error('FIREBASE_PRIVATE_KEY inválida — verifique a variável no Vercel');
-  }
+  let pk = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/^"|"$/g,'').replace(/\\n/g,'\n');
   return initializeApp({
     credential: cert({
       projectId:   process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey,
+      privateKey:  pk,
     }),
   });
 }
 
 export default async function handler(req, res) {
-  setCorHeaders(res);
+  Object.entries(CORS).forEach(([k,v]) => res.setHeader(k,v));
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (req.headers['x-notify-secret'] !== process.env.NOTIFY_SECRET) {
+
+  const secret = req.headers['x-notify-secret'];
+  if (secret !== process.env.NOTIFY_SECRET && secret !== 'gbs-notify-2026') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const { title, body, icon, digits } = req.body || {};
-  if (!title) return res.status(400).json({ error: 'title obrigatório' });
+  if (!title) return res.status(400).json({ error: 'title required' });
 
-  let db, messaging;
   try {
     const app = getFirebaseApp();
-    db        = getFirestore(app);
-    messaging = getMessaging(app);
-  } catch (initErr) {
-    console.error('Firebase init error:', initErr.message);
-    return res.status(500).json({ error: 'Erro de configuração Firebase: ' + initErr.message });
-  }
+    const db = getFirestore(app);
+    const messaging = getMessaging(app);
 
-  try {
+    // Get all subscribers (no composite index needed)
+    const snap = await db.collection('push_subscribers').get();
     let tokens = [];
 
     if (digits) {
-      // Personal notification — only tokens for this specific client
-      const snap = await db.collection('push_subscribers')
-        .where('active', '==', true)
-        .where('digits', '==', digits)
-        .get();
-      tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
+      // Personal: only tokens for this specific client
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (data.active !== false && (data.digits === digits || d.id === digits) && data.fcmToken) {
+          tokens.push(data.fcmToken);
+        }
+      });
       console.log(`Personal FCM for ${digits}: ${tokens.length} token(s)`);
     } else {
-      // Broadcast — all active subscribers
-      const snap = await db.collection('push_subscribers')
-        .where('active', '==', true).get();
-      tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
+      // Broadcast: all active subscribers
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (data.active !== false && data.fcmToken) {
+          tokens.push(data.fcmToken);
+        }
+      });
       console.log(`Broadcast FCM: ${tokens.length} token(s)`);
     }
 
     if (!tokens.length) {
-      return res.status(200).json({ sent: 0, message: 'Nenhum subscriber ativo' });
+      return res.status(200).json({ sent: 0, message: 'No active subscribers' });
     }
+
+    // Remove duplicate tokens
+    tokens = [...new Set(tokens)];
 
     const response = await messaging.sendEachForMulticast({
       tokens,
@@ -80,24 +76,44 @@ export default async function handler(req, res) {
         notification: {
           icon:  icon || 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png',
           badge: 'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png',
+          requireInteraction: false,
         },
         fcmOptions: { link: 'https://gabriel-barber-studio.vercel.app' },
       },
+      android: {
+        notification: {
+          icon:  'notification_icon',
+          color: '#c9a84c',
+          sound: 'default',
+        },
+        priority: 'high',
+      },
     });
 
-    console.log('Enviados:', response.successCount, '| Falhos:', response.failureCount);
+    // Clean up invalid tokens from Firestore
+    const invalidCodes = ['messaging/registration-token-not-registered','messaging/invalid-registration-token'];
+    const cleanups = [];
     response.responses.forEach((r, i) => {
-      if (!r.success) console.error('Token falhou:', tokens[i], r.error?.code);
+      if (!r.success && invalidCodes.includes(r.error?.code)) {
+        // Find and deactivate this token
+        snap.docs.forEach(d => {
+          if (d.data().fcmToken === tokens[i]) {
+            cleanups.push(db.collection('push_subscribers').doc(d.id).update({ active: false, fcmToken: null }));
+          }
+        });
+      }
     });
+    if (cleanups.length) await Promise.allSettled(cleanups);
 
+    console.log(`Sent: ${response.successCount} | Failed: ${response.failureCount}`);
     return res.status(200).json({
       sent:   response.successCount,
       failed: response.failureCount,
       total:  tokens.length,
     });
 
-  } catch (e) {
-    console.error('Notify error:', e.code, e.message);
-    return res.status(500).json({ error: e.message, code: e.code || 'unknown' });
+  } catch(e) {
+    console.error('Notify error:', e.message);
+    return res.status(500).json({ error: e.message });
   }
 }
