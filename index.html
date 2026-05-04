@@ -2,6 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <!-- Preconnect para recursos externos críticos -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+  <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
   <!-- Detecta Instagram/Facebook WebView e redireciona para navegador nativo -->
   <script>
     (function(){
@@ -48,7 +54,8 @@
   <meta property="og:url" content="https://gabriel-barber-studio.vercel.app">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gabriel Barber Studio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -817,6 +824,14 @@
 </head>
 <body id="site-body">
 
+<!-- Splash imediato enquanto JS/Firebase inicializa -->
+<div id="splash-screen" style="position:fixed;inset:0;background:#111;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px;transition:opacity .3s;">
+  <img src="https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png" style="width:80px;height:80px;border-radius:50%;border:2px solid #c9a84c;box-shadow:0 0 20px rgba(201,168,76,0.4);" alt="">
+  <div style="font-family:sans-serif;font-size:11px;color:#666;letter-spacing:2px;text-transform:uppercase;">Carregando...</div>
+  <div style="width:40px;height:2px;background:#c9a84c;border-radius:2px;animation:sbar 1.2s ease-in-out infinite alternate;"></div>
+  <style>@keyframes sbar{from{width:20px;opacity:.4}to{width:60px;opacity:1}}</style>
+</div>
+
 <div id="app-loading">
   <img src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'">
   <div class="spinner"></div>
@@ -1266,7 +1281,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+  // Firebase messaging carregado sob demanda (não bloqueia primeiro carregamento)
 
   const firebaseConfig = {
     apiKey: "AIzaSyBuqPBQocq7gFFnbtD8VoMB6kTu1I3R_9w",
@@ -1280,7 +1295,13 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
-  const messaging = getMessaging(app);
+  let messaging = null;
+  async function getMessagingInstance(){
+    if(messaging) return messaging;
+    const {getMessaging: GM, getToken: GT, onMessage: OM} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+    messaging = GM(app);
+    return {messaging, getToken:GT, onMessage:OM};
+  }
   const COL = "appointments";
 
   // ===== HORÁRIOS — carregados do Firestore =====
@@ -2540,7 +2561,11 @@
 
   window.addEventListener("DOMContentLoaded",()=>{
     setMinDate();
-    const hideLoading = () => { document.getElementById("app-loading").style.display="none"; };
+    const hideLoading = () => {
+      document.getElementById("app-loading").style.display="none";
+      const sp=document.getElementById('splash-screen');
+      if(sp){ sp.style.opacity='0'; setTimeout(()=>{if(sp.parentNode)sp.parentNode.removeChild(sp);},350); }
+    };
 
     onAuthStateChanged(auth, user => {
       hideLoading();
@@ -2657,8 +2682,11 @@
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('SW timeout')),5000))
       ]);
 
+      // Carregar Firebase Messaging sob demanda
+      const {getMessaging: GM, getToken: GT, onMessage: OM} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+      if(!messaging) messaging = GM(app);
       // Obter token FCM
-      const token = await getToken(messaging, {
+      const token = await GT(messaging, {
         vapidKey: 'BLwGsQRzcFrLs6XsSmgN3i2NP44Of28D9BrAjZtd_6XExonjtFCV_4KyY90Ee8cdltlz96TUflTxsmyHTDCgAEs',
         serviceWorkerRegistration: swReg,
       });
@@ -2678,7 +2706,7 @@
       }
 
       // Receber notificações com app em foreground
-      onMessage(messaging, payload=>{
+      OM(messaging, payload=>{
         const n = payload.notification || {};
         showPushNotification(
           n.title || 'Gabriel Barber Studio',
