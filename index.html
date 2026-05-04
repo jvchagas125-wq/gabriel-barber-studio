@@ -2,6 +2,29 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <!-- Detecta Instagram/Facebook WebView e abre no navegador nativo (sem loop) -->
+  <script>
+    (function(){
+      var ua = navigator.userAgent || '';
+      var isInstagram = ua.indexOf('Instagram') > -1;
+      var isFacebook  = ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1;
+      if(!(isInstagram || isFacebook)) return;
+      // Evita loop: só redireciona se não vier de um redirecionamento anterior
+      if(window.location.search.indexOf('openext=1') > -1) return;
+      var url = window.location.href;
+      var sep = url.indexOf('?') > -1 ? '&' : '?';
+      var target = url + sep + 'openext=1';
+      if(/Android/i.test(ua)){
+        // Android: abre no Chrome via intent
+        window.location.replace('intent://' + target.replace(/^https?:\/\//, '') +
+          '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' +
+          encodeURIComponent(target) + ';end');
+      } else if(/iPhone|iPad|iPod/i.test(ua)){
+        // iOS: link especial para abrir no Safari
+        window.location.replace(target);
+      }
+    })();
+  </script>
   <!-- Preconnect para recursos externos críticos -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
