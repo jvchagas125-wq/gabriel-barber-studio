@@ -1008,6 +1008,7 @@
       </div>
     </div>
     <div class="booking-card">
+      <div id="specific-breaks-notice-regular" style="display:none;margin-bottom:14px;padding:10px 14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold-border);border-radius:10px;font-size:13px;color:var(--gold);line-height:1.6;"></div>
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
       <div class="form-group">
@@ -1248,7 +1249,7 @@
 
     <div class="booking-card">
       <h3 style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#c9a84c;margin-bottom:8px;text-align:center;">Agendar meu Horário</h3>
-      <div id="specific-breaks-notice" style="display:none;margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold-border);border-radius:10px;font-size:13px;color:var(--gold);line-height:1.6;"></div>
+      <div id="specific-breaks-notice-vip" style="display:none;margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold-border);border-radius:10px;font-size:13px;color:var(--gold);line-height:1.6;"></div>
       <div class="form-group"><label class="form-label">Seu Nome</label><input class="form-input" type="text" id="vip-f-name" placeholder="Joao Silva"></div>
       <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" type="tel" id="vip-f-phone" readonly style="opacity:.7;cursor:not-allowed;"></div>
       <div class="form-group">
@@ -2279,17 +2280,15 @@
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
-    // Mostrar aviso de fechamento de agenda abaixo do título
+    // Mostrar aviso de fechamento de agenda
     const specificBreaksToday = (SCHEDULE.specificBreaks||[]).filter(b=>b.date&&b.date.trim()===selectedDate);
-    const noticeDiv = document.getElementById('specific-breaks-notice');
-    if(noticeDiv){
-      if(specificBreaksToday.length){
-        noticeDiv.innerHTML = specificBreaksToday.map(b=>`🔒 <strong>${b.start}–${b.end}</strong>${b.reason ? ': '+esc(b.reason) : ''}`).join('<br>');
-        noticeDiv.style.display = 'block';
-      } else {
-        noticeDiv.style.display = 'none';
-      }
-    }
+    const html = specificBreaksToday.length ? specificBreaksToday.map(b=>`🔒 <strong>${b.start}–${b.end}</strong>${b.reason ? ': '+esc(b.reason) : ''}`).join('<br>') : '';
+    ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.innerHTML = html;
+      el.style.display = html ? 'block' : 'none';
+    });
 
     // Verificar se a data selecionada é hoje para bloquear horários passados
     const todayStr = getTodayStr();
@@ -2365,7 +2364,7 @@
       const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
       document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
       document.getElementById("confirmBox").classList.add("show");
-      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value=""; selectedServices=[]; updateBookingSelects(); const sbn=document.getElementById('specific-breaks-notice'); if(sbn) sbn.style.display='none';
+      document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value=""; selectedServices=[]; updateBookingSelects(); ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
       renderSlots(); showToast("Agendamento confirmado!","success");
       setTimeout(()=>showSection("appointments"),2200);
     } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
@@ -2509,6 +2508,13 @@
     }
 
     const bookedRawVip=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
+    // Mostrar aviso de fechamento de agenda para VIP
+    const sbVip = (SCHEDULE.specificBreaks||[]).filter(b=>b.date&&b.date.trim()===selectedDate);
+    const sbHtmlVip = sbVip.length ? sbVip.map(b=>`🔒 <strong>${b.start}–${b.end}</strong>${b.reason?': '+esc(b.reason):''}`).join('<br>') : '';
+    ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      el.innerHTML=sbHtmlVip; el.style.display=sbHtmlVip?'block':'none';
+    });
     const intervalVip = SCHEDULE.slotInterval||15;
     const totalDurVip = getTotalSelectedDurationVip(service, intervalVip);
     const extraCount = totalDurVip <= intervalVip ? 0 : Math.ceil((totalDurVip+(SCHEDULE.buffer||5))/intervalVip)-1;
