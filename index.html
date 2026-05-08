@@ -2265,13 +2265,27 @@
     });
 
     // Intervalos específicos para esta data
-    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>b.date===selectedDate);
+    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>{
+      if(!b.date) return false;
+      return b.date.trim() === selectedDate;
+    });
     const specificBlockedMap = new Map();
     specificBreaks.forEach(b=>{
-      makeSlots('00:00','24:00').forEach(t=>{
-        if(t >= b.start && t < b.end) specificBlockedMap.set(t, b.reason||'Indisponível neste horário');
+      // Use minute-by-minute to ensure all slots are covered regardless of interval
+      const startParts = b.start.split(':').map(Number);
+      const endParts   = b.end.split(':').map(Number);
+      const startMin   = startParts[0]*60 + startParts[1];
+      const endMin     = endParts[0]*60   + endParts[1];
+      // Mark every slot in the day that falls within this range
+      slots.forEach(t=>{
+        const [h,m] = t.split(':').map(Number);
+        const tMin = h*60 + m;
+        if(tMin >= startMin && tMin < endMin){
+          specificBlockedMap.set(t, b.reason||'Indisponível neste horário');
+        }
       });
     });
+    if(specificBreaks.length > 0) console.log('Specific breaks for', selectedDate, ':', specificBreaks, '| Blocked slots:', [...specificBlockedMap.keys()]);
 
     // Verificar se a data selecionada é hoje para bloquear horários passados
     const todayStr = getTodayStr();
