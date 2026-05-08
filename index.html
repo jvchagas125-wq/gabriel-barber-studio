@@ -2264,6 +2264,15 @@
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
+    // Intervalos específicos para esta data
+    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>b.date===selectedDate);
+    const specificBlockedMap = new Map();
+    specificBreaks.forEach(b=>{
+      makeSlots('00:00','24:00').forEach(t=>{
+        if(t >= b.start && t < b.end) specificBlockedMap.set(t, b.reason||'Indisponível neste horário');
+      });
+    });
+
     // Verificar se a data selecionada é hoje para bloquear horários passados
     const todayStr = getTodayStr();
     const isToday = selectedDate === todayStr;
@@ -2274,11 +2283,13 @@
       const allNeeded=[time,...extras];
       const extrasValid=extras.every(e=>slots.includes(e));
       const isBooked=allNeeded.some(t=>bookedTimes.has(t));
+      const isSpecificBlocked=allNeeded.some(t=>specificBlockedMap.has(t));
+      const specificReason = specificBlockedMap.get(time) || [...allNeeded].map(t=>specificBlockedMap.get(t)).find(Boolean) || '';
       // Bloquear horários já passados quando a data é hoje
       const [slotH, slotM] = time.split(':').map(Number);
       const slotMinutes = slotH*60 + slotM;
       const isPastTime = isToday && slotMinutes <= nowMinutes;
-      const unavailable=isBooked||!extrasValid||isPastTime;
+      const unavailable=isBooked||!extrasValid||isPastTime||isSpecificBlocked;
 
       const btn=document.createElement("button");
       btn.type="button";
@@ -2286,6 +2297,20 @@
       btn.disabled=unavailable;
 
       if(unavailable){
+        if(isSpecificBlocked){
+          btn.textContent=time;
+          btn.title=specificReason;
+          // Show reason below button
+          const wrapper=document.createElement('div');
+          wrapper.style.cssText='display:flex;flex-direction:column;align-items:center;gap:2px;';
+          const reasonEl=document.createElement('div');
+          reasonEl.style.cssText='font-size:9px;color:var(--gold);text-align:center;line-height:1.2;max-width:70px;word-break:break-word;';
+          reasonEl.textContent='🔒 '+specificReason;
+          wrapper.appendChild(btn);
+          wrapper.appendChild(reasonEl);
+          container.appendChild(wrapper);
+          return;
+        }
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
         btn.textContent=extraCount>0?(time+' + '+totalDur+'min'):time;
