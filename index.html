@@ -2822,7 +2822,8 @@
       doc(db,'push_notifications_personal',digits),
       snap=>{
         if(!snap.exists()) return;
-        const list = snap.data().list||[];
+        const data = snap.data();
+        const list = data.list||[];
         list.forEach(n=>{
           if(loginAt && n.createdAt && n.createdAt <= loginAt) return;
           const seenKey = 'gbs_pseen_'+digits+'_'+(n.id||n.createdAt);
@@ -2830,6 +2831,20 @@
           localStorage.setItem(seenKey,'1');
           showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
         });
+        // Trigger personal FCM if admin saved a pendingFCM
+        if(data.pendingFCM && data.pendingFCM.digits === digits){
+          const pfKey = 'gbs_pfcm_'+digits+'_'+(data.pendingFCM.createdAt||'');
+          if(!localStorage.getItem(pfKey)){
+            localStorage.setItem(pfKey,'1');
+            fetch('/api/notify',{
+              method:'POST',
+              headers:{'Content-Type':'application/json','x-notify-secret':'gbs-notify-2026'},
+              body:JSON.stringify({title:data.pendingFCM.title,body:data.pendingFCM.body,digits}),
+            }).then(()=>{
+              updateDoc(doc(db,'push_notifications_personal',digits),{pendingFCM:null}).catch(()=>{});
+            }).catch(()=>{});
+          }
+        }
       }, ()=>{}
     );
 
