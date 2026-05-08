@@ -1335,6 +1335,7 @@
         // Restore services durations from SERVICES_DATA (they're stored separately)
         if(!SCHEDULE.services) SCHEDULE.services = {};
         SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
+        if(SCHEDULE.specificBreaks?.length) console.log('SCHEDULE.specificBreaks loaded:', SCHEDULE.specificBreaks);
       }
       renderHoursDisplay();
       // Re-renderiza slots se já tiver data selecionada
