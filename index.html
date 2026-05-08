@@ -2270,6 +2270,7 @@
       if(!b.date) return false;
       return b.date.trim() === selectedDate;
     });
+    console.log('selectedDate:', JSON.stringify(selectedDate), '| checking breaks:', (SCHEDULE.specificBreaks||[]).map(b=>JSON.stringify(b.date)));
     const specificBlockedMap = new Map();
     specificBreaks.forEach(b=>{
       // Use minute-by-minute to ensure all slots are covered regardless of interval
