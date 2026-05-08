@@ -1335,7 +1335,6 @@
         // Restore services durations from SERVICES_DATA (they're stored separately)
         if(!SCHEDULE.services) SCHEDULE.services = {};
         SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
-        if(SCHEDULE.specificBreaks?.length) console.log('SCHEDULE.specificBreaks loaded:', SCHEDULE.specificBreaks);
       }
       renderHoursDisplay();
       // Re-renderiza slots se já tiver data selecionada
@@ -1582,13 +1581,27 @@
     const dow = new Date(dateStr+'T12:00:00').getDay();
     const key = DOW_KEY[dow];
     if(!key) return [];
-    const dayCfg = SCHEDULE.days[key];
+    const dayCfg = SCHEDULE.days && SCHEDULE.days[key];
     if(!dayCfg||!dayCfg.open) return [];
     let allSlots = makeSlots(dayCfg.start, dayCfg.end);
+    // Remove weekly breaks
     const breaks = (SCHEDULE.breaks||[]).filter(b=>(b.days||[]).includes(key));
     for(const br of breaks){
       const brSlots = makeSlots(br.start, br.end);
       allSlots = allSlots.filter(s=>!brSlots.includes(s));
+    }
+    // Remove specific date breaks (Fechar Agenda)
+    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>b.date && b.date.trim()===dateStr);
+    for(const sb of specificBreaks){
+      const sbStart = sb.start.split(':').map(Number);
+      const sbEnd   = sb.end.split(':').map(Number);
+      const sbStartMin = sbStart[0]*60 + sbStart[1];
+      const sbEndMin   = sbEnd[0]*60   + sbEnd[1];
+      allSlots = allSlots.filter(s=>{
+        const [h,m] = s.split(':').map(Number);
+        const sMin = h*60 + m;
+        return sMin < sbStartMin || sMin >= sbEndMin;
+      });
     }
     return allSlots;
   }
@@ -2265,29 +2278,14 @@
       if(svcSlots>0) getExtraSlots(a.time, svcSlots).forEach(e=>bookedTimes.add(e));
     });
 
-    // Intervalos específicos para esta data
-    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>{
-      if(!b.date) return false;
-      return b.date.trim() === selectedDate;
-    });
-    console.log('selectedDate:', JSON.stringify(selectedDate), '| checking breaks:', (SCHEDULE.specificBreaks||[]).map(b=>JSON.stringify(b.date)));
-    const specificBlockedMap = new Map();
-    specificBreaks.forEach(b=>{
-      // Use minute-by-minute to ensure all slots are covered regardless of interval
-      const startParts = b.start.split(':').map(Number);
-      const endParts   = b.end.split(':').map(Number);
-      const startMin   = startParts[0]*60 + startParts[1];
-      const endMin     = endParts[0]*60   + endParts[1];
-      // Mark every slot in the day that falls within this range
-      slots.forEach(t=>{
-        const [h,m] = t.split(':').map(Number);
-        const tMin = h*60 + m;
-        if(tMin >= startMin && tMin < endMin){
-          specificBlockedMap.set(t, b.reason||'Indisponível neste horário');
-        }
-      });
-    });
-    if(specificBreaks.length > 0) console.log('Specific breaks for', selectedDate, ':', specificBreaks, '| Blocked slots:', [...specificBlockedMap.keys()]);
+    // Mostrar aviso de intervalos específicos para esta data
+    const specificBreaksToday = (SCHEDULE.specificBreaks||[]).filter(b=>b.date&&b.date.trim()===selectedDate);
+    if(specificBreaksToday.length){
+      const notice = document.createElement('div');
+      notice.style.cssText='grid-column:1/-1;background:rgba(201,168,76,0.1);border:1px solid var(--gold-border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:4px;';
+      notice.innerHTML = specificBreaksToday.map(b=>`🔒 ${b.start}–${b.end}: <strong>${esc(b.reason||'Indisponível')}</strong>`).join('<br>');
+      container.appendChild(notice);
+    }
 
     // Verificar se a data selecionada é hoje para bloquear horários passados
     const todayStr = getTodayStr();
@@ -2299,13 +2297,12 @@
       const allNeeded=[time,...extras];
       const extrasValid=extras.every(e=>slots.includes(e));
       const isBooked=allNeeded.some(t=>bookedTimes.has(t));
-      const isSpecificBlocked=allNeeded.some(t=>specificBlockedMap.has(t));
-      const specificReason = specificBlockedMap.get(time) || [...allNeeded].map(t=>specificBlockedMap.get(t)).find(Boolean) || '';
+
       // Bloquear horários já passados quando a data é hoje
       const [slotH, slotM] = time.split(':').map(Number);
       const slotMinutes = slotH*60 + slotM;
       const isPastTime = isToday && slotMinutes <= nowMinutes;
-      const unavailable=isBooked||!extrasValid||isPastTime||isSpecificBlocked;
+      const unavailable=isBooked||!extrasValid||isPastTime;
 
       const btn=document.createElement("button");
       btn.type="button";
@@ -2313,20 +2310,7 @@
       btn.disabled=unavailable;
 
       if(unavailable){
-        if(isSpecificBlocked){
-          btn.textContent=time;
-          btn.title=specificReason;
-          // Show reason below button
-          const wrapper=document.createElement('div');
-          wrapper.style.cssText='display:flex;flex-direction:column;align-items:center;gap:2px;';
-          const reasonEl=document.createElement('div');
-          reasonEl.style.cssText='font-size:9px;color:var(--gold);text-align:center;line-height:1.2;max-width:70px;word-break:break-word;';
-          reasonEl.textContent='🔒 '+specificReason;
-          wrapper.appendChild(btn);
-          wrapper.appendChild(reasonEl);
-          container.appendChild(wrapper);
-          return;
-        }
+
         btn.textContent=time+(isBooked?' ✗':'');
       } else {
         btn.textContent=extraCount>0?(time+' + '+totalDur+'min'):time;
