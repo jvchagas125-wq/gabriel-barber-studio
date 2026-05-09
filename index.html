@@ -1592,8 +1592,18 @@
       const brSlots = makeSlots(br.start, br.end);
       allSlots = allSlots.filter(s=>!brSlots.includes(s));
     }
-    // Remove specific date breaks (Fechar Agenda)
-    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>b.date && b.date.trim()===dateStr);
+    // Remove specific date breaks (Fechar Agenda) — including repeatWeekly
+    const dateDow = new Date(dateStr+'T12:00:00').getDay(); // 0=Sun,6=Sat
+    const specificBreaks = (SCHEDULE.specificBreaks||[]).filter(b=>{
+      if(!b.date) return false;
+      if(b.date.trim() === dateStr) return true; // exact date match
+      // repeatWeekly: same day of week, date must be on or before dateStr
+      if(b.repeatWeekly){
+        const bDow = new Date(b.date+'T12:00:00').getDay();
+        return bDow === dateDow && b.date.trim() <= dateStr;
+      }
+      return false;
+    });
     for(const sb of specificBreaks){
       const sbStart = sb.start.split(':').map(Number);
       const sbEnd   = sb.end.split(':').map(Number);
@@ -2281,7 +2291,16 @@
     });
 
     // Mostrar aviso de fechamento de agenda
-    const specificBreaksToday = (SCHEDULE.specificBreaks||[]).filter(b=>b.date&&b.date.trim()===selectedDate);
+    const _sdDow = new Date(selectedDate+'T12:00:00').getDay();
+    const specificBreaksToday = (SCHEDULE.specificBreaks||[]).filter(b=>{
+      if(!b.date) return false;
+      if(b.date.trim()===selectedDate) return true;
+      if(b.repeatWeekly){
+        const bDow = new Date(b.date+'T12:00:00').getDay();
+        return bDow===_sdDow && b.date.trim()<=selectedDate;
+      }
+      return false;
+    });
     const html = specificBreaksToday.length ? specificBreaksToday.map(b=>`🔒 <strong>${b.start}–${b.end}</strong>${b.reason ? ': '+esc(b.reason) : ''}`).join('<br>') : '';
     ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{
       const el = document.getElementById(id);
@@ -2509,7 +2528,13 @@
 
     const bookedRawVip=allAppointments.filter(a=>a.date===selectedDate).map(a=>a.time);
     // Mostrar aviso de fechamento de agenda para VIP
-    const sbVip = (SCHEDULE.specificBreaks||[]).filter(b=>b.date&&b.date.trim()===selectedDate);
+    const _vipDow = new Date(selectedDate+'T12:00:00').getDay();
+    const sbVip = (SCHEDULE.specificBreaks||[]).filter(b=>{
+      if(!b.date) return false;
+      if(b.date.trim()===selectedDate) return true;
+      if(b.repeatWeekly){ const bd=new Date(b.date+'T12:00:00').getDay(); return bd===_vipDow && b.date<=selectedDate; }
+      return false;
+    });
     const sbHtmlVip = sbVip.length ? sbVip.map(b=>`🔒 <strong>${b.start}–${b.end}</strong>${b.reason?': '+esc(b.reason):''}`).join('<br>') : '';
     ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{
       const el=document.getElementById(id); if(!el) return;
