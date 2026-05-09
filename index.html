@@ -1040,6 +1040,12 @@
 <div class="section" id="sec-appointments">
   <div class="page" style="max-width:700px;">
     <h2 class="section-title gold-gradient">Meus Agendamentos</h2>
+    <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;display:block;margin-bottom:18px;">
+      <div style="padding:12px 16px;border-radius:11px;background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(22,163,74,0.05));border:1px solid rgba(22,163,74,0.25);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:13px;color:#4ade80;font-weight:600;">⭐ O que achou do nosso atendimento? Nos avalie no Google Maps.</span>
+        <span style="padding:6px 14px;border-radius:8px;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;white-space:nowrap;">Avaliar →</span>
+      </div>
+    </a>
     <div id="aptList"></div>
     <div class="mob-nav-row">
       <button class="mob-nav-btn prev" onclick="showSection('booking')" title="Agendar">← Agendar</button>
@@ -2468,10 +2474,9 @@
         const fmtDate=new Date(apt.date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
         const isPast=apt.date<today;
         const isDone=apt.done===true;
-        const reviewKey='gbs_reviewed_'+apt.id;
-        const alreadyReviewed=localStorage.getItem(reviewKey);
+
         const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
-        const reviewBanner = isDone && !alreadyReviewed ? '<div style="margin-top:12px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(22,163,74,0.05));border:1px solid rgba(22,163,74,0.25);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div style="font-size:12px;color:#4ade80;font-weight:600;">⭐ Gostou do atendimento? Deixe sua avaliação!</div><a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" onclick="localStorage.setItem(\''+reviewKey+'\',\'1\');this.closest(\'.apt-card\').querySelector(\'.review-banner\').remove()" style="text-decoration:none;"><button style="padding:7px 14px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-family:\' DM Sans\',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">⭐ Avaliar no Google</button></a></div>' : '';
+        const reviewBanner = '';
         return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isDone?'color:#4ade80;border-color:rgba(22,163,74,0.3);background:rgba(22,163,74,0.08);':(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':''))+'">'+(isDone?'✅ Concluído':(isPast?'Realizado':apt.status))+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+reviewBanner+(isPast||isDone?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
       }).join("");
     } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
