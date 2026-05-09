@@ -2394,6 +2394,7 @@
       document.getElementById("confirmBox").classList.add("show");
       document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value=""; selectedServices=[]; updateBookingSelects(); ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
       renderSlots(); showToast("Agendamento confirmado!","success");
+      notifyGabriel("📅 <b>Novo agendamento!</b>\n👤 "+esc(name)+"\n📞 "+esc(loggedPhone||"")+"\n✂️ "+esc(service)+"\n📆 "+new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})+" às "+esc(time));
       setTimeout(()=>showSection("appointments"),2200);
     } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
     finally { btn.disabled=false; btn.textContent="Confirmar Agendamento"; }
@@ -2516,7 +2517,9 @@
         );
         for(const b of blocked) await deleteDoc(doc(db,COL,b.id));
       }
-      showToast("Agendamento cancelado","success"); renderAppointments();
+      showToast("Agendamento cancelado","success");
+      notifyGabriel("🚫 <b>Agendamento cancelado!</b>\n👤 "+esc(mainApt?.name||"—")+"\n📞 "+esc(mainApt?.phone||"—")+"\n✂️ "+esc(mainApt?.service||"—")+"\n📆 "+esc(mainApt?.date||"—")+" às "+esc(mainApt?.time||"—"));
+      renderAppointments();
     }
     catch(err){ console.error(err); showToast("Erro ao cancelar","error"); }
   };
@@ -2626,6 +2629,7 @@
       document.getElementById('confirmBox-vip').style.display='block';
       document.getElementById('vip-f-name').value=''; document.getElementById('vip-f-service').value=''; document.getElementById('vip-f-date').value=''; document.getElementById('vip-f-time').value='';
       renderSlotsVip(); showToast('Agendamento confirmado!','success');
+      notifyGabriel('👑 <b>Novo agendamento VIP!</b>\n👤 '+esc(name)+'\n📞 '+esc(loggedPhone||'')+'\n✂️ '+esc(service)+'\n📆 '+new Date(date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})+' às '+esc(time));
     } catch(e){ showToast('Erro ao confirmar. Tente novamente.','error'); }
     finally { btn.disabled=false; btn.textContent='Confirmar Agendamento'; }
   };
@@ -3337,6 +3341,18 @@
       showToast('+'+reviewCoins+' GB$ creditados por avaliar no Google! ⭐','success');
     } catch(e){ console.warn('creditReviewGB:',e); }
   };
+
+
+  // ===== NOTIFICAÇÃO TELEGRAM PARA GABRIEL =====
+  async function notifyGabriel(message){
+    try {
+      fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-notify-secret': 'gbs-notify-2026' },
+        body: JSON.stringify({ message }),
+      }).catch(()=>{});
+    } catch(e){}
+  }
 
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
