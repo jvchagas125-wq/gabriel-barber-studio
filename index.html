@@ -1040,12 +1040,14 @@
 <div class="section" id="sec-appointments">
   <div class="page" style="max-width:700px;">
     <h2 class="section-title gold-gradient">Meus Agendamentos</h2>
-    <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;display:block;margin-bottom:18px;">
-      <div style="padding:12px 16px;border-radius:11px;background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(22,163,74,0.05));border:1px solid rgba(22,163,74,0.25);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-        <span style="font-size:13px;color:#4ade80;font-weight:600;">⭐ O que achou do nosso atendimento? Nos avalie no Google Maps.</span>
-        <span style="padding:6px 14px;border-radius:8px;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;white-space:nowrap;">Avaliar →</span>
-      </div>
-    </a>
+    <div id="review-gb-banner" style="margin-bottom:18px;">
+      <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;display:block;" onclick="creditReviewGB()">
+        <div style="padding:12px 16px;border-radius:11px;background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(22,163,74,0.05));border:1px solid rgba(22,163,74,0.25);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span id="review-banner-text" style="font-size:13px;color:#4ade80;font-weight:600;">⭐ O que achou do nosso atendimento? Nos avalie no Google Maps.</span>
+          <span style="padding:6px 14px;border-radius:8px;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;white-space:nowrap;">Avaliar →</span>
+        </div>
+      </a>
+    </div>
     <div id="aptList"></div>
     <div class="mob-nav-row">
       <button class="mob-nav-btn prev" onclick="showSection('booking')" title="Agendar">← Agendar</button>
@@ -3303,7 +3305,7 @@
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:8px;">Obrigado pela visita!</div>
         <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Seu atendimento foi concluído! Que tal deixar uma avaliação no Google e ajudar outras pessoas a nos conhecer? 😊</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <a href="${'https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D'}" target="_blank" style="text-decoration:none;" onclick="localStorage.setItem('${popupKey}','1');document.body.removeChild(document.getElementById('review-prompt-modal'))">
+          <a href="${'https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D'}" target="_blank" style="text-decoration:none;" onclick="creditReviewGB();localStorage.setItem('${popupKey}','1');document.body.removeChild(document.getElementById('review-prompt-modal'))">
             <button style="width:100%;padding:13px;border-radius:11px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">⭐ Avaliar no Google Maps</button>
           </a>
           <button onclick="localStorage.setItem('${popupKey}','skip');document.body.removeChild(document.getElementById('review-prompt-modal'))" style="width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Agora não</button>
@@ -3312,6 +3314,29 @@
     document.body.appendChild(modal);
     modal.onclick=e=>{if(e.target===modal)modal.remove();};
   }
+
+
+  // ===== CRÉDITO GB$ POR AVALIAR NO GOOGLE =====
+  window.creditReviewGB = async function(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    const creditedKey = 'gbs_review_gb_credited_'+digits;
+    if(localStorage.getItem(creditedKey)) return; // já creditou
+    try {
+      const cfgSnap = await getDoc(doc(db,'config','gb_store'));
+      const reviewCoins = cfgSnap.exists() ? (parseInt(cfgSnap.data().reviewCoins)||2) : 2;
+      if(reviewCoins <= 0) return;
+      const walRef = doc(db,'wallets',digits);
+      const walSnap = await getDoc(walRef);
+      const cur = walSnap.exists() ? (walSnap.data().balance||0) : 0;
+      await setDoc(walRef,{ balance: cur+reviewCoins, phone:loggedPhone, digits, updatedAt:new Date().toISOString() },{merge:true});
+      localStorage.setItem(creditedKey,'1');
+      // Update banner text
+      const txt = document.getElementById('review-banner-text');
+      if(txt) txt.textContent = '⭐ Obrigado pela avaliação! +'+reviewCoins+' GB$ creditados na sua carteira!';
+      showToast('+'+reviewCoins+' GB$ creditados por avaliar no Google! ⭐','success');
+    } catch(e){ console.warn('creditReviewGB:',e); }
+  };
 
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
