@@ -3277,15 +3277,16 @@
   function checkShowReviewPrompt(){
     if(!loggedPhone) return;
     const digits = loggedPhone.replace(/\D/g,'');
+    // Only show popup once per client (not per appointment)
+    const popupKey = 'gbs_review_popup_'+digits;
+    if(localStorage.getItem(popupKey)) return;
     const mine = allAppointments.filter(a=>
       (a.phone||'').replace(/\D/g,'')===digits && a.done===true
     );
-    // Check if any done appointment hasn't been reviewed yet
-    const unreviewed = mine.find(a=>!localStorage.getItem('gbs_reviewed_'+a.id));
-    if(unreviewed) showReviewModal(unreviewed.id);
+    if(mine.length > 0) showReviewModal(popupKey);
   }
 
-  function showReviewModal(aptId){
+  function showReviewModal(popupKey){
     const existing = document.getElementById('review-prompt-modal');
     if(existing) return; // already showing
     const modal = document.createElement('div');
@@ -3297,10 +3298,10 @@
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:8px;">Obrigado pela visita!</div>
         <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Seu atendimento foi concluído! Que tal deixar uma avaliação no Google e ajudar outras pessoas a nos conhecer? 😊</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <a href="${'https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D'}" target="_blank" style="text-decoration:none;" onclick="localStorage.setItem('gbs_reviewed_${aptId}','1');document.body.removeChild(document.getElementById('review-prompt-modal'))">
+          <a href="${'https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D'}" target="_blank" style="text-decoration:none;" onclick="localStorage.setItem('${popupKey}','1');document.body.removeChild(document.getElementById('review-prompt-modal'))">
             <button style="width:100%;padding:13px;border-radius:11px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">⭐ Avaliar no Google Maps</button>
           </a>
-          <button onclick="localStorage.setItem('gbs_reviewed_${aptId}','skip');document.body.removeChild(document.getElementById('review-prompt-modal'))" style="width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Agora não</button>
+          <button onclick="localStorage.setItem('${popupKey}','skip');document.body.removeChild(document.getElementById('review-prompt-modal'))" style="width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Agora não</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
