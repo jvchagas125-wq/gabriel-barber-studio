@@ -2007,6 +2007,7 @@
     if(name === 'store') loadStore();
     if(name === 'home' || name === 'contact') loadContactNotices();
     if(name === 'reviews') loadReviews();
+    if(name === 'appointments') checkShowReviewPrompt();
     if(name === 'booking' && !isVip){ setMinDate(); document.getElementById('confirmBox').classList.remove('show'); }
     // VIP: ao ir para home-vip via 'booking', scroll suave até o form
     if(isVip && name === 'booking'){
@@ -2466,8 +2467,12 @@
       container.innerHTML=counterHtml+mine.map(apt=>{
         const fmtDate=new Date(apt.date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
         const isPast=apt.date<today;
+        const isDone=apt.done===true;
+        const reviewKey='gbs_reviewed_'+apt.id;
+        const alreadyReviewed=localStorage.getItem(reviewKey);
         const justifyHtml = apt.justification ? '<div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);"><span style="font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Justificativa do 2º agendamento</span><span style="font-size:13px;color:#ccc;">'+esc(apt.justification)+'</span></div>' : '';
-        return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':'')+'">'+(isPast?'Realizado':apt.status)+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+(isPast?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
+        const reviewBanner = isDone && !alreadyReviewed ? '<div style="margin-top:12px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(22,163,74,0.05));border:1px solid rgba(22,163,74,0.25);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div style="font-size:12px;color:#4ade80;font-weight:600;">⭐ Gostou do atendimento? Deixe sua avaliação!</div><a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" onclick="localStorage.setItem(\''+reviewKey+'\',\'1\');this.closest(\'.apt-card\').querySelector(\'.review-banner\').remove()" style="text-decoration:none;"><button style="padding:7px 14px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-family:\' DM Sans\',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">⭐ Avaliar no Google</button></a></div>' : '';
+        return '<div class="apt-card"><div class="apt-card-header"><div><div class="apt-name">'+esc(apt.name)+'</div><div class="apt-phone">'+esc(apt.phone)+'</div></div><div class="apt-status" style="'+(isDone?'color:#4ade80;border-color:rgba(22,163,74,0.3);background:rgba(22,163,74,0.08);':(isPast?'color:var(--text-dim);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);':''))+'">'+(isDone?'✅ Concluído':(isPast?'Realizado':apt.status))+'</div></div><div class="apt-grid"><div class="apt-field"><span>Serviço</span><strong>'+esc(apt.service)+'</strong></div><div class="apt-field"><span>Data</span><strong>'+fmtDate+'</strong></div><div class="apt-field"><span>Horário</span><strong>'+esc(apt.time)+'</strong></div></div>'+justifyHtml+reviewBanner+(isPast||isDone?'':'<button class="cancel-btn" onclick="cancelApt(\''+apt.id+'\')">Cancelar agendamento</button>')+'</div>';
       }).join("");
     } catch(err){ console.error(err); container.innerHTML='<div class="no-apt"><p>Erro ao carregar agendamentos.</p></div>'; }
   }
@@ -3266,6 +3271,41 @@
     const img = document.getElementById('review-lightbox-img');
     if(lb&&img){ img.src=url; lb.style.display='flex'; }
   };
+
+
+  // ===== GOOGLE MAPS REVIEW PROMPT =====
+  function checkShowReviewPrompt(){
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    const mine = allAppointments.filter(a=>
+      (a.phone||'').replace(/\D/g,'')===digits && a.done===true
+    );
+    // Check if any done appointment hasn't been reviewed yet
+    const unreviewed = mine.find(a=>!localStorage.getItem('gbs_reviewed_'+a.id));
+    if(unreviewed) showReviewModal(unreviewed.id);
+  }
+
+  function showReviewModal(aptId){
+    const existing = document.getElementById('review-prompt-modal');
+    if(existing) return; // already showing
+    const modal = document.createElement('div');
+    modal.id = 'review-prompt-modal';
+    modal.style.cssText='position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;animation:fadeIn .25s ease;';
+    modal.innerHTML=`
+      <div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;animation:slideUp .3s ease-out;text-align:center;">
+        <div style="font-size:36px;margin-bottom:10px;">⭐</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:8px;">Obrigado pela visita!</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Seu atendimento foi concluído! Que tal deixar uma avaliação no Google e ajudar outras pessoas a nos conhecer? 😊</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="${'https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D'}" target="_blank" style="text-decoration:none;" onclick="localStorage.setItem('gbs_reviewed_${aptId}','1');document.body.removeChild(document.getElementById('review-prompt-modal'))">
+            <button style="width:100%;padding:13px;border-radius:11px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">⭐ Avaliar no Google Maps</button>
+          </a>
+          <button onclick="localStorage.setItem('gbs_reviewed_${aptId}','skip');document.body.removeChild(document.getElementById('review-prompt-modal'))" style="width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Agora não</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.onclick=e=>{if(e.target===modal)modal.remove();};
+  }
 
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
