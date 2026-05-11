@@ -822,7 +822,7 @@
       100% { transform: rotate(15deg); }
     }
     /* Notif dropdown */
-    .notif-dropdown { position:absolute; top:calc(100% + 8px); right:0; width:320px; max-width:calc(100vw - 20px); background:#1a1a1a; border:1px solid var(--gold-border); border-radius:14px; box-shadow:0 16px 48px rgba(0,0,0,.7); z-index:200; display:none; animation:fadeIn .15s ease-out; overflow:hidden; }
+    .notif-dropdown { position:absolute; top:calc(100% + 8px); right:-4px; width:320px; max-width:calc(100vw - 16px); background:#1a1a1a; border:1px solid var(--gold-border); border-radius:14px; box-shadow:0 16px 48px rgba(0,0,0,.7); z-index:200; display:none; animation:fadeIn .15s ease-out; overflow:hidden; }
     .notif-dropdown.open { display:block; }
     .notif-dd-header { padding:14px 16px 10px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:space-between; }
     .notif-dd-title { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--gold); }
@@ -933,6 +933,8 @@
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
     <div class="nav-user" id="nav-user" style="display:none;"></div>
+    <!-- Perfil + Sino agrupados à direita -->
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
     <!-- Sino de notificações -->
     <div style="position:relative;display:flex;align-items:center;" id="bell-wrap">
       <button class="bell-btn" id="bell-btn" onclick="toggleBellDropdown()" title="Notificações">
@@ -955,8 +957,7 @@
         </div>
       </div>
     </div>
-
-    <!-- Novo perfil dropdown -->
+    <!-- Perfil -->
     <div class="profile-wrap" id="profile-wrap">
       <button class="profile-btn" onclick="toggleProfileMenu()" id="profile-btn">
         <div class="profile-avatar" id="profile-avatar">
@@ -990,6 +991,8 @@
         </button>
       </div>
     </div>
+  </div>
+    </div><!-- end perfil+sino -->
   </div>
 </nav>
 
@@ -2814,11 +2817,6 @@
           await registerFCM();
           listenForPushNotifications(digits);
           showToast('Notificações ativadas! 🔔','success');
-          setTimeout(()=>showPushNotification(
-            'Gabriel Barber Studio 🔔',
-            'Notificações ativadas! Você receberá avisos mesmo com o app fechado.',
-            'https://i.postimg.cc/FFpNdnLT/Design-sem-nome.png'
-          ), 800);
         }
       } catch(e){ console.warn('push permission:',e); }
     };
@@ -3744,7 +3742,6 @@
   // SISTEMA DE NOTIFICAÇÕES IN-APP
   // ═══════════════════════════════════════
   let notifUnsubscribe = null;
-  let notifModalTimer = null;
 
   function startNotifListener(){
     if(notifUnsubscribe) notifUnsubscribe();
@@ -3784,7 +3781,7 @@
             const n = change.doc.data();
             const key = 'gbs_notif_read_'+change.doc.id;
             if(!localStorage.getItem(key)){
-              showNotifModal(n.title||'Gabriel Barber Studio', n.body||'', n.createdAt||'');
+              if(loggedPhone) addBellNotification(loggedPhone.replace(/\D/g,''), n.title||'Gabriel Barber Studio', n.body||'');
             }
           }
         });
@@ -3796,7 +3793,7 @@
         // Só mostrar se não foi lida ainda
         if(!localStorage.getItem('gbs_notif_read_'+latest.id)){
           setTimeout(()=>{
-            showNotifModal(latest.title||'Gabriel Barber Studio', latest.body||'', latest.createdAt||'', latest.id);
+            if(loggedPhone) addBellNotification(loggedPhone.replace(/\D/g,''), latest.title||'Gabriel Barber Studio', latest.body||'');
           }, 1500);
         }
       }
@@ -3883,30 +3880,7 @@
     if(wrap) wrap.style.display = wrap.style.display==='none' ? 'block' : 'none';
   };
 
-  function showNotifModal(title, body, createdAt, id){
-    const modal = document.getElementById('notif-modal');
-    const titleEl = document.getElementById('notif-modal-title');
-    const bodyEl = document.getElementById('notif-modal-body');
-    const timeEl = document.getElementById('notif-modal-time');
-    if(!modal) return;
-    if(titleEl) titleEl.textContent = title;
-    if(bodyEl)  bodyEl.textContent  = body;
-    if(timeEl && createdAt){
-      timeEl.textContent = new Date(createdAt).toLocaleString('pt-BR',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
-    }
-    modal.style.display='block';
-    // Fechar automaticamente após 8 segundos
-    clearTimeout(notifModalTimer);
-    notifModalTimer = setTimeout(()=>closeNotifModal(), 8000);
-    // Marcar como lida ao mostrar
-    if(id) localStorage.setItem('gbs_notif_read_'+id,'1');
-  }
-
-  window.closeNotifModal = function(){
-    const modal = document.getElementById('notif-modal');
-    if(modal) modal.style.display='none';
-    clearTimeout(notifModalTimer);
-  };
+  // showNotifModal removed — notifications go to bell icon only
 
 
   // ═══════════════════════════════════════
@@ -4333,15 +4307,7 @@ let rankingUnsubscribe = null;
 
 
 <!-- Modal nova notificação -->
-<div id="notif-modal" class="notif-modal">
-  <div class="notif-modal-header">
-    <span class="notif-modal-icon">🔔</span>
-    <span class="notif-modal-title" id="notif-modal-title">Gabriel Barber Studio</span>
-    <button class="notif-modal-close" onclick="closeNotifModal()">✕</button>
-  </div>
-  <div class="notif-modal-body" id="notif-modal-body"></div>
-  <div class="notif-modal-time" id="notif-modal-time"></div>
-</div>
+
 
 
 <div id="sec-ranking" class="section">
