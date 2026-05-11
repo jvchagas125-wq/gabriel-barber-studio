@@ -808,6 +808,35 @@
     .maps-review-btn:hover { opacity:.9; }
     .maps-review-btn-wrap { text-align:center; }
     @media(max-width:640px){ .review-grid { grid-template-columns:1fr 1fr; gap:10px; } }
+
+    /* ===== SINO DE NOTIFICAÇÕES ===== */
+    .bell-btn { position:relative; background:none; border:none; cursor:pointer; padding:8px; border-radius:50%; transition:background .15s; display:none; }
+    .bell-btn:hover { background:rgba(255,255,255,0.06); }
+    .bell-btn svg { width:22px; height:22px; fill:var(--text-muted); transition:fill .15s; }
+    .bell-btn:hover svg { fill:var(--gold); }
+    .bell-btn.has-unread svg { fill:var(--gold); animation:bellRing .6s ease-in-out infinite alternate; }
+    .bell-badge { position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:#dc2626; border:2px solid #111; display:none; }
+    .bell-btn.has-unread .bell-badge { display:block; }
+    @keyframes bellRing {
+      0%   { transform: rotate(-15deg); }
+      100% { transform: rotate(15deg); }
+    }
+    /* Notif dropdown */
+    .notif-dropdown { position:absolute; top:calc(100% + 8px); right:0; width:320px; max-width:calc(100vw - 20px); background:#1a1a1a; border:1px solid var(--gold-border); border-radius:14px; box-shadow:0 16px 48px rgba(0,0,0,.7); z-index:200; display:none; animation:fadeIn .15s ease-out; overflow:hidden; }
+    .notif-dropdown.open { display:block; }
+    .notif-dd-header { padding:14px 16px 10px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:space-between; }
+    .notif-dd-title { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--gold); }
+    .notif-dd-actions { display:flex; gap:6px; }
+    .notif-dd-action { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .notif-dd-list { max-height:320px; overflow-y:auto; }
+    .notif-dd-item { padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:background .15s; }
+    .notif-dd-item:hover { background:rgba(255,255,255,0.03); }
+    .notif-dd-item.unread { background:rgba(201,168,76,0.05); border-left:3px solid var(--gold); }
+    .notif-dd-item-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
+    .notif-dd-item-body { font-size:12px; color:var(--text-muted); line-height:1.4; }
+    .notif-dd-item-time { font-size:10px; color:var(--text-dim); margin-top:4px; }
+    .notif-dd-empty { padding:24px 16px; text-align:center; font-size:13px; color:var(--text-dim); }
+
   </style>
 
   <script>
@@ -904,6 +933,29 @@
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
     </div>
     <div class="nav-user" id="nav-user" style="display:none;"></div>
+    <!-- Sino de notificações -->
+    <div style="position:relative;" id="bell-wrap">
+      <button class="bell-btn" id="bell-btn" onclick="toggleBellDropdown()" title="Notificações">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        <span class="bell-badge" id="bell-badge"></span>
+      </button>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-dd-header">
+          <div class="notif-dd-title">🔔 Notificações</div>
+          <div class="notif-dd-actions">
+            <button class="notif-dd-action" onclick="markAllNotifsRead()" style="background:rgba(201,168,76,0.1);color:var(--gold);border:none;">✓ Lidas</button>
+            <button class="notif-dd-action" onclick="clearAllNotifs()" style="background:none;color:#f87171;border:1px solid rgba(220,38,38,0.3);">🗑️</button>
+          </div>
+        </div>
+
+        <div class="notif-dd-list" id="notif-dd-list">
+          <div class="notif-dd-empty">Nenhuma notificação ainda.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Novo perfil dropdown -->
     <div class="profile-wrap" id="profile-wrap">
       <button class="profile-btn" onclick="toggleProfileMenu()" id="profile-btn">
@@ -929,24 +981,7 @@
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
           🗓️ Meus Agendamentos
         </button>
-        <button class="profile-dd-btn" onclick="toggleNotifInbox()" style="justify-content:space-between;">
-          <span>🔔 Notificações</span>
-          <span id="notif-count-label" style="background:var(--gold);color:#111;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:none;">0</span>
-        </button>
-        <!-- Inbox de notificações -->
-        <div id="notif-inbox-wrap" style="display:none;">
-          <div class="notif-inbox" id="notif-inbox-list">
-            <div class="notif-empty">Nenhuma notificação ainda.</div>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <button onclick="markAllNotifsRead()" style="flex:1;padding:6px;border-radius:7px;border:none;background:rgba(201,168,76,0.1);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;">
-              ✓ Lidas
-            </button>
-            <button onclick="clearAllNotifs()" style="flex:1;padding:6px;border-radius:7px;border:1px solid rgba(220,38,38,0.3);background:none;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;">
-              🗑️ Excluir
-            </button>
-          </div>
-        </div>
+
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
           📍 Contato
         </button>
@@ -2066,6 +2101,8 @@
       subscribeAll();
       initPushNotifications(digits);
       checkFillDataBtnVisibility();
+      // Show bell icon
+      if(digits) showBellIcon(digits);
     } catch(err){
       console.error(err);
       errEl.textContent="Erro ao autenticar. Tente novamente.";
@@ -2880,6 +2917,7 @@
           const seenKey = 'gbs_pseen_'+digits+'_'+(n.id||n.createdAt);
           if(localStorage.getItem(seenKey)) return;
           localStorage.setItem(seenKey,'1');
+          if(loggedPhone) addBellNotification(loggedPhone.replace(/\D/g,''), n.title||'Gabriel Barber Studio', n.body||'');
           showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
         });
         // Trigger personal FCM if admin saved a pendingFCM
@@ -2931,6 +2969,8 @@
   }
 
   async function showPushNotification(title, body, icon){
+    // Add to bell notification inbox
+    if(loggedPhone){ addBellNotification(loggedPhone.replace(/\D/g,''), title, body); }
     if(Notification.permission !== 'granted') return;
     try {
       // Tentar via Service Worker (funciona em todos os contextos)
@@ -3353,6 +3393,126 @@
       }).catch(()=>{});
     } catch(e){}
   }
+
+
+  // ===== SINO DE NOTIFICAÇÕES =====
+  let bellNotifications = []; // {id, title, body, createdAt, read}
+  const BELL_STORAGE_KEY = 'gbs_bell_notifs_';
+
+  function getBellKey(digits){ return BELL_STORAGE_KEY + digits; }
+
+  function loadBellNotifications(digits){
+    try {
+      const stored = localStorage.getItem(getBellKey(digits));
+      bellNotifications = stored ? JSON.parse(stored) : [];
+    } catch(e){ bellNotifications = []; }
+    renderBellDropdown();
+    updateBellBadge();
+  }
+
+  function saveBellNotifications(digits){
+    try { localStorage.setItem(getBellKey(digits), JSON.stringify(bellNotifications.slice(-50))); } catch(e){}
+  }
+
+  function addBellNotification(digits, title, body){
+    bellNotifications.unshift({ id:'n_'+Date.now(), title, body, createdAt:new Date().toISOString(), read:false });
+    saveBellNotifications(digits);
+    renderBellDropdown();
+    updateBellBadge();
+  }
+
+  function updateBellBadge(){
+    const btn = document.getElementById('bell-btn');
+    const badge = document.getElementById('bell-badge');
+    if(!btn) return;
+    const unread = bellNotifications.filter(n=>!n.read).length;
+    if(unread > 0){
+      btn.classList.add('has-unread');
+      if(badge) badge.style.display='block';
+    } else {
+      btn.classList.remove('has-unread');
+      if(badge) badge.style.display='none';
+    }
+  }
+
+  function renderBellDropdown(){
+    const list = document.getElementById('notif-dd-list');
+    if(!list) return;
+    if(!bellNotifications.length){
+      list.innerHTML='<div class="notif-dd-empty">Nenhuma notificação ainda.</div>';
+      return;
+    }
+    list.innerHTML = bellNotifications.map(n=>{
+      const dt = n.createdAt ? new Date(n.createdAt).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="notif-dd-item ${n.read?'':'unread'}" onclick="markBellRead('${n.id}')">
+        <div class="notif-dd-item-title">${esc(n.title||'')}</div>
+        <div class="notif-dd-item-body">${esc(n.body||'')}</div>
+        <div class="notif-dd-item-time">${dt}</div>
+      </div>`;
+    }).join('');
+  }
+
+  window.toggleBellDropdown = function(){
+    const dd = document.getElementById('notif-dropdown');
+    if(!dd) return;
+    const isOpen = dd.classList.contains('open');
+    // Close all dropdowns
+    document.querySelectorAll('.profile-wrap').forEach(w=>w.classList.remove('open'));
+    if(!isOpen){
+      dd.classList.add('open');
+      // Mark all as read after 2s
+      setTimeout(()=>{
+        if(loggedPhone){
+          const digits = loggedPhone.replace(/\D/g,'');
+          bellNotifications.forEach(n=>n.read=true);
+          saveBellNotifications(digits);
+          updateBellBadge();
+        }
+      }, 2000);
+    } else {
+      dd.classList.remove('open');
+    }
+  };
+
+  window.markBellRead = function(id){
+    const n = bellNotifications.find(n=>n.id===id);
+    if(n) n.read=true;
+    if(loggedPhone) saveBellNotifications(loggedPhone.replace(/\D/g,''));
+    renderBellDropdown();
+    updateBellBadge();
+  };
+
+  window.markAllNotifsRead = function(){
+    bellNotifications.forEach(n=>n.read=true);
+    if(loggedPhone) saveBellNotifications(loggedPhone.replace(/\D/g,''));
+    renderBellDropdown();
+    updateBellBadge();
+  };
+
+  window.clearAllNotifs = function(){
+    bellNotifications = [];
+    if(loggedPhone) saveBellNotifications(loggedPhone.replace(/\D/g,''));
+    renderBellDropdown();
+    updateBellBadge();
+  };
+
+  // Close bell dropdown when clicking outside
+  document.addEventListener('click', e=>{
+    const bellWrap = document.getElementById('bell-wrap');
+    if(bellWrap && !bellWrap.contains(e.target)){
+      const dd = document.getElementById('notif-dropdown');
+      if(dd) dd.classList.remove('open');
+    }
+  });
+
+  // Show bell icon when logged in
+  function showBellIcon(digits){
+    const btn = document.getElementById('bell-btn');
+    if(btn) btn.style.display = 'flex';
+    loadBellNotifications(digits);
+  }
+
+
 
   // ===== CALENDÁRIO NASCIMENTO =====
   let birthCalDate = new Date(2000, 0, 1); // começa no ano 2000
