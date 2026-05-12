@@ -2101,6 +2101,8 @@
       document.getElementById("profile-dd-phone").textContent=formatted;
       const ddName=document.getElementById("profile-dd-name"); if(ddName) ddName.textContent=rawName;
       document.getElementById("f-phone").value=formatted;
+      document.getElementById("f-name").value=rawName;
+      const _vipName=document.getElementById("vip-f-name"); if(_vipName) _vipName.value=rawName;
       subscribeAll();
       initPushNotifications(digits);
       checkFillDataBtnVisibility();
@@ -2693,6 +2695,8 @@
         document.getElementById("profile-dd-phone").textContent = saved;
         const _ddName=document.getElementById("profile-dd-name"); if(_ddName) _ddName.textContent=savedName||'';
         document.getElementById("f-phone").value = saved;
+        const _fName=document.getElementById("f-name"); if(_fName) _fName.value=savedName||'';
+        const _vipFName=document.getElementById("vip-f-name"); if(_vipFName) _vipFName.value=savedName||'';
         const vipPhone = document.getElementById("vip-f-phone");
         if(vipPhone) vipPhone.value = saved;
         const vipDate = document.getElementById("vip-f-date");
