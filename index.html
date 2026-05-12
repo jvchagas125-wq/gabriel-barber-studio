@@ -3052,7 +3052,8 @@
       if(d.pwaIcon){
         // Update apple-touch-icon and favicon
         document.querySelectorAll('link[rel="apple-touch-icon"],link[rel="icon"]').forEach(el=>{ el.href=d.pwaIcon; });
-        // manifest served dynamically by /api/manifest
+        // Update apple-touch-icon and favicon with custom icon
+        document.querySelectorAll('link[rel="apple-touch-icon"],link[rel="icon"]').forEach(el=>{ el.href=d.pwaIcon; });
       }
     } catch(e){ console.warn('loadSiteBackground:',e); }
   }
