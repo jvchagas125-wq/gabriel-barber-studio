@@ -3521,28 +3521,7 @@
     updateBellBadge();
   };
 
-  window.clearAllNotifs = function(){
-    bellNotifications = [];
-    if(loggedPhone){
-      const digits = loggedPhone.replace(/\D/g,'');
-      try {
-        // Limpar lista do bell
-        localStorage.removeItem('gbs_bell_notifs_'+digits);
-        // Salvar timestamp do clear
-        const now = new Date().toISOString();
-        localStorage.setItem('gbs_notif_cleared_'+digits, now);
-        // Limpar todas as keys gbs_seen_ para este usuário
-        const keysToRemove = [];
-        for(let i=0;i<localStorage.length;i++){
-          const k=localStorage.key(i);
-          if(k && k.startsWith('gbs_seen_'+digits+'_')) keysToRemove.push(k);
-        }
-        keysToRemove.forEach(k=>localStorage.removeItem(k));
-      } catch(e){}
-    }
-    renderBellDropdown();
-    updateBellBadge();
-  };
+
 
   // Close bell dropdown when clicking outside
   document.addEventListener('click', e=>{
@@ -3891,21 +3870,29 @@
   };
 
   window.clearAllNotifs = function(){
-    if(!confirm('Excluir todas as notificações?')) return;
-    // Salvar timestamp — só mostrar notificações APÓS esse momento
+    // Sistema sino (bell)
+    bellNotifications = [];
+    if(loggedPhone){
+      const digits = loggedPhone.replace(/\D/g,'');
+      try {
+        localStorage.removeItem('gbs_bell_notifs_'+digits);
+        localStorage.setItem('gbs_notif_cleared_'+digits, new Date().toISOString());
+        // MANTER as gbs_seen_ keys para que o onSnapshot não reprocesse notifs antigas
+      } catch(e){}
+    }
+    renderBellDropdown();
+    updateBellBadge();
+    // Sistema inbox (legado)
     const now = new Date().toISOString();
     localStorage.setItem('gbs_notifs_cleared', now);
-    // Limpar inbox visual
     const list = document.getElementById('notif-inbox-list');
     if(list) list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda.</div>';
-    // Esconder inbox
     const wrap = document.getElementById('notif-inbox-wrap');
     if(wrap) wrap.style.display='none';
-    // Zerar badge
     const badge = document.getElementById('notif-count-label');
     if(badge) badge.style.display='none';
     showToast('Notificações excluídas','success');
-  };;
+  };
 
   window.markAllNotifsRead = function(){
     document.querySelectorAll('.notif-item').forEach(el=>{
