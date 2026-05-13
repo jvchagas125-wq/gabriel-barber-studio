@@ -2953,6 +2953,9 @@
         if(loginAt && n.createdAt && n.createdAt <= loginAt) return;
         const seenKey = 'gbs_seen_'+digits+'_'+change.doc.id;
         if(localStorage.getItem(seenKey)) return;
+        // Ignorar notificações anteriores ao último clear do usuário
+        const clearedAt = localStorage.getItem('gbs_notif_cleared_'+digits);
+        if(clearedAt && n.createdAt && n.createdAt.toMillis && n.createdAt.toMillis() <= new Date(clearedAt).getTime()) return;
         localStorage.setItem(seenKey,'1');
         showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
         // FCM: só o primeiro cliente que ver dispara (pending:true → false)
@@ -3416,6 +3419,16 @@
     try {
       const stored = localStorage.getItem(getBellKey(digits));
       bellNotifications = stored ? JSON.parse(stored) : [];
+      // Aplicar filtro de clear: remover notificações anteriores ao último clear
+      const clearedAt = localStorage.getItem('gbs_notif_cleared_'+digits);
+      if(clearedAt){
+        bellNotifications = bellNotifications.filter(n=> !n.createdAt || new Date(n.createdAt) > new Date(clearedAt));
+      }
+      // Aplicar read: marcar como lidas as anteriores ao último markAllRead
+      const readAt = localStorage.getItem('gbs_notif_read_'+digits);
+      if(readAt){
+        bellNotifications.forEach(n=>{ if(n.createdAt && new Date(n.createdAt) <= new Date(readAt)) n.read=true; });
+      }
     } catch(e){ bellNotifications = []; }
     renderBellDropdown();
     updateBellBadge();
@@ -3495,14 +3508,24 @@
 
   window.markAllNotifsRead = function(){
     bellNotifications.forEach(n=>n.read=true);
-    if(loggedPhone) saveBellNotifications(loggedPhone.replace(/\D/g,''));
+    if(loggedPhone){
+      const digits = loggedPhone.replace(/\D/g,'');
+      saveBellNotifications(digits);
+      // Marcar timestamp — notificações anteriores não voltam como unread
+      try { localStorage.setItem('gbs_notif_read_'+digits, new Date().toISOString()); } catch(e){}
+    }
     renderBellDropdown();
     updateBellBadge();
   };
 
   window.clearAllNotifs = function(){
     bellNotifications = [];
-    if(loggedPhone) saveBellNotifications(loggedPhone.replace(/\D/g,''));
+    if(loggedPhone){
+      const digits = loggedPhone.replace(/\D/g,'');
+      saveBellNotifications(digits);
+      // Salvar timestamp do clear para ignorar notificações antigas
+      try { localStorage.setItem('gbs_notif_cleared_'+digits, new Date().toISOString()); } catch(e){}
+    }
     renderBellDropdown();
     updateBellBadge();
   };
