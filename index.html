@@ -2955,7 +2955,10 @@
         if(localStorage.getItem(seenKey)) return;
         // Ignorar notificações anteriores ao último clear do usuário
         const clearedAt = localStorage.getItem('gbs_notif_cleared_'+digits);
-        if(clearedAt && n.createdAt && n.createdAt.toMillis && n.createdAt.toMillis() <= new Date(clearedAt).getTime()) return;
+        if(clearedAt && n.createdAt){
+          const notifTs = n.createdAt.toMillis ? n.createdAt.toMillis() : new Date(n.createdAt).getTime();
+          if(notifTs <= new Date(clearedAt).getTime()) return;
+        }
         localStorage.setItem(seenKey,'1');
         showPushNotification(n.title||'Gabriel Barber Studio', n.body||'', n.icon||'');
         // FCM: só o primeiro cliente que ver dispara (pending:true → false)
@@ -3522,9 +3525,20 @@
     bellNotifications = [];
     if(loggedPhone){
       const digits = loggedPhone.replace(/\D/g,'');
-      saveBellNotifications(digits);
-      // Salvar timestamp do clear para ignorar notificações antigas
-      try { localStorage.setItem('gbs_notif_cleared_'+digits, new Date().toISOString()); } catch(e){}
+      try {
+        // Limpar lista do bell
+        localStorage.removeItem('gbs_bell_notifs_'+digits);
+        // Salvar timestamp do clear
+        const now = new Date().toISOString();
+        localStorage.setItem('gbs_notif_cleared_'+digits, now);
+        // Limpar todas as keys gbs_seen_ para este usuário
+        const keysToRemove = [];
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(k && k.startsWith('gbs_seen_'+digits+'_')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k=>localStorage.removeItem(k));
+      } catch(e){}
     }
     renderBellDropdown();
     updateBellBadge();
