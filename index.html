@@ -1751,20 +1751,24 @@
         discountBadgeHtml = '<span style="display:inline-block;font-size:10px;font-weight:700;background:rgba(220,38,38,0.18);color:#f87171;border:1px solid rgba(220,38,38,0.35);border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;">'+p.discount+'% OFF</span>';
       }
 
+      const btnLabel = (p.btnText||'').trim() || 'Assinar agora';
       let btnHtml;
       if(p.mpLink){
         btnHtml = '<button class="plan-btn" onclick="openPlanModal(this)" data-name="'
           + p.name.replace(/"/g,'&quot;')
           + '" data-price="R$' + price + '/m&ecirc;s" data-link="'
           + p.mpLink.replace(/"/g,'&quot;')
-          + '">Assinar agora</button>';
+          + '">' + btnLabel + '</button>';
       } else {
-        btnHtml = '<button class="plan-btn" onclick="showToast(&quot;Link de assinatura em breve!&quot;,&quot;error&quot;)" style="opacity:.6;cursor:not-allowed;">Assinar agora</button>';
+        btnHtml = '<button class="plan-btn" onclick="showToast(&quot;Link de assinatura em breve!&quot;,&quot;error&quot;)" style="opacity:.6;cursor:not-allowed;">' + btnLabel + '</button>';
       }
+      const showPrice = p.showPrice !== false;
+      const priceHtml = showPrice
+        ? (priceOldHtml + '<div class="plan-price">R$'+price+'<span>/m&ecirc;s</span>'+discountBadgeHtml+'</div>')
+        : '';
       return '<div class="plan-card'+featuredClass+'">'+badge
         +'<div class="plan-name">'+(p.emoji||'')+(p.emoji?' ':'')+p.name+'</div>'
-        +priceOldHtml
-        +'<div class="plan-price">R$'+price+'<span>/m&ecirc;s</span>'+discountBadgeHtml+'</div>'
+        +priceHtml
         +bvBadge
         +'<div class="plan-divider"></div>'
         +'<ul class="plan-features">'+benefitsHtml+'</ul>'
