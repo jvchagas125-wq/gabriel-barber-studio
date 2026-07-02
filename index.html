@@ -1890,21 +1890,14 @@
 
   // Abre modal de email ao clicar "Assinar agora"
   window.openPlanModal = function(elOrName, planPrice, mpLink){
-    // Suporta chamada via data-attributes (botão) ou direto (legacy)
-    let planName, link;
+    let link;
     if(elOrName && elOrName.dataset){
-      planName = elOrName.dataset.name || '';
-      planPrice = elOrName.dataset.price || '';
-      link      = elOrName.dataset.link || '';
+      link = elOrName.dataset.link || '';
     } else {
-      planName = elOrName;
       link = mpLink;
     }
-    pendingPlanLink = link;
-    pendingPlanName = planName;
-    document.getElementById('plan-modal-name').textContent = planName + ' — ' + planPrice;
-    document.getElementById('plan-email-input').value = '';
-    document.getElementById('planModal').style.display = 'flex';
+    if(!link){ showToast('Link de pagamento não configurado. Fale com o barbeiro.','error'); return; }
+    window.open(link, '_blank');
   };
 
   // Cliente confirma email e vai ao MP
