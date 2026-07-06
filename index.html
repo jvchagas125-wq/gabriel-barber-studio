@@ -2357,10 +2357,12 @@
       el.style.display = html ? 'block' : 'none';
     });
 
-    // Verificar se a data selecionada é hoje para bloquear horários passados
+    // Verificar bloqueio por antecedência mínima
     const todayStr = getTodayStr();
     const isToday = selectedDate === todayStr;
     const nowMinutes = isToday ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
+    const minAdvanceHours = SCHEDULE.minAdvanceHours !== undefined ? SCHEDULE.minAdvanceHours : 12;
+    const now = new Date();
 
     slots.forEach(time=>{
       const extras=extraCount>0?getExtraSlots(time,extraCount):[];
@@ -2372,7 +2374,17 @@
       const [slotH, slotM] = time.split(':').map(Number);
       const slotMinutes = slotH*60 + slotM;
       const isPastTime = isToday && slotMinutes <= nowMinutes;
-      const unavailable=isBooked||!extrasValid||isPastTime;
+
+      // Bloquear slots dentro da antecedência mínima (ex: 12h antes)
+      let isTooSoon = false;
+      if(minAdvanceHours > 0){
+        const slotDate = new Date(selectedDate + 'T' + time + ':00');
+        const diffMs = slotDate.getTime() - now.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        isTooSoon = diffHours < minAdvanceHours;
+      }
+
+      const unavailable=isBooked||!extrasValid||isPastTime||isTooSoon;
 
       const btn=document.createElement("button");
       btn.type="button";
@@ -2615,6 +2627,8 @@
     const todayStrVip = getTodayStr();
     const isTodayVip = selectedDate === todayStrVip;
     const nowMinutesVip = isTodayVip ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
+    const minAdvanceHoursVip = SCHEDULE.minAdvanceHours !== undefined ? SCHEDULE.minAdvanceHours : 12;
+    const nowVip = new Date();
 
     slots.forEach(time=>{
       const extras = extraCount>0?getExtraSlots(time,extraCount):[];
@@ -2624,7 +2638,13 @@
       const [slotHV, slotMV] = time.split(':').map(Number);
       const slotMinutesV = slotHV*60 + slotMV;
       const isPastTimeV = isTodayVip && slotMinutesV <= nowMinutesVip;
-      const unavailable = isBooked||!extrasValid||isPastTimeV;
+      let isTooSoonV = false;
+      if(minAdvanceHoursVip > 0){
+        const slotDateV = new Date(selectedDate + 'T' + time + ':00');
+        const diffMsV = slotDateV.getTime() - nowVip.getTime();
+        isTooSoonV = (diffMsV / (1000 * 60 * 60)) < minAdvanceHoursVip;
+      }
+      const unavailable = isBooked||!extrasValid||isPastTimeV||isTooSoonV;
 
       const btn = document.createElement('button');
       btn.type='button'; btn.className='time-btn'; btn.disabled=unavailable;
