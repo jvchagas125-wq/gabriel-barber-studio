@@ -2361,7 +2361,8 @@
     const todayStr = getTodayStr();
     const isToday = selectedDate === todayStr;
     const nowMinutes = isToday ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
-    const minAdvanceHours = SCHEDULE.minAdvanceHours !== undefined ? SCHEDULE.minAdvanceHours : 12;
+    const minAdvanceHours = SCHEDULE.minAdvanceHours !== undefined ? Number(SCHEDULE.minAdvanceHours) : 0;
+    const minAdvancePeriod = SCHEDULE.minAdvancePeriod || 'all';
     const now = new Date();
 
     slots.forEach(time=>{
@@ -2375,9 +2376,14 @@
       const slotMinutes = slotH*60 + slotM;
       const isPastTime = isToday && slotMinutes <= nowMinutes;
 
-      // Bloquear slots dentro da antecedência mínima (ex: 12h antes)
+      // Verificar se o slot está no período configurado para antecedência
+      const inPeriod = minAdvancePeriod === 'all'
+        || (minAdvancePeriod === 'morning'   && slotH >= 9  && slotH < 12)
+        || (minAdvancePeriod === 'afternoon' && slotH >= 12 && slotH < 23);
+
+      // Bloquear slots dentro da antecedência mínima
       let isTooSoon = false;
-      if(minAdvanceHours > 0){
+      if(minAdvanceHours > 0 && inPeriod){
         const slotDate = new Date(selectedDate + 'T' + time + ':00');
         const diffMs = slotDate.getTime() - now.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
@@ -2627,7 +2633,8 @@
     const todayStrVip = getTodayStr();
     const isTodayVip = selectedDate === todayStrVip;
     const nowMinutesVip = isTodayVip ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
-    const minAdvanceHoursVip = SCHEDULE.minAdvanceHours !== undefined ? SCHEDULE.minAdvanceHours : 12;
+    const minAdvanceHoursVip = SCHEDULE.minAdvanceHours !== undefined ? Number(SCHEDULE.minAdvanceHours) : 0;
+    const minAdvancePeriodVip = SCHEDULE.minAdvancePeriod || 'all';
     const nowVip = new Date();
 
     slots.forEach(time=>{
@@ -2638,8 +2645,12 @@
       const [slotHV, slotMV] = time.split(':').map(Number);
       const slotMinutesV = slotHV*60 + slotMV;
       const isPastTimeV = isTodayVip && slotMinutesV <= nowMinutesVip;
+      const [slotHV] = time.split(':').map(Number);
+      const inPeriodV = minAdvancePeriodVip === 'all'
+        || (minAdvancePeriodVip === 'morning'   && slotHV >= 9  && slotHV < 12)
+        || (minAdvancePeriodVip === 'afternoon' && slotHV >= 12 && slotHV < 23);
       let isTooSoonV = false;
-      if(minAdvanceHoursVip > 0){
+      if(minAdvanceHoursVip > 0 && inPeriodV){
         const slotDateV = new Date(selectedDate + 'T' + time + ':00');
         const diffMsV = slotDateV.getTime() - nowVip.getTime();
         isTooSoonV = (diffMsV / (1000 * 60 * 60)) < minAdvanceHoursVip;
