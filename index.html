@@ -2645,7 +2645,6 @@
       const [slotHV, slotMV] = time.split(':').map(Number);
       const slotMinutesV = slotHV*60 + slotMV;
       const isPastTimeV = isTodayVip && slotMinutesV <= nowMinutesVip;
-      const [slotHV] = time.split(':').map(Number);
       const inPeriodV = minAdvancePeriodVip === 'all'
         || (minAdvancePeriodVip === 'morning'   && slotHV >= 9  && slotHV < 12)
         || (minAdvancePeriodVip === 'afternoon' && slotHV >= 12 && slotHV < 23);
