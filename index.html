@@ -4174,22 +4174,27 @@ let rankingUnsubscribe = null;
       const imgHtml = p.imageUrl
         ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
         : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
+      const isBrl = p.costType === 'brl';
+      const costLabel = isBrl
+        ? `R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')} <span>💳</span>`
+        : `${p.cost||0} <span>GB$</span>`;
+      const redeemBtn = isBrl
+        ? `<button class="store-redeem-btn" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
+        : `<button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
+            ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
+          </button>`;
       const front = `
         ${imgHtml}
         <div class="store-card-cat">${p.category||'Geral'}</div>
         <div class="store-card-name">${p.name||'Produto'}</div>
-        <div class="store-card-cost">${p.cost||0} <span>GB$</span></div>
+        <div class="store-card-cost">${costLabel}</div>
         <div style="flex:1;"></div>
         ${hasDesc?`<button class="flip-btn" onclick="flipCard(event,'${p.id}')">📖 Leia a descrição</button>`:''}
-        <button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
-          ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
-        </button>`;
+        ${redeemBtn}`;
       const back = hasDesc ? `
         <div class="store-card-back-title">📋 ${p.name||'Produto'}</div>
         <div class="store-card-back-desc">${esc(p.description||'')}</div>
-        <button class="store-redeem-btn" style="margin-bottom:6px;" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
-          ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
-        </button>
+        ${redeemBtn}
         <button class="flip-btn-back" onclick="flipCard(event,'${p.id}')">← Voltar</button>` : '';
       return `<div class="store-card" id="sc-${p.id}">
         <div class="store-card-inner">
@@ -4200,6 +4205,53 @@ let rankingUnsubscribe = null;
     }).join('');
   }
 
+
+  window.redeemProductBrl = async function(productId){
+    const product = storeProducts.find(p=>p.id===productId);
+    if(!product || !product.paymentLink) {
+      showToast('Link de pagamento não configurado.','error'); return;
+    }
+    // Modal de confirmação para pagamento R$
+    const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
+    await new Promise(resolve=>{
+      const modal = document.createElement('div');
+      modal.id = 'brl-redeem-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;';
+      modal.innerHTML = `<div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;animation:slideUp .25s ease-out;text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">💳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Confirmar Compra</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">${product.name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:16px;">${priceFmt}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Você será redirecionado para o pagamento. Após concluir, aguarde a confirmação do Gabriel.</div>
+        <div style="display:flex;gap:10px;">
+          <button id="brl-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
+          <button id="brl-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💳 Continuar</button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#brl-confirm').onclick = ()=>{
+        document.body.removeChild(modal);
+        resolve(true);
+      };
+      modal.querySelector('#brl-cancel').onclick = ()=>{ document.body.removeChild(modal); resolve(false); };
+      modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
+    }).then(confirmed=>{
+      if(!confirmed) return;
+      // Abrir link de pagamento em nova aba
+      window.open(product.paymentLink, '_blank');
+      // Mostrar tela de aguardo
+      const waiting = document.createElement('div');
+      waiting.id = 'brl-waiting-modal';
+      waiting.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;';
+      waiting.innerHTML = `<div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:16px;animation:pulse 1.5s infinite;">⏳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:10px;">Aguardando Pagamento</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Conclua o pagamento na página que abriu.<br>Após o pagamento, o Gabriel confirmará o seu pedido em breve.</div>
+        <button onclick="document.getElementById('brl-waiting-modal').remove()" style="padding:10px 24px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:none;color:var(--text-muted);font-size:13px;cursor:pointer;">Fechar</button>
+      </div>`;
+      document.body.appendChild(waiting);
+    });
+  };
 
   window.flipCard = function(e, id){
     e.stopPropagation();
