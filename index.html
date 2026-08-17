@@ -69,7 +69,6 @@
     #app-loading img { width:90px;height:90px;object-fit:contain;opacity:.8; }
     .spinner { width:32px;height:32px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);animation:spin .7s linear infinite; }
     @keyframes fadeInUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
-    .svc-fade-in { animation:fadeInUp .45s ease both; }
     @keyframes spin{to{transform:rotate(360deg)}}
     nav{position:sticky;top:0;z-index:40;background:rgba(17,17,17,0.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06)}
     .nav-inner{max-width:960px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;}
@@ -1443,6 +1442,7 @@
     const grid = document.getElementById('services-grid');
     if(!grid) return;
     const btnStyle = 'background:none;border:none;color:#c9a84c;font-size:10px;font-weight:700;cursor:pointer;padding:2px 0;letter-spacing:.3px;';
+    grid.style.opacity = '1';
     grid.innerHTML = SERVICES_DATA.map((s, si)=>{
       const allFeats = s.features || [];
       const MAX = 3;
@@ -1473,7 +1473,7 @@
         ? '<img src="' + s.image + '" alt="' + s.name + '" style="width:40px;height:40px;object-fit:contain;flex-shrink:0;">'
         : '';
 
-      return '<div class="service-card svc-fade-in" style="animation-delay:'+( si * 80)+'ms">'
+      return '<div class="service-card">'
         + '<div class="service-card-header">'
         + imgHtml
         + '<div class="service-card-header-info">'
@@ -1485,7 +1485,21 @@
         + '<div class="svc-feats-mobile">'  + featsMobile + '</div>'
         + '</div>';
     }).join('');
+    }).join('');
+    // Animar cards com delay escalonado
+    requestAnimationFrame(()=>{
+      grid.querySelectorAll('.service-card').forEach((card, i)=>{
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity .4s ease, transform .4s ease';
+        setTimeout(()=>{
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, i * 80);
+      });
+    });
   }
+
 
   window.toggleFeats = function(si, btn){
     const hidden = document.querySelectorAll('.feat-hidden-'+si);
