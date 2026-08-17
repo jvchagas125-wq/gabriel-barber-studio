@@ -2724,7 +2724,6 @@
     };
 
     onAuthStateChanged(auth, user => {
-      hideLoading();
       const saved = localStorage.getItem("gbs_phone");
       const savedName = localStorage.getItem("gbs_name");
       if(user && saved){
@@ -2745,7 +2744,7 @@
         initPushNotifications(saved.replace(/\D/g,''));
         showBellIcon(saved.replace(/\D/g,''));
         loadPlansFromFirestore();
-        loadServicesFromFirestore();
+        loadServicesFromFirestore().then(()=>hideLoading());
         loadBannersFromFirestore();
         loadSiteConfig();
         startNotifListener();
@@ -2779,6 +2778,7 @@
           }
         }, () => {}); // ignora erros silenciosamente
       } else {
+        loadServicesFromFirestore().then(()=>hideLoading());
         document.getElementById("login-screen").style.display="flex";
       }
       loadPlansFromFirestore();
