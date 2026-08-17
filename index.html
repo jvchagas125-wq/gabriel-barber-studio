@@ -69,7 +69,7 @@
     #app-loading img { width:90px;height:90px;object-fit:contain;opacity:.8; }
     .spinner { width:32px;height:32px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);animation:spin .7s linear infinite; }
     @keyframes fadeInUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
-    .svc-fade-in { opacity:0; animation:fadeInUp .45s ease forwards; }
+    .svc-fade-in { animation:fadeInUp .45s ease both; }
     @keyframes spin{to{transform:rotate(360deg)}}
     nav{position:sticky;top:0;z-index:40;background:rgba(17,17,17,0.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06)}
     .nav-inner{max-width:960px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;}
