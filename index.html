@@ -3349,33 +3349,88 @@
 
   window.confirmBuyGBs = async function(){
     if(!selectedGBPackage){ showToast('Selecione um pacote.','error'); return; }
-    const email = (document.getElementById('buy-gbs-email')?.value||'').trim();
-    if(!email||!email.includes('@')){ showToast('Informe um e-mail válido.','error'); return; }
     if(!loggedPhone) return;
     const digits = loggedPhone.replace(/\D/g,'');
+
+    // Mostrar loading
+    const btn = document.getElementById('buy-gbs-confirm-btn');
+    if(btn){ btn.disabled=true; btn.textContent='Aguarde...'; }
+
     try {
-      // Register purchase request
       const purchaseId = 'gbp_'+digits+'_'+Date.now();
+
+      // Salvar pedido pendente no Firestore
       await setDoc(doc(db,'gb_purchases',purchaseId),{
         clientName:  loggedName||'',
         phone:       loggedPhone,
         digits,
-        email,
         packageId:   selectedGBPackage.id,
         price:       selectedGBPackage.price,
         coins:       selectedGBPackage.coins,
         bonus:       selectedGBPackage.bonus||0,
-        link:        selectedGBPackage.link,
         status:      'pending',
         createdAt:   new Date().toISOString(),
       });
-      // Redirect to Mercado Pago in new tab
-      window.open(selectedGBPackage.link, '_blank');
-      // Show waiting screen
+
+      // Gerar link dinâmico via /api/mp-checkout
+      const resp = await fetch('/api/mp-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId:   purchaseId,
+          productName: `${selectedGBPackage.coins + (selectedGBPackage.bonus||0)} GB$ — Gabriel Barber`,
+          price:       selectedGBPackage.price,
+          clientPhone: loggedPhone,
+          clientName:  loggedName||'',
+          type:        'gbs', // para o webhook saber que é compra de GB$
+          packageId:   selectedGBPackage.id,
+          coins:       selectedGBPackage.coins,
+          bonus:       selectedGBPackage.bonus||0,
+        }),
+      });
+      const result = await resp.json();
+
+      if(!resp.ok || !result.initPoint){
+        showToast(result.error||'Erro ao gerar link de pagamento.','error');
+        if(btn){ btn.disabled=false; btn.textContent='Continuar para pagamento →'; }
+        return;
+      }
+
+      // Atualizar o pedido com o preferenceId
+      await setDoc(doc(db,'gb_purchases',purchaseId),{ preferenceId: result.preferenceId },{ merge:true });
+
+      // Abrir checkout MP
+      window.open(result.initPoint, '_blank');
+
+      // Mostrar tela de aguardo
       document.getElementById('buy-gbs-email-section').style.display = 'none';
       document.getElementById('buy-gbs-packages').style.display = 'none';
       document.getElementById('buy-gbs-waiting').style.display = 'block';
-    } catch(e){ showToast('Erro ao registrar pedido: '+e.message,'error'); }
+
+      // Listener no Firestore para detectar quando o webhook creditar os GB$
+      const unsubGBS = onSnapshot(doc(db,'gb_purchases',purchaseId), snap=>{
+        const d = snap.data();
+        if(!d || d.status !== 'approved') return;
+        unsubGBS();
+        document.getElementById('buy-gbs-modal').style.display = 'none';
+        const ok = document.createElement('div');
+        ok.style.cssText = 'position:fixed;inset:0;z-index:910;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+        const totalCoins = (d.coins||0)+(d.bonus||0);
+        ok.innerHTML = `<div style="background:#1a1a1a;border:1px solid #c9a84c;border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
+          <div style="font-size:52px;margin-bottom:12px;">🪙</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:8px;">GB$ Creditados!</div>
+          <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:8px;">+${totalCoins} GB$</div>
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Os GB$ já estão disponíveis na sua carteira.</div>
+          <button onclick="this.closest('div[style]').remove()" style="padding:11px 28px;border-radius:10px;border:none;background:var(--gold);color:#111;font-weight:700;font-size:14px;cursor:pointer;">✓ Entendido</button>
+        </div>`;
+        document.body.appendChild(ok);
+        showToast('GB$ creditados com sucesso! 🪙','success');
+      });
+
+    } catch(e){
+      showToast('Erro: '+e.message,'error');
+      if(btn){ btn.disabled=false; btn.textContent='Continuar para pagamento →'; }
+    }
   };
 
 
