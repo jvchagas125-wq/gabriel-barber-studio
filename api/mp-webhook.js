@@ -1,9 +1,10 @@
 // api/mp-webhook.js
-// Recebe notificações do Mercado Pago quando pagamento é confirmado
-// e atualiza o Firestore com status do pagamento
+// Recebe notificações do Mercado Pago e processa:
+// - Compra de GB$: credita GB$ na carteira do cliente
+// - Produto em R$: registra pedido como aprovado
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue }     from 'firebase-admin/firestore';
 
 function initFirebase() {
   if (!getApps().length) {
@@ -22,8 +23,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { type, data } = req.body || {};
-
-  // MP envia type=payment quando um pagamento é processado
   if (type !== 'payment' || !data?.id) {
     return res.status(200).json({ ok: true, skipped: true });
   }
@@ -38,11 +37,14 @@ export default async function handler(req, res) {
     if (!mpRes.ok) throw new Error('MP API error: ' + mpRes.status);
     const payment = await mpRes.json();
 
-    const status      = payment.status;           // approved, rejected, pending
-    const productId   = payment.metadata?.product_id;
-    const clientPhone = payment.metadata?.client_phone;
-    const clientName  = payment.metadata?.client_name;
-    const amount      = payment.transaction_amount;
+    const status      = payment.status; // approved, rejected, pending
+    const meta        = payment.metadata || {};
+    const paymentType = meta.type || 'product';
+    const productId   = meta.product_id;
+    const clientPhone = meta.client_phone;
+    const clientName  = meta.client_name;
+    const coins       = parseInt(meta.coins)  || 0;
+    const bonus       = parseInt(meta.bonus)  || 0;
     const paymentId   = String(payment.id);
 
     if (!productId || !clientPhone) {
@@ -52,34 +54,79 @@ export default async function handler(req, res) {
 
     const db = initFirebase();
 
-    // Salvar registro do pagamento no Firestore
-    await db.collection('store_payments').doc(paymentId).set({
-      paymentId,
-      productId,
-      clientPhone,
-      clientName,
-      amount,
-      status,
-      createdAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    // Se aprovado, salvar também na wallet do cliente como resgate pendente
     if (status === 'approved') {
-      await db.collection('store_redeems').add({
-        productId,
-        clientPhone,
-        clientName,
-        amount,
-        paymentId,
-        paymentStatus: 'approved',
-        status: 'pending_delivery', // Gabriel confirma a entrega
-        createdAt: FieldValue.serverTimestamp(),
-      });
 
-      console.log(`✅ Pagamento aprovado: ${paymentId} | produto: ${productId} | cliente: ${clientPhone}`);
+      // ── COMPRA DE GB$ ──────────────────────────────────────────────
+      if (paymentType === 'gbs') {
+        const totalCoins = coins + bonus;
+        const digits = clientPhone.replace(/\D/g, '');
+
+        // Creditar GB$ na carteira do cliente
+        const walletRef = db.collection('wallets').doc(digits);
+        await walletRef.set({
+          balance:   FieldValue.increment(totalCoins),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Atualizar o pedido para approved
+        await db.collection('gb_purchases').doc(productId).set({
+          status:     'approved',
+          paymentId,
+          approvedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Registrar transação no histórico
+        await db.collection('wallets').doc(digits).collection('transactions').add({
+          type:      'purchase',
+          amount:    totalCoins,
+          coins,
+          bonus,
+          paymentId,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+
+        console.log(`✅ GB$ creditados: +${totalCoins} para ${clientPhone}`);
+      }
+
+      // ── PRODUTO EM R$ ──────────────────────────────────────────────
+      else {
+        // Registrar pagamento aprovado
+        await db.collection('store_payments').doc(paymentId).set({
+          paymentId,
+          productId,
+          clientPhone,
+          clientName,
+          amount:     payment.transaction_amount,
+          status:     'approved',
+          createdAt:  FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Registrar resgate pendente de entrega
+        await db.collection('store_redeems').add({
+          productId,
+          clientPhone,
+          clientName,
+          paymentId,
+          paymentStatus: 'approved',
+          status:        'pending_delivery',
+          createdAt:     FieldValue.serverTimestamp(),
+        });
+
+        console.log(`✅ Produto aprovado: ${productId} | cliente: ${clientPhone}`);
+      }
+
+    } else {
+      // Pagamento recusado/pendente — atualizar status
+      if (paymentType === 'gbs') {
+        await db.collection('gb_purchases').doc(productId).set({
+          status:    status,
+          paymentId,
+        }, { merge: true });
+      }
+      console.log(`ℹ️ Pagamento ${status}: ${paymentId}`);
     }
 
-    return res.status(200).json({ ok: true, status });
+    return res.status(200).json({ ok: true, status, type: paymentType });
 
   } catch (err) {
     console.error('mp-webhook error:', err.message);
