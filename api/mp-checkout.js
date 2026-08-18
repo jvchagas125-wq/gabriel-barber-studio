@@ -1,5 +1,6 @@
 // api/mp-checkout.js
 // Cria uma preferência de pagamento no Mercado Pago
+// Usado para: produtos em R$ da loja e compra de GB$
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,7 +9,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { productId, productName, price, clientPhone, clientName } = req.body || {};
+  const {
+    productId, productName, price,
+    clientPhone, clientName,
+    type,       // 'gbs' ou 'product'
+    packageId, coins, bonus,
+  } = req.body || {};
+
   if (!productId || !productName || !price) {
     return res.status(400).json({ error: 'productId, productName e price são obrigatórios' });
   }
@@ -17,37 +24,42 @@ export default async function handler(req, res) {
   if (!ACCESS_TOKEN) return res.status(500).json({ error: 'MP_ACCESS_TOKEN não configurado' });
 
   const baseUrl = 'https://gabriel-barber-studio.vercel.app';
+  const phone   = (clientPhone || '').replace(/\D/g, '');
 
   try {
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':  'application/json',
         'Authorization': `Bearer ${ACCESS_TOKEN}`,
       },
       body: JSON.stringify({
         items: [{
-          id: productId,
-          title: productName,
-          quantity: 1,
-          currency_id: 'BRL',
+          id:         productId,
+          title:      productName,
+          quantity:   1,
+          currency_id:'BRL',
           unit_price: parseFloat(price),
         }],
         payer: {
-          name: clientName || '',
-          phone: { number: (clientPhone || '').replace(/\D/g, '') },
+          name:  clientName || '',
+          phone: { number: phone },
         },
         back_urls: {
-          success: `${baseUrl}/?payment=success&product=${encodeURIComponent(productId)}&phone=${encodeURIComponent((clientPhone||'').replace(/\D/g,''))}`,
+          success: `${baseUrl}/?payment=success&product=${encodeURIComponent(productId)}&phone=${encodeURIComponent(phone)}&type=${type||'product'}`,
           failure: `${baseUrl}/?payment=failure`,
           pending: `${baseUrl}/?payment=pending`,
         },
         auto_return: 'approved',
-        notification_url: `https://gabriel-barber-studio.vercel.app/api/mp-webhook`,
+        notification_url: `${baseUrl}/api/mp-webhook`,
         metadata: {
-          product_id: productId,
-          client_phone: (clientPhone || '').replace(/\D/g, ''),
-          client_name: clientName || '',
+          type:         type || 'product',  // 'gbs' ou 'product'
+          product_id:   productId,
+          package_id:   packageId || '',
+          coins:        coins     || 0,
+          bonus:        bonus     || 0,
+          client_phone: phone,
+          client_name:  clientName || '',
         },
         statement_descriptor: 'GABRIEL BARBER',
       }),
@@ -61,7 +73,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       preferenceId: data.id,
-      initPoint: data.init_point,
+      initPoint:    data.init_point,
     });
 
   } catch (err) {
