@@ -1,11 +1,13 @@
 {
   "rewrites": [
-    { "source": "/api/webhook", "destination": "/api/webhook.js" },
+    { "source": "/api/webhook",            "destination": "/api/webhook.js" },
     { "source": "/api/check-subscription", "destination": "/api/check-subscription.js" },
-    { "source": "/api/notify", "destination": "/api/notify.js" },
-    { "source": "/api/telegram", "destination": "/api/telegram.js" },
-    { "source": "/api/manifest", "destination": "/api/manifest.js" },
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/api/notify",             "destination": "/api/notify.js" },
+    { "source": "/api/telegram",           "destination": "/api/telegram.js" },
+    { "source": "/api/manifest",           "destination": "/api/manifest.js" },
+    { "source": "/api/mp-checkout",        "destination": "/api/mp-checkout.js" },
+    { "source": "/api/mp-webhook",         "destination": "/api/mp-webhook.js" },
+    { "source": "/",                       "destination": "/index.html" }
   ],
   "headers": [
     {
