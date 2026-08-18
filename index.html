@@ -2783,6 +2783,29 @@
       }
       loadPlansFromFirestore();
     showSection("home");
+    // Detectar retorno do Mercado Pago após pagamento
+    const urlParams = new URLSearchParams(window.location.search);
+    const payStatus = urlParams.get('payment');
+    if(payStatus === 'success'){
+      history.replaceState({}, '', '/');
+      setTimeout(()=>{
+        const ok = document.createElement('div');
+        ok.style.cssText = 'position:fixed;inset:0;z-index:910;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+        ok.innerHTML = `<div style="background:#1a1a1a;border:1px solid #16a34a;border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
+          <div style="font-size:52px;margin-bottom:12px;">✅</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;margin-bottom:8px;">Pagamento Confirmado!</div>
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Seu pedido foi recebido com sucesso. O Gabriel entrará em contato em breve.</div>
+          <button onclick="this.closest('div[style]').remove()" style="padding:11px 28px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">✓ Entendido</button>
+        </div>`;
+        document.body.appendChild(ok);
+      }, 1000);
+    } else if(payStatus === 'failure'){
+      history.replaceState({}, '', '/');
+      setTimeout(()=>showToast('Pagamento não concluído. Tente novamente.','error'), 800);
+    } else if(payStatus === 'pending'){
+      history.replaceState({}, '', '/');
+      setTimeout(()=>showToast('Pagamento pendente. Aguarde a confirmação.','info'), 800);
+    }
     });
 
     setTimeout(hideLoading, 6000);
@@ -4220,49 +4243,105 @@ let rankingUnsubscribe = null;
 
   window.redeemProductBrl = async function(productId){
     const product = storeProducts.find(p=>p.id===productId);
-    if(!product || !product.paymentLink) {
-      showToast('Link de pagamento não configurado.','error'); return;
-    }
-    // Modal de confirmação para pagamento R$
+    if(!product){ showToast('Produto não encontrado.','error'); return; }
     const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
-    await new Promise(resolve=>{
+
+    // Modal de confirmação
+    const confirmed = await new Promise(resolve=>{
       const modal = document.createElement('div');
-      modal.id = 'brl-redeem-modal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;';
-      modal.innerHTML = `<div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;animation:slideUp .25s ease-out;text-align:center;">
+      modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `<div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">💳</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Confirmar Compra</div>
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">${product.name}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:16px;">${priceFmt}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Você será redirecionado para o pagamento. Após concluir, aguarde a confirmação do Gabriel.</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Você será redirecionado para o pagamento. Após concluir, o status atualiza automaticamente.</div>
         <div style="display:flex;gap:10px;">
           <button id="brl-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
           <button id="brl-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💳 Continuar</button>
         </div>
       </div>`;
       document.body.appendChild(modal);
-      modal.querySelector('#brl-confirm').onclick = ()=>{
-        document.body.removeChild(modal);
-        resolve(true);
-      };
-      modal.querySelector('#brl-cancel').onclick = ()=>{ document.body.removeChild(modal); resolve(false); };
+      modal.querySelector('#brl-confirm').onclick = ()=>{ document.body.removeChild(modal); resolve(true); };
+      modal.querySelector('#brl-cancel').onclick  = ()=>{ document.body.removeChild(modal); resolve(false); };
       modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
-    }).then(confirmed=>{
-      if(!confirmed) return;
-      // Abrir link de pagamento em nova aba
-      window.open(product.paymentLink, '_blank');
-      // Mostrar tela de aguardo
+    });
+    if(!confirmed) return;
+
+    // Mostrar loading enquanto cria preferência no MP
+    const loadingEl = document.createElement('div');
+    loadingEl.id = 'brl-loading';
+    loadingEl.style.cssText = 'position:fixed;inset:0;z-index:910;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+    loadingEl.innerHTML = `<div style="text-align:center;">
+      <div class="spinner" style="margin:0 auto 16px;width:44px;height:44px;"></div>
+      <div style="font-size:14px;color:var(--gold);font-weight:600;">Preparando pagamento...</div>
+    </div>`;
+    document.body.appendChild(loadingEl);
+
+    try {
+      // Chamar /api/mp-checkout para gerar link dinâmico
+      const resp = await fetch('/api/mp-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId:   product.id,
+          productName: product.name,
+          price:       product.priceBrl || 0,
+          clientPhone: loggedPhone || '',
+          clientName:  loggedName  || '',
+        }),
+      });
+      const result = await resp.json();
+      loadingEl.remove();
+
+      if(!resp.ok || !result.initPoint){
+        showToast(result.error || 'Erro ao gerar link de pagamento.','error');
+        return;
+      }
+
+      // Abrir checkout do Mercado Pago
+      window.open(result.initPoint, '_blank');
+
+      // Tela de aguardo com listener no Firestore
       const waiting = document.createElement('div');
-      waiting.id = 'brl-waiting-modal';
-      waiting.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;';
+      waiting.id = 'brl-waiting';
+      waiting.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
       waiting.innerHTML = `<div style="background:#1a1a1a;border:1px solid var(--gold-border);border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
-        <div style="font-size:40px;margin-bottom:16px;animation:pulse 1.5s infinite;">⏳</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:10px;">Aguardando Pagamento</div>
-        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">Conclua o pagamento na página que abriu.<br>Após o pagamento, o Gabriel confirmará o seu pedido em breve.</div>
-        <button onclick="document.getElementById('brl-waiting-modal').remove()" style="padding:10px 24px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:none;color:var(--text-muted);font-size:13px;cursor:pointer;">Fechar</button>
+        <div style="font-size:44px;margin-bottom:12px;">⏳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:8px;">Aguardando Pagamento</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:8px;">Conclua o pagamento na aba que abriu.</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;">Esta tela atualiza automaticamente quando o pagamento for confirmado.</div>
+        <button onclick="document.getElementById('brl-waiting').remove()" style="padding:10px 24px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:none;color:var(--text-muted);font-size:13px;cursor:pointer;">Fechar</button>
       </div>`;
       document.body.appendChild(waiting);
-    });
+
+      // Listener no Firestore para detectar pagamento aprovado
+      const { onSnapshot, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const phone = (loggedPhone||'').replace(/\D/g,'');
+      const q = query(collection(db,'store_payments'), where('clientPhone','==',phone), where('productId','==',product.id), where('status','==','approved'));
+      const unsub = onSnapshot(q, snap=>{
+        if(snap.empty) return;
+        unsub();
+        const w = document.getElementById('brl-waiting');
+        if(w) w.remove();
+        // Mostrar sucesso
+        const ok = document.createElement('div');
+        ok.style.cssText = 'position:fixed;inset:0;z-index:910;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+        ok.innerHTML = `<div style="background:#1a1a1a;border:1px solid #16a34a;border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
+          <div style="font-size:52px;margin-bottom:12px;">✅</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;margin-bottom:8px;">Pagamento Confirmado!</div>
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Seu pedido de <strong>${product.name}</strong> foi recebido. O Gabriel entrará em contato em breve.</div>
+          <button onclick="this.closest('div[style]').remove()" style="padding:11px 28px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">✓ Entendido</button>
+        </div>`;
+        document.body.appendChild(ok);
+        showToast('Pagamento confirmado! 🎉','success');
+      });
+
+    } catch(err) {
+      const l = document.getElementById('brl-loading');
+      if(l) l.remove();
+      showToast('Erro: ' + err.message,'error');
+    }
   };
 
   window.flipCard = function(e, id){
