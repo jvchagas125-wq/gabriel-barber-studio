@@ -59,10 +59,10 @@
       --gold-border: rgba(201,168,76,0.25); --bg: #f7f5f0; --bg2: #ffffff; --bg3: #efece3;
       --text: #1c1c1a; --text-muted: #6b675e; --text-dim: #a09c8f; --red: #dc2626; --green: #16a34a;
     }
-    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
+    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: linear-gradient(rgba(250,248,244,0.94), rgba(250,248,244,0.94)), url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
     @media (max-width: 768px) { html, body { background-attachment: scroll; } }
 
-    body::before{content:'';position:fixed;inset:0;z-index:-1;background:rgba(250,248,244,0.92);pointer-events:none;}
+    body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;}
         .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:#d8d4c8;border-radius:3px}
     #app-loading { position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px; }
@@ -121,6 +121,10 @@
     .login-notice{text-align:center;font-size:12px;color:var(--text-dim);margin-top:14px}
     .hero{text-align:center;padding:20px 0 40px}
     .hero-logo{display:inline-block;animation:float 3s ease-in-out infinite}
+    /* Logo (arquivo é um wordmark branco) precisa de um fundo escuro para ficar visível no tema claro */
+    img[src*="vcPQoRh"]{background:linear-gradient(135deg,#1f1c14,#2a2418);border-radius:10px;padding:6px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+    #site-hero-logo{border-radius:28px;padding:22px;box-shadow:0 16px 48px rgba(0,0,0,0.18);}
+    .mob-menu-header img[src*="vcPQoRh"]{padding:5px 10px;border-radius:8px;}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
     .hero-logo img{width:240px;height:240px;object-fit:contain}
     .hero-sub{color:var(--text-muted);font-size:17px;margin:8px 0 40px}
