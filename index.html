@@ -136,6 +136,33 @@
     .service-features li::before{content:"·";color:var(--gold);font-size:16px;line-height:1;flex-shrink:0}
     @keyframes slideInUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
     .service-card:nth-child(1){animation-delay:.05s}.service-card:nth-child(2){animation-delay:.1s}.service-card:nth-child(3){animation-delay:.15s}.service-card:nth-child(4){animation-delay:.2s}.service-card:nth-child(5){animation-delay:.25s}
+
+    /* ===== CARROSSEL DE SERVIÇOS (desktop/tablet) ===== */
+    .services-carousel{position:relative;}
+    .svc-arrow{display:none;}
+    @media(min-width:641px){
+      .services-grid{
+        display:flex;
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        scrollbar-width:none;
+        padding:4px 2px 10px;
+      }
+      .services-grid::-webkit-scrollbar{display:none;}
+      .services-grid .service-card{flex:0 0 240px;}
+      .svc-arrow{
+        display:flex;align-items:center;justify-content:center;
+        position:absolute;top:50%;transform:translateY(-50%);
+        width:40px;height:40px;border-radius:50%;
+        background:var(--bg2);border:1px solid var(--gold-border);color:var(--gold);
+        font-size:20px;line-height:1;cursor:pointer;z-index:5;
+        box-shadow:0 6px 18px rgba(0,0,0,.35);transition:background .15s,transform .15s;
+      }
+      .svc-arrow:hover{background:var(--gold-dim);transform:translateY(-50%) scale(1.06);}
+      .svc-arrow.prev{left:-18px;}
+      .svc-arrow.next{right:-18px;}
+    }
     .cta-btn{display:inline-block;padding:14px 36px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:17px;cursor:pointer;transition:opacity .2s;animation:pulseGold 2s ease-in-out infinite}
     .cta-btn:hover{opacity:.88}
     @keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.45)}50%{box-shadow:0 0 0 10px rgba(201,168,76,0)}}
@@ -1006,7 +1033,11 @@
     </div>
     <div id="site-banners-container" style="margin-bottom:8px;"></div>
     <h2 class="section-title gold-gradient">Nossos Serviços</h2>
-    <div class="services-grid" id="services-grid"></div>
+    <div class="services-carousel">
+      <button type="button" class="svc-arrow prev" onclick="scrollServices(-1)" aria-label="Serviço anterior">&#8249;</button>
+      <div class="services-grid" id="services-grid"></div>
+      <button type="button" class="svc-arrow next" onclick="scrollServices(1)" aria-label="Próximo serviço">&#8250;</button>
+    </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
 
     <!-- Avisos página inicial -->
@@ -4724,5 +4755,65 @@ let rankingUnsubscribe = null;
     </div>
   </div>
 </div>
+
+<script>
+  // ===== Carrossel de Serviços: setas + rolagem automática suave =====
+  (function(){
+    var svcPaused = false;
+    var svcDir = 1;
+    var svcLastTs = null;
+    var svcPos = null; // posição interna (float) — evita o arredondamento de scrollLeft travar o avanço
+    var SVC_SPEED = 28; // pixels por segundo
+
+    function svcTick(ts){
+      var el = document.getElementById('services-grid');
+      if(el){
+        if(svcLastTs === null) svcLastTs = ts;
+        var dt = (ts - svcLastTs) / 1000;
+        svcLastTs = ts;
+        if(svcPaused){
+          svcPos = null; // resincroniza na próxima retomada (usuário pode ter rolado manualmente)
+        } else if(dt < 0.5){
+          var maxScroll = el.scrollWidth - el.clientWidth;
+          if(maxScroll > 4){
+            if(svcPos === null) svcPos = el.scrollLeft;
+            if(svcPos >= maxScroll - 1) svcDir = -1;
+            else if(svcPos <= 1) svcDir = 1;
+            svcPos += svcDir * SVC_SPEED * dt;
+            if(svcPos < 0) svcPos = 0;
+            if(svcPos > maxScroll) svcPos = maxScroll;
+            el.scrollLeft = svcPos;
+          }
+        }
+      } else {
+        svcLastTs = ts;
+      }
+      requestAnimationFrame(svcTick);
+    }
+    requestAnimationFrame(svcTick);
+
+    function svcResumeLater(){
+      clearTimeout(window._svcResumeTimer);
+      window._svcResumeTimer = setTimeout(function(){ svcPaused = false; }, 3500);
+    }
+
+    window.scrollServices = function(dir){
+      var el = document.getElementById('services-grid');
+      if(!el) return;
+      svcPaused = true;
+      el.scrollBy({ left: dir * 260, behavior: 'smooth' });
+      svcResumeLater();
+    };
+
+    document.addEventListener('DOMContentLoaded', function(){
+      var wrap = document.querySelector('.services-carousel');
+      if(!wrap) return;
+      wrap.addEventListener('mouseenter', function(){ svcPaused = true; });
+      wrap.addEventListener('mouseleave', function(){ svcPaused = false; });
+      wrap.addEventListener('touchstart', function(){ svcPaused = true; }, { passive: true });
+      wrap.addEventListener('touchend', svcResumeLater, { passive: true });
+    });
+  })();
+</script>
 </body>
 </html>
