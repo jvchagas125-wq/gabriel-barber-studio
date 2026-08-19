@@ -144,6 +144,7 @@
     .services-carousel{position:relative;}
     .svc-arrow{display:none;}
     @media(min-width:641px){
+      .services-carousel{padding:0 56px;}
       .services-grid{
         display:flex;
         flex-wrap:nowrap;
@@ -163,8 +164,8 @@
         box-shadow:0 6px 18px rgba(0,0,0,.35);transition:background .15s,transform .15s;
       }
       .svc-arrow:hover{background:var(--gold-dim);transform:translateY(-50%) scale(1.06);}
-      .svc-arrow.prev{left:-18px;}
-      .svc-arrow.next{right:-18px;}
+      .svc-arrow.prev{left:4px;}
+      .svc-arrow.next{right:4px;}
     }
     .cta-btn{display:inline-block;padding:14px 36px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:17px;cursor:pointer;transition:opacity .2s;animation:pulseGold 2s ease-in-out infinite}
     .cta-btn:hover{opacity:.88}
