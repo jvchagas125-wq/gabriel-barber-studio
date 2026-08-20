@@ -59,10 +59,15 @@
       --gold-border: rgba(201,168,76,0.25); --bg: #242220; --bg2: #2f2c28; --bg3: #3a362f;
       --text: #e5e5e5; --text-muted: #9a9384; --text-dim: #847e6f; --red: #dc2626; --green: #16a34a;
     }
-    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
+    html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: linear-gradient(rgba(24,22,20,0.62), rgba(24,22,20,0.62)), url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
     @media (max-width: 768px) { html, body { background-attachment: scroll; } }
 
-    body::before{content:'';position:fixed;inset:0;z-index:-1;background:rgba(24,22,20,0.62);pointer-events:none;}
+    /* Antes o escurecimento vinha de um overlay fixo separado (body::before), que
+       podia se desalinhar do fundo em telas menores (attachment:scroll no celular
+       vs. o overlay fixo no viewport) e deixar pedaços da foto "crua" aparecendo —
+       o efeito de "duas fotos". Agora o escurecimento está embutido direto na
+       própria imagem de fundo (mesma camada, sempre alinhado, sem esse risco). */
+    body::before{content:none;}
         .gold-gradient { background: linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:#4a453c;border-radius:3px}
     #app-loading { position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px; }
@@ -1154,7 +1159,7 @@
     <div class="hero">
       <div class="hero-logo"><img id="site-hero-logo" src="https://i.imgur.com/vcPQoRh.png" alt="Logo" onerror="this.style.display='none'"></div>
     </div>
-    <div id="site-banners-container" style="margin-bottom:8px;"></div>
+    <div id="site-banners-container" style="margin-bottom:22px;"></div>
     <h2 class="section-title gold-gradient">Nossos Serviços</h2>
     <div class="services-carousel">
       <button type="button" class="svc-arrow prev" onclick="scrollServices(-1)" aria-label="Serviço anterior">&#8249;</button>
@@ -1429,7 +1434,7 @@
     </div>
     <!-- Card de aviso de assinatura ativa -->
     <!-- Banners/avisos do admin -->
-    <div id="site-banners-container-vip" style="margin-bottom:8px;"></div>
+    <div id="site-banners-container-vip" style="margin-bottom:22px;"></div>
 
     <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
       <div style="font-size:28px;flex-shrink:0;">✨</div>
