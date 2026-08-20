@@ -211,9 +211,10 @@
       .nav-inner{padding:8px 12px;gap:4px;flex-wrap:nowrap;align-items:center;}
       .nav-btn{padding:5px 6px;font-size:10px}
       .nav-user{padding:4px 8px;font-size:11px;gap:5px} .nav-user-dot{width:5px;height:5px}
-      .page{padding:24px 12px 56px}
-      .hero-logo img{width:160px;height:160px} .hero-sub{font-size:14px;margin-bottom:28px}
-      .section-title{font-size:28px;margin-bottom:20px}
+      .page{padding:10px 12px 56px}
+      .hero{padding:4px 0 8px}
+      .hero-logo img{width:90px;height:90px} .hero-sub{font-size:12.5px;margin:4px 0 8px}
+      .section-title{font-size:20px;margin-bottom:8px}
       .services-grid{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
       .service-card{padding:18px 14px} .service-card img{width:40px;height:40px}
       .service-card h3{font-size:13px} .service-card p{font-size:11px} .service-price{font-size:18px}
@@ -246,9 +247,11 @@
     .site-banner-warn .site-banner-icon-badge{background:rgba(234,179,8,0.18);}
     .site-banner-warn .site-banner-label{color:#fde047;}
     @media(max-width:640px){
-      .site-banner{padding:13px 14px;gap:10px;border-radius:12px;}
-      .site-banner-icon-badge{width:28px;height:28px;font-size:14px;}
-      .site-banner-text{font-size:12.5px;}
+      .site-banner{padding:8px 10px;gap:8px;border-radius:10px;margin-bottom:6px;}
+      .site-banner-icon-badge{width:20px;height:20px;font-size:11px;}
+      .site-banner-label{font-size:9px;}
+      .site-banner-text{font-size:11px;line-height:1.35;}
+      .site-banner-body{gap:1px;}
     }
 
 
@@ -367,24 +370,24 @@
         grid-template-columns:none !important;
         overflow-x:hidden !important;
         scrollbar-width:none;
-        gap:12px !important;
-        padding:4px 2px 10px !important;
-        margin-bottom:16px !important;
+        gap:10px !important;
+        padding:2px 2px 6px !important;
+        margin-bottom:8px !important;
       }
       .services-grid::-webkit-scrollbar{ display:none; }
       .services-grid .service-card{
         /* Cada card ocupa exatamente metade da largura visível (menos o espaço
            entre eles), então sempre mostra 2 cards inteiros, nunca um cortado —
            independente do tamanho da tela do celular. */
-        flex:0 0 calc((100% - 12px) / 2) !important;
-        width:calc((100% - 12px) / 2) !important;
+        flex:0 0 calc((100% - 10px) / 2) !important;
+        width:calc((100% - 10px) / 2) !important;
         height:auto !important;
         overflow:visible !important;
         display:flex !important;
         flex-direction:column !important;
         align-items:stretch !important;
         text-align:left !important;
-        padding:16px 14px !important;
+        padding:10px 10px !important;
         gap:0 !important;
       }
       .services-grid .service-card.expanded{ height:auto !important; }
@@ -392,36 +395,40 @@
         flex-direction:row !important;
         align-items:center !important;
         justify-content:flex-start !important;
-        gap:10px !important;
+        gap:7px !important;
         width:100% !important;
         min-width:0 !important;
         padding-right:0 !important;
       }
-      .services-grid .service-card-header img{ width:34px !important; height:34px !important; }
+      .services-grid .service-card-header img{ width:24px !important; height:24px !important; }
       .services-grid .service-card-header-info{
         align-items:flex-start !important;
         text-align:left !important;
         width:100% !important;
       }
       .services-grid .service-card-header-info h3{
-        font-size:12.5px !important;
+        font-size:11px !important;
         text-align:left !important;
         white-space:normal !important;
+        line-height:1.25 !important;
       }
       .services-grid .service-card-header-info .service-price{
-        font-size:17px !important;
+        font-size:14px !important;
         text-align:left !important;
       }
-      .services-grid .svc-feats-desktop{ display:flex !important; }
+      .services-grid .svc-feats-desktop{ display:flex !important; margin-top:6px !important; }
       .services-grid .svc-feats-mobile{ display:none !important; }
+      .services-grid .service-divider{ margin:6px 0 !important; }
+      .services-grid .service-features{ gap:3px !important; margin-bottom:6px !important; }
       .services-grid .service-features li{
-        font-size:11.5px !important;
+        font-size:10px !important;
+        line-height:1.3 !important;
         white-space:normal !important;
         overflow:visible !important;
         text-overflow:clip !important;
         text-align:left !important;
       }
-      .services-grid .service-btn{ font-size:12px !important; padding:9px !important; }
+      .services-grid .service-btn{ font-size:11px !important; padding:6px !important; }
       .svc-arrow{
         display:flex !important;
         align-items:center !important;
@@ -444,6 +451,8 @@
       .svc-arrow:active{ background:var(--gold-dim) !important; }
       .svc-arrow.prev{ left:0 !important; }
       .svc-arrow.next{ right:0 !important; }
+      .services-carousel + .text-center{ margin-top:12px !important; }
+      .cta-btn{ font-size:14px !important; padding:9px 22px !important; }
     }
 
     /* ===== INBOX DE NOTIFICAÇÕES ===== */
