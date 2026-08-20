@@ -4888,40 +4888,48 @@ let rankingUnsubscribe = null;
 </div>
 
 <script>
-  // ===== Carrossel de Serviços: setas + rolagem automática suave =====
+  // ===== Carrossel de Serviços: setas + avanço automático (um card por vez) =====
   (function(){
     var svcPaused = false;
-    var svcDir = 1;
-    var svcLastTs = null;
-    var svcPos = null; // posição interna (float) — evita o arredondamento de scrollLeft travar o avanço
-    var SVC_SPEED = 28; // pixels por segundo
+    var AUTO_INTERVAL = 3200; // ms entre cada avanço automático
 
-    function svcTick(ts){
-      var el = document.getElementById('services-grid');
-      if(el){
-        if(svcLastTs === null) svcLastTs = ts;
-        var dt = (ts - svcLastTs) / 1000;
-        svcLastTs = ts;
-        if(svcPaused){
-          svcPos = null; // resincroniza na próxima retomada (usuário pode ter rolado manualmente)
-        } else if(dt < 0.5){
-          var maxScroll = el.scrollWidth - el.clientWidth;
-          if(maxScroll > 4){
-            if(svcPos === null) svcPos = el.scrollLeft;
-            if(svcPos >= maxScroll - 1) svcDir = -1;
-            else if(svcPos <= 1) svcDir = 1;
-            svcPos += svcDir * SVC_SPEED * dt;
-            if(svcPos < 0) svcPos = 0;
-            if(svcPos > maxScroll) svcPos = maxScroll;
-            el.scrollLeft = svcPos;
-          }
-        }
-      } else {
-        svcLastTs = ts;
+    // Distância entre o início de um card e o início do próximo (largura + espaçamento),
+    // medida direto no DOM para funcionar em qualquer tamanho de tela sem precisar
+    // manter um número fixo em JS sincronizado com o CSS.
+    function svcStep(el){
+      var cards = el.querySelectorAll('.service-card');
+      if(cards.length >= 2){
+        var d = cards[1].offsetLeft - cards[0].offsetLeft;
+        if(d > 0) return d;
       }
-      requestAnimationFrame(svcTick);
+      if(cards.length >= 1) return cards[0].offsetWidth;
+      return el.clientWidth;
     }
-    requestAnimationFrame(svcTick);
+
+    function svcAdvance(el, dir){
+      var maxScroll = el.scrollWidth - el.clientWidth;
+      if(maxScroll <= 4) return;
+      var step = svcStep(el);
+      if(!step) return;
+      var target = el.scrollLeft + (dir * step);
+      if(target >= maxScroll - 4) target = maxScroll;
+      else if(target <= 4) target = 0;
+      el.scrollTo({ left: target, behavior: 'smooth' });
+    }
+
+    function svcAutoTick(){
+      var el = document.getElementById('services-grid');
+      if(!el || svcPaused) return;
+      var maxScroll = el.scrollWidth - el.clientWidth;
+      if(maxScroll <= 4) return;
+      if(el.scrollLeft >= maxScroll - 4){
+        // chegou no último card: volta suavemente para o início e recomeça o ciclo
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        svcAdvance(el, 1);
+      }
+    }
+    setInterval(svcAutoTick, AUTO_INTERVAL);
 
     function svcResumeLater(){
       clearTimeout(window._svcResumeTimer);
@@ -4932,7 +4940,7 @@ let rankingUnsubscribe = null;
       var el = document.getElementById('services-grid');
       if(!el) return;
       svcPaused = true;
-      el.scrollBy({ left: dir * 260, behavior: 'smooth' });
+      svcAdvance(el, dir);
       svcResumeLater();
     };
 
