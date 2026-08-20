@@ -4893,20 +4893,21 @@ let rankingUnsubscribe = null;
 </div>
 
 <script>
-  // ===== Carrossel de Serviços: avança de "tela cheia" em "tela cheia" (3 no
-  // computador / 2 no celular, conforme o CSS) em loop infinito, sem nunca parar
-  // por causa de toque/mouse. Técnica: o conteúdo é triplicado (3 cópias idênticas
-  // em sequência) e, depois de cada deslize, se a posição passou de um conjunto
-  // completo, voltamos instantaneamente ao ponto equivalente — como o próximo
-  // bloco é pixel-a-pixel igual ao original, o "salto" fica invisível.
+  // ===== Carrossel de Serviços: sempre grupos completos (3 no computador / 2 no
+  // celular, conforme o CSS), avançando sozinho em loop infinito, sem nunca parar
+  // por toque/mouse. Em vez de somar pixels "soltos" (que desalinha quando a
+  // quantidade de serviços não é múltiplo exato de 3 ou 2), cada "página" do
+  // carrossel é calculada a partir do índice real dos cards — por isso toda
+  // página mostra sempre o número cheio de cards, nunca um cortado.
   (function(){
     var AUTO_INTERVAL = 3400; // ms entre cada avanço automático
     var ANIM_MS = 480;        // duração do deslize suave
 
-    var pos = 0;              // posição lógica atual (sempre dentro de [0, loopWidth))
     var duplicated = false;
     var originalCount = 0;
-    var loopWidth = 0;        // largura de UM conjunto completo de cards (ponto de repetição)
+    var groupPixels = [];   // posição (px) de cada página do carrossel
+    var loopWidth = 0;      // distância até o conjunto duplicado (ponto de repetição)
+    var curGroup = 0;
     var animId = null;
     var autoTimer = null;
 
@@ -4929,13 +4930,32 @@ let rankingUnsubscribe = null;
       return true;
     }
 
-    function measureLoopWidth(el){
+    // Recalcula com o layout já assentado: quantos cards cabem por página e a
+    // posição exata (em px) de cada página, garantindo grupos sempre completos —
+    // inclusive quando a quantidade de serviços não é múltipla exata do tamanho
+    // da página (nesse caso a última página "recua" pra continuar cheia).
+    function measureLayout(el){
       var cards = el.querySelectorAll('.service-card');
-      if(cards.length >= originalCount + 1){
-        var d = cards[originalCount].offsetLeft - cards[0].offsetLeft;
-        if(d > 0) return d;
+      if(originalCount === 0 || cards.length < originalCount + 1) return false;
+
+      var cardStep = cards[1] ? (cards[1].offsetLeft - cards[0].offsetLeft) : el.clientWidth;
+      if(!cardStep) return false;
+
+      var perGroup = Math.max(1, Math.round(el.clientWidth / cardStep));
+      if(perGroup >= originalCount) perGroup = originalCount;
+
+      var numGroups = Math.max(1, Math.ceil(originalCount / perGroup));
+      var starts = [];
+      for(var g = 0; g < numGroups; g++){
+        var start = g * perGroup;
+        if(start + perGroup > originalCount) start = Math.max(0, originalCount - perGroup);
+        if(starts.indexOf(start) === -1) starts.push(start);
       }
-      return el.scrollWidth / 3;
+
+      groupPixels = starts.map(function(idx){ return cards[idx].offsetLeft - cards[0].offsetLeft; });
+      loopWidth = cards[originalCount].offsetLeft - cards[0].offsetLeft;
+      curGroup = 0;
+      return loopWidth > 4 && groupPixels.length > 0;
     }
 
     var observer = new MutationObserver(function(){
@@ -4946,9 +4966,11 @@ let rankingUnsubscribe = null;
       if(cards.length === 0) return;
       if(duplicateCards(el)){
         duplicated = true;
+        // alguns frames de folga pro layout (ícones/fontes) assentar antes de medir
         requestAnimationFrame(function(){
-          loopWidth = measureLoopWidth(el);
-          startAutoLoop();
+          requestAnimationFrame(function(){
+            if(measureLayout(el)) startAutoLoop();
+          });
         });
       }
     });
@@ -4958,10 +4980,8 @@ let rankingUnsubscribe = null;
       if(el) observer.observe(el, { childList: true });
     });
 
-    function animateBy(el, delta){
+    function animateTo(el, from, to, onDone){
       if(animId) cancelAnimationFrame(animId);
-      var from = pos;
-      var to = pos + delta;
       var start = null;
       function frame(ts){
         if(start === null) start = ts;
@@ -4972,33 +4992,55 @@ let rankingUnsubscribe = null;
           animId = requestAnimationFrame(frame);
         } else {
           animId = null;
-          pos = to;
-          // correção instantânea e invisível: mantém a posição sempre dentro de um
-          // conjunto (o próximo conjunto duplicado é idêntico, então não se nota)
-          while(pos >= loopWidth) pos -= loopWidth;
-          while(pos < 0) pos += loopWidth;
-          el.scrollLeft = pos;
+          el.scrollLeft = to;
+          if(onDone) onDone();
         }
       }
       animId = requestAnimationFrame(frame);
     }
 
-    function svcAdvance(dir){
+    function goToGroup(dir){
       var el = document.getElementById('services-grid');
-      if(!el || !duplicated || !loopWidth) return;
-      var step = el.clientWidth || loopWidth; // exatamente uma "tela" (3 ou 2 cards, via CSS)
-      animateBy(el, dir * step);
+      if(!el || groupPixels.length <= 1) return;
+      var numGroups = groupPixels.length;
+      var from = el.scrollLeft;
+
+      if(dir >= 0){
+        var next = curGroup + 1;
+        if(next < numGroups){
+          curGroup = next;
+          animateTo(el, from, groupPixels[curGroup]);
+        } else {
+          // fim do conjunto original: desliza pra dentro da cópia duplicada
+          // (idêntica) e, ao chegar, salta de volta pro início real sem se notar.
+          curGroup = 0;
+          animateTo(el, from, loopWidth + groupPixels[0], function(){
+            el.scrollLeft = groupPixels[0];
+          });
+        }
+      } else {
+        var prev = curGroup - 1;
+        if(prev >= 0){
+          curGroup = prev;
+          animateTo(el, from, groupPixels[curGroup]);
+        } else {
+          // não existe cópia duplicada "antes" do início — troca instantânea pra
+          // última página só nesse caso raro (seta "anterior" logo no começo).
+          curGroup = numGroups - 1;
+          el.scrollLeft = groupPixels[curGroup];
+        }
+      }
     }
 
     function startAutoLoop(){
       clearInterval(autoTimer);
-      autoTimer = setInterval(function(){ svcAdvance(1); }, AUTO_INTERVAL);
+      autoTimer = setInterval(function(){ goToGroup(1); }, AUTO_INTERVAL);
     }
 
-    // Setas: avançam manualmente uma "tela" inteira e reiniciam a contagem do
+    // Setas: avançam manualmente uma página inteira e reiniciam a contagem do
     // automático — mas nunca pausam por toque/mouse passando por cima.
     window.scrollServices = function(dir){
-      svcAdvance(dir);
+      goToGroup(dir);
       startAutoLoop();
     };
   })();
