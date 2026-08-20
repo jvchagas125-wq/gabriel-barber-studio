@@ -144,7 +144,11 @@
     .services-carousel{position:relative;}
     .svc-arrow{display:none;}
     @media(min-width:641px){
-      .services-carousel{padding:0 56px;}
+      /* Largura travada em exatamente 3 cards (240px) + 2 espaços (20px) + padding
+         interno do grid (4px) + padding do carrossel p/ as setas (56px de cada lado)
+         = 876px. Assim sempre mostra 3 cards inteiros, nunca um cortado ao meio.
+         Em telas menores que isso, encolhe normalmente (min(100%, ...)). */
+      .services-carousel{padding:0 56px;width:min(100%, 876px);margin:0 auto;}
       .services-grid{
         display:flex;
         flex-wrap:nowrap;
