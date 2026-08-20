@@ -4893,33 +4893,39 @@ let rankingUnsubscribe = null;
 </div>
 
 <script>
-  // ===== Carrossel de Serviços: movimento contínuo em loop infinito =====
-  // Não pausa ao tocar/passar o mouse — os cards ficam sempre se movendo sozinhos.
-  // Técnica: duplicamos os cards uma vez (o 2º bloco é idêntico ao 1º) e, quando a
-  // rolagem atinge o fim do 1º bloco, voltamos instantaneamente ao início da posição
-  // equivalente no mesmo pixel — como visualmente é tudo igual, o "salto" é invisível
-  // e o efeito parece uma esteira infinita.
+  // ===== Carrossel de Serviços: avança de "tela cheia" em "tela cheia" (3 no
+  // computador / 2 no celular, conforme o CSS) em loop infinito, sem nunca parar
+  // por causa de toque/mouse. Técnica: o conteúdo é triplicado (3 cópias idênticas
+  // em sequência) e, depois de cada deslize, se a posição passou de um conjunto
+  // completo, voltamos instantaneamente ao ponto equivalente — como o próximo
+  // bloco é pixel-a-pixel igual ao original, o "salto" fica invisível.
   (function(){
-    var SPEED = 34;        // pixels por segundo
-    var pos = 0;           // posição interna (float) — evita o arredondamento de scrollLeft travar o avanço
-    var lastTs = null;
+    var AUTO_INTERVAL = 3400; // ms entre cada avanço automático
+    var ANIM_MS = 480;        // duração do deslize suave
+
+    var pos = 0;              // posição lógica atual (sempre dentro de [0, loopWidth))
     var duplicated = false;
     var originalCount = 0;
-    var loopWidth = 0;     // distância até o ponto onde o conteúdo se repete
+    var loopWidth = 0;        // largura de UM conjunto completo de cards (ponto de repetição)
+    var animId = null;
+    var autoTimer = null;
 
     function duplicateCards(el){
       var cards = Array.prototype.slice.call(el.querySelectorAll('.service-card'));
       if(cards.length === 0) return false;
       originalCount = cards.length;
-      cards.forEach(function(card){
-        var clone = card.cloneNode(true);
-        clone.setAttribute('aria-hidden', 'true');
-        // remove qualquer animação/opacidade residual da entrada — o clone já nasce visível
-        clone.style.opacity = '1';
-        clone.style.transform = 'none';
-        clone.style.animation = 'none';
-        el.appendChild(clone);
-      });
+      // duas cópias extras (3 no total) dão espaço de sobra pra qualquer combinação
+      // de "cards por tela" x "quantidade de serviços" sem estourar o scroll máximo.
+      for(var copy = 0; copy < 2; copy++){
+        cards.forEach(function(card){
+          var clone = card.cloneNode(true);
+          clone.setAttribute('aria-hidden', 'true');
+          clone.style.opacity = '1';
+          clone.style.transform = 'none';
+          clone.style.animation = 'none';
+          el.appendChild(clone);
+        });
+      }
       return true;
     }
 
@@ -4929,7 +4935,7 @@ let rankingUnsubscribe = null;
         var d = cards[originalCount].offsetLeft - cards[0].offsetLeft;
         if(d > 0) return d;
       }
-      return el.scrollWidth / 2;
+      return el.scrollWidth / 3;
     }
 
     var observer = new MutationObserver(function(){
@@ -4940,7 +4946,10 @@ let rankingUnsubscribe = null;
       if(cards.length === 0) return;
       if(duplicateCards(el)){
         duplicated = true;
-        requestAnimationFrame(function(){ loopWidth = measureLoopWidth(el); });
+        requestAnimationFrame(function(){
+          loopWidth = measureLoopWidth(el);
+          startAutoLoop();
+        });
       }
     });
 
@@ -4949,35 +4958,48 @@ let rankingUnsubscribe = null;
       if(el) observer.observe(el, { childList: true });
     });
 
-    function tick(ts){
-      var el = document.getElementById('services-grid');
-      if(el && duplicated && loopWidth > 4){
-        if(lastTs === null) lastTs = ts;
-        var dt = (ts - lastTs) / 1000;
-        lastTs = ts;
-        if(dt < 0.5){
-          pos += SPEED * dt;
-          if(pos >= loopWidth) pos -= loopWidth; // salto invisível: o bloco duplicado é idêntico ao original
-          if(pos < 0) pos += loopWidth;
+    function animateBy(el, delta){
+      if(animId) cancelAnimationFrame(animId);
+      var from = pos;
+      var to = pos + delta;
+      var start = null;
+      function frame(ts){
+        if(start === null) start = ts;
+        var t = Math.min(1, (ts - start) / ANIM_MS);
+        var eased = 1 - Math.pow(1 - t, 3); // ease-out
+        el.scrollLeft = from + (to - from) * eased;
+        if(t < 1){
+          animId = requestAnimationFrame(frame);
+        } else {
+          animId = null;
+          pos = to;
+          // correção instantânea e invisível: mantém a posição sempre dentro de um
+          // conjunto (o próximo conjunto duplicado é idêntico, então não se nota)
+          while(pos >= loopWidth) pos -= loopWidth;
+          while(pos < 0) pos += loopWidth;
           el.scrollLeft = pos;
         }
-      } else {
-        lastTs = ts;
       }
-      requestAnimationFrame(tick);
+      animId = requestAnimationFrame(frame);
     }
-    requestAnimationFrame(tick);
 
-    // Setas: dão um empurrão manual na posição, sem interromper o loop contínuo
-    window.scrollServices = function(dir){
+    function svcAdvance(dir){
       var el = document.getElementById('services-grid');
-      if(!el || !loopWidth) return;
-      var cards = el.querySelectorAll('.service-card');
-      var step = (cards.length >= 2) ? (cards[1].offsetLeft - cards[0].offsetLeft) : el.clientWidth;
-      pos += dir * step;
-      if(pos >= loopWidth) pos -= loopWidth;
-      if(pos < 0) pos += loopWidth;
-      el.scrollLeft = pos;
+      if(!el || !duplicated || !loopWidth) return;
+      var step = el.clientWidth || loopWidth; // exatamente uma "tela" (3 ou 2 cards, via CSS)
+      animateBy(el, dir * step);
+    }
+
+    function startAutoLoop(){
+      clearInterval(autoTimer);
+      autoTimer = setInterval(function(){ svcAdvance(1); }, AUTO_INTERVAL);
+    }
+
+    // Setas: avançam manualmente uma "tela" inteira e reiniciam a contagem do
+    // automático — mas nunca pausam por toque/mouse passando por cima.
+    window.scrollServices = function(dir){
+      svcAdvance(dir);
+      startAutoLoop();
     };
   })();
 </script>
