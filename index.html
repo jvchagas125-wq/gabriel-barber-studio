@@ -929,6 +929,9 @@
     }
     .store-redeem-btn:hover { opacity: .88; }
     .store-redeem-btn:disabled { background: rgba(255,255,255,0.08); color: var(--text-dim); cursor: not-allowed; opacity: 1; }
+    /* Produtos pagos em R$ (dinheiro real) ganham um botão verde pra se
+       diferenciar dos produtos resgatados com GB$ (dourado). */
+    .store-redeem-btn.store-redeem-btn-brl { background: var(--green); color: #111; }
     @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } .wallet-card { flex-wrap: wrap; } .wallet-divider { display: none !important; } .wallet-side-text { flex: 1 1 100% !important; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: 4px; } }
     @media (max-width: 380px) { .store-grid { grid-template-columns: 1fr; } }
 
@@ -4465,7 +4468,7 @@ let rankingUnsubscribe = null;
         ? `R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')} <span>💳</span>`
         : `${p.cost||0} <span>GB$</span>`;
       const redeemBtn = isBrl
-        ? `<button class="store-redeem-btn" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
+        ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
         : `<button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
             ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
           </button>`;
