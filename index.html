@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -144,7 +145,7 @@
     .services-carousel{position:relative;}
     .svc-arrow{display:none;}
     @media(min-width:641px){
-      .services-carousel{padding:0 56px;}
+      .services-carousel{padding:0 56px;max-width:352px;margin:0 auto;}
       .services-grid{
         display:flex;
         flex-wrap:nowrap;
@@ -154,7 +155,7 @@
         padding:4px 2px 10px;
       }
       .services-grid::-webkit-scrollbar{display:none;}
-      .services-grid .service-card{flex:0 0 240px;}
+      .services-grid .service-card{flex:0 0 100%;width:100%;}
       .svc-arrow{
         display:flex;align-items:center;justify-content:center;
         position:absolute;top:50%;transform:translateY(-50%);
@@ -357,7 +358,7 @@
        cards lado a lado, setas e auto-scroll suave. Sobrescreve o layout
        "lista horizontal" acima usando seletores mais específicos. */
     @media(max-width:640px){
-      .services-carousel{ padding:0 34px !important; }
+      .services-carousel{ padding:0 34px !important; max-width:258px !important; margin:0 auto !important; }
       .services-grid{
         display:flex !important;
         flex-wrap:nowrap !important;
@@ -371,8 +372,8 @@
       }
       .services-grid::-webkit-scrollbar{ display:none; }
       .services-grid .service-card{
-        flex:0 0 190px !important;
-        width:190px !important;
+        flex:0 0 100% !important;
+        width:100% !important;
         height:auto !important;
         overflow:visible !important;
         display:flex !important;
@@ -4891,7 +4892,7 @@ let rankingUnsubscribe = null;
   // ===== Carrossel de Serviços: setas + avanço automático (um card por vez) =====
   (function(){
     var svcPaused = false;
-    var AUTO_INTERVAL = 3200; // ms entre cada avanço automático
+    var AUTO_INTERVAL = 4000; // ms entre cada avanço automático (card cheio visível, dá tempo de ler)
 
     // Distância entre o início de um card e o início do próximo (largura + espaçamento),
     // medida direto no DOM para funcionar em qualquer tamanho de tela sem precisar
