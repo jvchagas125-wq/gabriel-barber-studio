@@ -375,8 +375,11 @@
       }
       .services-grid::-webkit-scrollbar{ display:none; }
       .services-grid .service-card{
-        flex:0 0 190px !important;
-        width:190px !important;
+        /* Cada card ocupa exatamente metade da largura visível (menos o espaço
+           entre eles), então sempre mostra 2 cards inteiros, nunca um cortado —
+           independente do tamanho da tela do celular. */
+        flex:0 0 calc((100% - 12px) / 2) !important;
+        width:calc((100% - 12px) / 2) !important;
         height:auto !important;
         overflow:visible !important;
         display:flex !important;
