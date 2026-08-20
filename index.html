@@ -234,25 +234,31 @@
     @media(max-width:500px){.services-grid{grid-template-columns:1fr}}
 
     /* ===== BANNERS / AVISOS ===== */
-    .site-banner{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:14px;margin-bottom:12px;border:1px solid;border-left-width:4px;animation:slideInUp .4s ease-out backwards;box-shadow:0 4px 16px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;}
+    /* Um quadro só (site-banners-frame) contendo todos os avisos empilhados,
+       cada um como uma linha interna separada por um traço fino — em vez de
+       cada aviso ser um card independente. */
+    .site-banners-frame{background:var(--bg2);border:1px solid var(--gold-border);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.18);overflow:hidden;animation:slideInUp .4s ease-out backwards;}
+    .site-banner{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-left:4px solid transparent;transition:background .15s;}
+    .site-banner + .site-banner{border-top:1px solid rgba(255,255,255,0.07);}
     a.site-banner{text-decoration:none;cursor:pointer;}
-    .site-banner:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(0,0,0,.3);}
+    .site-banner:hover{background:rgba(255,255,255,0.035);}
     .site-banner-icon-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
     .site-banner-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
     .site-banner-label{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;}
     .site-banner-text{font-size:13px;font-weight:500;line-height:1.6;color:var(--text);}
     .site-banner-arrow{align-self:center;font-size:16px;opacity:.7;flex-shrink:0;}
-    .site-banner-info{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3);}
+    .site-banner-info{background:rgba(59,130,246,0.06);border-left-color:rgba(59,130,246,0.5);}
     .site-banner-info .site-banner-icon-badge{background:rgba(59,130,246,0.18);}
     .site-banner-info .site-banner-label{color:#93c5fd;}
-    .site-banner-promo{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.4);}
+    .site-banner-promo{background:rgba(201,168,76,0.06);border-left-color:var(--gold);}
     .site-banner-promo .site-banner-icon-badge{background:rgba(201,168,76,0.2);}
     .site-banner-promo .site-banner-label{color:var(--gold);}
-    .site-banner-warn{background:rgba(234,179,8,0.08);border-color:rgba(234,179,8,0.35);}
+    .site-banner-warn{background:rgba(234,179,8,0.06);border-left-color:rgba(234,179,8,0.5);}
     .site-banner-warn .site-banner-icon-badge{background:rgba(234,179,8,0.18);}
     .site-banner-warn .site-banner-label{color:#fde047;}
     @media(max-width:640px){
-      .site-banner{padding:6px 10px;gap:8px;border-radius:10px;margin-bottom:5px;}
+      .site-banners-frame{border-radius:10px;}
+      .site-banner{padding:8px 10px;gap:8px;}
       .site-banner-icon-badge{width:20px;height:20px;font-size:11px;}
       .site-banner-label{font-size:9px;}
       .site-banner-text{font-size:11px;line-height:1.35;}
@@ -1166,7 +1172,7 @@
       <button type="button" class="svc-arrow next" onclick="scrollServices(1)" aria-label="Próximo serviço">&#8250;</button>
     </div>
     <div class="text-center" style="margin-top:32px;"><button class="cta-btn" onclick="showSection('booking')">Agendar Corte</button></div>
-    <div id="site-banners-container" style="margin-top:56px;"></div>
+    <div id="site-banners-container" style="margin-top:90px;"></div>
 
     <!-- Avisos página inicial -->
     <div id="home-notices-wrap" style="display:none;margin-top:24px;">
@@ -1581,16 +1587,17 @@
       var tag=b.link?'a':'div';
       var linkAttrs=b.link?' href="'+b.link+'" target="_blank" rel="noopener"':'';
       var arrow=b.link?'<span class="site-banner-arrow">→</span>':'';
-      return '<'+tag+' class="site-banner '+cls+'"'+linkAttrs+' style="animation-delay:'+i*0.08+'s">'
+      return '<'+tag+' class="site-banner '+cls+'"'+linkAttrs+'>'
         + '<span class="site-banner-icon-badge">'+icon+'</span>'
         + '<div class="site-banner-body"><span class="site-banner-label">'+label+'</span><span class="site-banner-text">'+b.text+'</span></div>'
         + arrow
         + '</'+tag+'>';
     }).join('');
+    var framed = html ? '<div class="site-banners-frame">'+html+'</div>' : '';
     var c1=document.getElementById('site-banners-container');
     var c2=document.getElementById('site-banners-container-vip');
-    if(c1) c1.innerHTML=html;
-    if(c2) c2.innerHTML=html;
+    if(c1) c1.innerHTML=framed;
+    if(c2) c2.innerHTML=framed;
   }
 
   async function loadServicesFromFirestore(){
