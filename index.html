@@ -60,7 +60,14 @@
       --text: #e5e5e5; --text-muted: #9a9384; --text-dim: #847e6f; --red: #dc2626; --green: #16a34a;
     }
     html, body { min-height: 100%; color: var(--text); font-family: "DM Sans", sans-serif; background-color: var(--bg); background-image: linear-gradient(rgba(24,22,20,0.62), rgba(24,22,20,0.62)), url("https://i.imgur.com/rIkUnrQ.png"); background-size: cover; background-position: center top; background-attachment: fixed; background-repeat: no-repeat; }
-    @media (max-width: 768px) { html, body { background-attachment: scroll; } }
+    /* No celular usamos attachment:scroll (fixed trava/pisca em alguns navegadores
+       móveis), mas isso faz o "cover" calcular o tamanho da imagem com base na
+       altura TOTAL da página (que muda conforme o conteúdo carrega/reflui) em vez
+       do tamanho da tela — esticando a foto de forma inconsistente e criando a
+       aparência de "duas fotos"/uma emenda borrada. Fixando o tamanho em exatamente
+       uma tela (100vw x 100vh) resolve: a foto sempre aparece do mesmo jeito, do
+       topo da página pra baixo, não importa quanto conteúdo tenha abaixo dela. */
+    @media (max-width: 768px) { html, body { background-attachment: scroll; background-size: 100vw 100vh; } }
 
     /* Antes o escurecimento vinha de um overlay fixo separado (body::before), que
        podia se desalinhar do fundo em telas menores (attachment:scroll no celular
@@ -246,7 +253,7 @@
     .site-banner-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
     .site-banner-label{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;}
     .site-banner-text{font-size:13px;font-weight:500;line-height:1.6;color:var(--text);}
-    .site-banner-arrow{align-self:center;font-size:16px;opacity:.7;flex-shrink:0;}
+    .site-banner-arrow{align-self:center;font-size:16px;opacity:.9;flex-shrink:0;color:#fff !important;}
     .site-banner-info{background:rgba(59,130,246,0.06);border-left-color:rgba(59,130,246,0.5);}
     .site-banner-info .site-banner-icon-badge{background:rgba(59,130,246,0.18);}
     .site-banner-info .site-banner-label{color:#93c5fd;}
