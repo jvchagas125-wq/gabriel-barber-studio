@@ -981,6 +981,9 @@
     .maps-review-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:10px; border:none; background:linear-gradient(135deg,#1a6634,#22863a); color:#fff; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:24px; transition:opacity .15s; box-shadow:0 3px 12px rgba(22,163,74,0.25); }
     .maps-review-btn:hover { opacity:.9; }
     .maps-review-btn-wrap { text-align:center; }
+    .maps-review-btn-outline { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:10px; border:1.5px solid rgba(74,222,128,0.5); background:rgba(22,163,74,0.08); color:#4ade80; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:background .15s,opacity .15s; }
+    .maps-review-btn-outline:hover { background:rgba(22,163,74,0.16); }
+    .maps-review-btn-wrap-bottom { text-align:center; margin-top:28px; }
     @media(max-width:640px){ .review-grid { grid-template-columns:1fr 1fr; gap:10px; } }
 
     /* ===== SINO DE NOTIFICAÇÕES ===== */
@@ -1285,6 +1288,13 @@
       <div class="spinner" style="margin:0 auto 12px;"></div>
       Carregando avaliações...
     </div>
+  </div>
+
+  <!-- Botão "Confira outras avaliações no Google" -->
+  <div class="maps-review-btn-wrap-bottom">
+    <a href="https://www.google.com/maps/place/Gabriel+%7C+Barber+Studio/@-21.7718064,-41.3084483,17z/data=!4m8!3m7!1s0xbdd581dcb96dc5:0xf90095302400cf7d!8m2!3d-21.7718064!4d-41.3084483!9m1!1b1!16s%2Fg%2F11z06gsc9m?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener" style="text-decoration:none;" onclick="creditReviewGB()">
+      <button class="maps-review-btn-outline">🔎 Confira outras avaliações no Google</button>
+    </a>
   </div>
 
   <!-- Lightbox -->
