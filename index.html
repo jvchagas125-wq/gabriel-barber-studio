@@ -1407,16 +1407,25 @@
       </div>
       <!-- Divisor -->
       <div class="wallet-divider" style="width:1px;background:rgba(255,255,255,0.08);align-self:stretch;margin:0 6px;flex-shrink:0;"></div>
-      <!-- Frase ao lado -->
+      <!-- Frase ao lado + saldo R$ -->
       <div class="wallet-side-text" style="flex:1;min-width:0;">
         <div class="wallet-sub" id="wallet-sub-text" style="font-size:13px;line-height:1.55;color:var(--text-muted);">Acumule, aproveite e gaste seus créditos com nossos produtos ou cupons! 🪙→🎁</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">💰 Saldo R$</span>
+          <span id="wallet-balance-brl" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#4ade80;">R$ 0,00</span>
+        </div>
       </div>
     </div>
 
-    <!-- Botão comprar GB$ -->
-    <button id="buy-gbs-btn" onclick="openBuyGBsModal()" style="width:100%;padding:11px;border-radius:11px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:16px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;">
-      🛒 Compre aqui +GB$
-    </button>
+    <!-- Botões comprar GB$ / depositar R$ -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button id="buy-gbs-btn" onclick="openBuyGBsModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+        🛒 Compre +GB$
+      </button>
+      <button id="deposit-brl-btn" onclick="openDepositBrlModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(74,222,128,0.35);background:rgba(22,163,74,0.1);color:#4ade80;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+        💰 Depositar R$
+      </button>
+    </div>
 
     <!-- Filtros -->
     <div class="store-filters" id="store-filters">
@@ -3645,6 +3654,155 @@
   };
 
 
+  // ═══════════════════════════════════════
+  // DEPOSITAR R$ — SALDO EM DINHEIRO REAL NA CARTEIRA
+  // Mesmo fluxo do "Comprar GB$" (checkout do Mercado Pago via /api/mp-checkout),
+  // mas usando type:'brl_deposit' para o webhook identificar que é um depósito de
+  // saldo R$ (e creditar em wallets/{digits}.balanceBrl) em vez de uma compra de GB$.
+  // ═══════════════════════════════════════
+  let selectedDepositAmount = null;
+  const DEPOSIT_BRL_PRESETS = [20, 50, 100, 200];
+
+  window.openDepositBrlModal = function(){
+    selectedDepositAmount = null;
+    document.getElementById('deposit-brl-presets').style.display = 'grid';
+    document.getElementById('deposit-brl-confirm-section').style.display = 'none';
+    document.getElementById('deposit-brl-waiting').style.display = 'none';
+    const customEl = document.getElementById('deposit-brl-custom');
+    if(customEl) customEl.value = '';
+    renderDepositPresets();
+    document.getElementById('deposit-brl-modal').style.display = 'flex';
+  };
+
+  window.closeDepositBrlModal = function(){
+    document.getElementById('deposit-brl-modal').style.display = 'none';
+  };
+
+  function renderDepositPresets(){
+    const el = document.getElementById('deposit-brl-presets');
+    if(!el) return;
+    el.innerHTML = DEPOSIT_BRL_PRESETS.map(v=>`
+      <button type="button" onclick="selectDepositAmount(${v})" id="dep-amt-${v}" style="padding:14px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:var(--bg3);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:19px;cursor:pointer;transition:all .15s;">R$${v}</button>
+    `).join('');
+  }
+
+  window.selectDepositAmount = function(v){
+    selectedDepositAmount = v;
+    const customEl = document.getElementById('deposit-brl-custom');
+    if(customEl) customEl.value = '';
+    DEPOSIT_BRL_PRESETS.forEach(p=>{
+      const btn = document.getElementById('dep-amt-'+p);
+      if(!btn) return;
+      if(p===v){ btn.style.borderColor='#4ade80'; btn.style.background='rgba(22,163,74,0.14)'; btn.style.color='#4ade80'; }
+      else { btn.style.borderColor='rgba(255,255,255,0.08)'; btn.style.background='var(--bg3)'; btn.style.color='var(--text)'; }
+    });
+    showDepositConfirmSection();
+  };
+
+  window.onDepositCustomInput = function(){
+    const raw = document.getElementById('deposit-brl-custom').value||'';
+    const v = parseFloat(raw.replace(',','.'));
+    DEPOSIT_BRL_PRESETS.forEach(p=>{
+      const btn = document.getElementById('dep-amt-'+p);
+      if(btn){ btn.style.borderColor='rgba(255,255,255,0.08)'; btn.style.background='var(--bg3)'; btn.style.color='var(--text)'; }
+    });
+    if(v>0){
+      selectedDepositAmount = v;
+      showDepositConfirmSection();
+    } else {
+      selectedDepositAmount = null;
+      const sec = document.getElementById('deposit-brl-confirm-section');
+      if(sec) sec.style.display = 'none';
+    }
+  };
+
+  function showDepositConfirmSection(){
+    const sec = document.getElementById('deposit-brl-confirm-section');
+    const lbl = document.getElementById('deposit-brl-amount-label');
+    if(lbl) lbl.textContent = 'R$ '+selectedDepositAmount.toFixed(2).replace('.',',');
+    if(sec) sec.style.display = 'block';
+  }
+
+  window.confirmDepositBrl = async function(){
+    if(!selectedDepositAmount || selectedDepositAmount<=0){ showToast('Selecione ou informe um valor.','error'); return; }
+    if(!loggedPhone) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    const amount = selectedDepositAmount;
+
+    const btn = document.getElementById('deposit-brl-confirm-btn');
+    if(btn){ btn.disabled=true; btn.textContent='Aguarde...'; }
+
+    try {
+      const depositId = 'dep_'+digits+'_'+Date.now();
+
+      // Salvar pedido de depósito pendente no Firestore
+      await setDoc(doc(db,'brl_deposits',depositId),{
+        clientName: loggedName||'',
+        phone:      loggedPhone,
+        digits,
+        amount,
+        status:     'pending',
+        createdAt:  new Date().toISOString(),
+      });
+
+      // Gerar link dinâmico via /api/mp-checkout (mesmo endpoint usado para GB$)
+      const resp = await fetch('/api/mp-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId:   depositId,
+          productName: `Depósito de R$ ${amount.toFixed(2).replace('.',',')} — Gabriel Barber`,
+          price:       amount,
+          clientPhone: loggedPhone,
+          clientName:  loggedName||'',
+          type:        'brl_deposit', // para o webhook saber que é depósito de saldo R$
+          depositId,
+        }),
+      });
+      const result = await resp.json();
+
+      if(!resp.ok || !result.initPoint){
+        showToast(result.error||'Erro ao gerar link de pagamento.','error');
+        if(btn){ btn.disabled=false; btn.textContent='Continuar para pagamento →'; }
+        return;
+      }
+
+      await setDoc(doc(db,'brl_deposits',depositId),{ preferenceId: result.preferenceId },{ merge:true });
+
+      // Abrir checkout MP
+      window.open(result.initPoint, '_blank');
+
+      // Mostrar tela de aguardo
+      document.getElementById('deposit-brl-presets').style.display = 'none';
+      document.getElementById('deposit-brl-confirm-section').style.display = 'none';
+      document.getElementById('deposit-brl-waiting').style.display = 'block';
+
+      // Listener no Firestore para detectar quando o webhook creditar o saldo R$
+      const unsubDep = onSnapshot(doc(db,'brl_deposits',depositId), snap=>{
+        const d = snap.data();
+        if(!d || d.status !== 'approved') return;
+        unsubDep();
+        document.getElementById('deposit-brl-modal').style.display = 'none';
+        const ok = document.createElement('div');
+        ok.style.cssText = 'position:fixed;inset:0;z-index:910;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+        ok.innerHTML = `<div style="background:var(--bg2);border:1px solid #16a34a;border-radius:18px;padding:32px 24px;width:90%;max-width:320px;text-align:center;">
+          <div style="font-size:52px;margin-bottom:12px;">💰</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;margin-bottom:8px;">Depósito Confirmado!</div>
+          <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;color:#4ade80;margin-bottom:8px;">+R$ ${amount.toFixed(2).replace('.',',')}</div>
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">O saldo já está disponível na sua carteira.</div>
+          <button onclick="this.closest('div[style]').remove()" style="padding:11px 28px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">✓ Entendido</button>
+        </div>`;
+        document.body.appendChild(ok);
+        showToast('Depósito confirmado! 💰','success');
+      });
+
+    } catch(e){
+      showToast('Erro: '+e.message,'error');
+      if(btn){ btn.disabled=false; btn.textContent='Continuar para pagamento →'; }
+    }
+  };
+
+
   // ===== COMENTÁRIOS / AVALIAÇÕES =====
   function loadReviews(){
     const grid = document.getElementById('reviews-grid');
@@ -4370,6 +4528,7 @@ let rankingUnsubscribe = null;
   let storeProducts = [];
   let storeActiveFilter = 'all';
   let gbBalance = 0;
+  let gbBalanceBrl = 0;
   let storeUnsubscribe = null;
   let balanceUnsubscribe = null;
 
@@ -4407,25 +4566,39 @@ let rankingUnsubscribe = null;
       }
     } catch(e){ console.warn('gb_config:',e); }
 
-    // Busca saldo no Firestore (atribuído pelo admin ao marcar "Concluído")
+    // Busca saldo no Firestore (GB$ atribuído pelo admin ao marcar "Concluído";
+    // R$ creditado pelo webhook de depósito ou manualmente pelo admin)
     try {
       const walletSnap = await getDoc(doc(db,'wallets',digits));
-      gbBalance = walletSnap.exists() ? (walletSnap.data().balance||0) : 0;
-    } catch(e){ gbBalance = 0; }
+      const wd = walletSnap.exists() ? walletSnap.data() : {};
+      gbBalance = wd.balance||0;
+      gbBalanceBrl = wd.balanceBrl||0;
+    } catch(e){ gbBalance = 0; gbBalanceBrl = 0; }
 
     const balEl = document.getElementById('wallet-balance');
+    const balBrlEl = document.getElementById('wallet-balance-brl');
     if(balEl) balEl.textContent = gbBalance;
+    if(balBrlEl) balBrlEl.textContent = 'R$ ' + gbBalanceBrl.toFixed(2).replace('.',',');
 
     // Escuta saldo em tempo real
     if(balanceUnsubscribe) balanceUnsubscribe();
     balanceUnsubscribe = onSnapshot(doc(db,'wallets',digits), snap => {
-      const newBalance = snap.exists() ? (snap.data().balance||0) : 0;
+      const wd = snap.exists() ? snap.data() : {};
+      const newBalance = wd.balance||0;
+      const newBalanceBrl = wd.balanceBrl||0;
+      let changed = false;
       if(newBalance !== gbBalance){
         gbBalance = newBalance;
         if(balEl) balEl.textContent = gbBalance;
-        // Re-render grid para atualizar botões habilitados/desabilitados em tempo real
-        renderStoreGrid();
+        changed = true;
       }
+      if(newBalanceBrl !== gbBalanceBrl){
+        gbBalanceBrl = newBalanceBrl;
+        if(balBrlEl) balBrlEl.textContent = 'R$ ' + gbBalanceBrl.toFixed(2).replace('.',',');
+        changed = true;
+      }
+      // Re-render grid para atualizar botões habilitados/desabilitados em tempo real
+      if(changed) renderStoreGrid();
     });
 
     // Escuta produtos em tempo real
@@ -4476,11 +4649,12 @@ let rankingUnsubscribe = null;
         ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
         : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
       const isBrl = p.costType === 'brl';
+      const canPayBalance = isBrl && gbBalanceBrl >= (p.priceBrl||0);
       const costLabel = isBrl
         ? `R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')} <span>💳</span>`
         : `${p.cost||0} <span>GB$</span>`;
       const redeemBtn = isBrl
-        ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
+        ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">${canPayBalance?'💰 Comprar (saldo)':'💳 Comprar'}</button>`
         : `<button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
             ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
           </button>`;
@@ -4510,6 +4684,13 @@ let rankingUnsubscribe = null;
   window.redeemProductBrl = async function(productId){
     const product = storeProducts.find(p=>p.id===productId);
     if(!product){ showToast('Produto não encontrado.','error'); return; }
+
+    // Se o cliente já tem saldo R$ suficiente na carteira, paga na hora com o
+    // saldo em vez de abrir um novo checkout do Mercado Pago por item.
+    if(gbBalanceBrl >= (product.priceBrl||0)){
+      return payProductWithBalance(productId);
+    }
+
     const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
 
     // Modal de confirmação
@@ -4607,6 +4788,70 @@ let rankingUnsubscribe = null;
       const l = document.getElementById('brl-loading');
       if(l) l.remove();
       showToast('Erro: ' + err.message,'error');
+    }
+  };
+
+  // Paga um produto em R$ instantaneamente usando o saldo já depositado na carteira
+  // (sem precisar abrir um novo checkout do Mercado Pago).
+  window.payProductWithBalance = async function(productId){
+    const product = storeProducts.find(p=>p.id===productId);
+    if(!product){ showToast('Produto não encontrado.','error'); return; }
+    if(gbBalanceBrl < (product.priceBrl||0)){ showToast('Saldo R$ insuficiente.','error'); return; }
+    const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
+
+    const confirmed = await new Promise(resolve=>{
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `<div style="background:var(--bg2);border:1px solid rgba(74,222,128,0.35);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">💰</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;margin-bottom:8px;">Confirmar Compra</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">${product.name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#4ade80;margin-bottom:16px;">${priceFmt}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Pagamento com o seu saldo R$. Saldo após a compra: <strong style="color:#4ade80;">R$ ${(gbBalanceBrl-(product.priceBrl||0)).toFixed(2).replace('.',',')}</strong></div>
+        <div style="display:flex;gap:10px;">
+          <button id="pwb-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
+          <button id="pwb-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💰 Comprar</button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#pwb-confirm').onclick = ()=>{ document.body.removeChild(modal); resolve(true); };
+      modal.querySelector('#pwb-cancel').onclick  = ()=>{ document.body.removeChild(modal); resolve(false); };
+      modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
+    });
+    if(!confirmed) return;
+
+    try {
+      const digits = loggedPhone.replace(/\D/g,'');
+      // Registra o pedido (mesma coleção usada para os resgates com GB$, para
+      // aparecer junto na tela de pedidos do admin)
+      await setDoc(doc(db,'redemptions', digits+'_'+productId+'_'+Date.now()),{
+        clientPhone:    loggedPhone,
+        clientName:     loggedName||'—',
+        digits,
+        productId,
+        productName:    product.name||'—',
+        productCostBrl: product.priceBrl||0,
+        paidWith:       'balance_brl',
+        category:       product.category||'Geral',
+        redeemedAt:     new Date().toISOString(),
+        status:         'pending',
+      });
+
+      // Debita do saldo R$ no Firestore (campo 'balanceBrl')
+      const walletRef = doc(db,'wallets',digits);
+      const ws = await getDoc(walletRef);
+      const currentBrl = ws.exists() ? (ws.data().balanceBrl||0) : 0;
+      const newBrl = Math.max(0, currentBrl - (product.priceBrl||0));
+      await setDoc(walletRef, { balanceBrl: newBrl, updatedAt: new Date().toISOString() }, {merge:true});
+
+      gbBalanceBrl = newBrl;
+      const brlEl = document.getElementById('wallet-balance-brl');
+      if(brlEl) brlEl.textContent = 'R$ ' + gbBalanceBrl.toFixed(2).replace('.',',');
+      renderStoreGrid();
+      showToast(`"${product.name}" comprado com saldo! O Gabriel vai confirmar em breve. 🎉`,'success');
+    } catch(e){
+      console.error('pay with balance error:', e);
+      showToast('Erro ao comprar: '+e.message,'error');
     }
   };
 
@@ -4930,6 +5175,39 @@ let rankingUnsubscribe = null;
         <div style="font-size:32px;margin-bottom:10px;">⏳</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:6px;">Aguardando confirmação</div>
         <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">Seu pedido foi registrado. Após o pagamento, Gabriel irá aprovar e seus GB$ serão creditados automaticamente.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Depositar R$ -->
+<div id="deposit-brl-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;" onclick="if(event.target===this)closeDepositBrlModal()">
+  <div style="background:var(--bg2);border:1px solid rgba(74,222,128,0.35);border-radius:18px;padding:0;width:90%;max-width:420px;animation:slideUp .3s ease-out;overflow:hidden;max-height:90vh;overflow-y:auto;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#123322,#1a4d33);padding:20px 22px 16px;border-bottom:1px solid rgba(74,222,128,0.3);position:relative;">
+      <button onclick="closeDepositBrlModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#4ade80;">💰 Depositar R$</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Deposite um valor em reais na sua carteira e use para pagar produtos e cupons na hora, sem precisar pagar item por item.</div>
+    </div>
+    <!-- Valores -->
+    <div style="padding:18px 22px;">
+      <div id="deposit-brl-presets" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="grid-column:1/-1;text-align:center;padding:12px;color:var(--text-dim);">Carregando...</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Ou informe outro valor</label>
+        <input type="number" id="deposit-brl-custom" min="1" step="0.01" placeholder="Ex: 35,00" oninput="onDepositCustomInput()" style="width:100%;padding:12px 14px;border-radius:10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;box-sizing:border-box;">
+      </div>
+      <!-- Confirmar -->
+      <div id="deposit-brl-confirm-section" style="display:none;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Você vai depositar: <strong id="deposit-brl-amount-label" style="color:#4ade80;">R$ 0,00</strong></div>
+        <button id="deposit-brl-confirm-btn" onclick="confirmDepositBrl()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">Continuar para pagamento →</button>
+      </div>
+      <!-- Aguardando -->
+      <div id="deposit-brl-waiting" style="display:none;text-align:center;padding:16px 0;">
+        <div style="font-size:32px;margin-bottom:10px;">⏳</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#4ade80;margin-bottom:6px;">Aguardando confirmação</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">Seu depósito foi registrado. Após o pagamento, o valor cai automaticamente no seu saldo R$.</div>
       </div>
     </div>
   </div>
