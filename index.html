@@ -3519,10 +3519,8 @@
     // Reset completo do modal
     selectedGBPackage = null;
     document.getElementById('buy-gbs-packages').style.display = 'flex';
-    document.getElementById('buy-gbs-email-section').style.display = 'none';
+    document.getElementById('buy-gbs-confirm-section').style.display = 'none';
     document.getElementById('buy-gbs-waiting').style.display = 'none';
-    const emailEl = document.getElementById('buy-gbs-email');
-    if(emailEl) emailEl.value = '';
     document.getElementById('buy-gbs-modal').style.display = 'flex';
     if(!gbPackagesData.length) await loadGBPackagesClient();
     renderGBPackagesClient();
@@ -3563,9 +3561,8 @@
         if(check){ check.style.borderColor='rgba(255,255,255,0.15)'; check.style.background=''; check.textContent=''; }
       }
     });
-    // Show email section
-    document.getElementById('buy-gbs-email-section').style.display = 'block';
-    document.getElementById('buy-gbs-email').focus();
+    // Mostrar confirmação
+    document.getElementById('buy-gbs-confirm-section').style.display = 'block';
   };
 
   window.confirmBuyGBs = async function(){
@@ -3624,7 +3621,7 @@
       window.open(result.initPoint, '_blank');
 
       // Mostrar tela de aguardo
-      document.getElementById('buy-gbs-email-section').style.display = 'none';
+      document.getElementById('buy-gbs-confirm-section').style.display = 'none';
       document.getElementById('buy-gbs-packages').style.display = 'none';
       document.getElementById('buy-gbs-waiting').style.display = 'block';
 
@@ -4650,12 +4647,11 @@ let rankingUnsubscribe = null;
         ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
         : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
       const isBrl = p.costType === 'brl';
-      const canPayBalance = isBrl && gbBalanceBrl >= (p.priceBrl||0);
       const costLabel = isBrl
         ? `R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')} <span>💳</span>`
         : `${p.cost||0} <span>GB$</span>`;
       const redeemBtn = isBrl
-        ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">${canPayBalance?'💰 Comprar (saldo)':'💳 Comprar'}</button>`
+        ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
         : `<button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
             ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
           </button>`;
@@ -4682,39 +4678,53 @@ let rankingUnsubscribe = null;
   }
 
 
+  // Paga um produto em R$ abrindo um checkout novo do Mercado Pago (pagamento
+  // direto por item, sem usar o saldo da carteira). Quando o cliente tem saldo
+  // suficiente, essa opção aparece lado a lado com "Pagar com saldo" — ele escolhe.
   window.redeemProductBrl = async function(productId){
     const product = storeProducts.find(p=>p.id===productId);
     if(!product){ showToast('Produto não encontrado.','error'); return; }
 
-    // Se o cliente já tem saldo R$ suficiente na carteira, paga na hora com o
-    // saldo em vez de abrir um novo checkout do Mercado Pago por item.
-    if(gbBalanceBrl >= (product.priceBrl||0)){
-      return payProductWithBalance(productId);
-    }
-
     const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
+    const canPayBalance = gbBalanceBrl >= (product.priceBrl||0);
 
-    // Modal de confirmação
-    const confirmed = await new Promise(resolve=>{
+    // Modal de confirmação — quando o cliente tem saldo R$ suficiente, oferece a
+    // escolha entre pagar com o saldo (instantâneo) ou abrir um novo checkout do
+    // Mercado Pago; sem saldo suficiente, mostra só a opção do Mercado Pago.
+    const choice = await new Promise(resolve=>{
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;';
+      const paymentButtons = canPayBalance
+        ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Como você quer pagar?</div>
+           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+             <button id="brl-pay-balance" style="padding:12px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💰 Pagar com saldo (R$ ${gbBalanceBrl.toFixed(2).replace('.',',')} disponível)</button>
+             <button id="brl-pay-mp" style="padding:12px;border-radius:10px;border:1px solid var(--gold-border);background:none;color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💳 Pagar no Mercado Pago</button>
+           </div>
+           <button id="brl-cancel" style="width:100%;padding:8px;border-radius:10px;border:none;background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">Cancelar</button>`
+        : `<div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Você será redirecionado para o pagamento. Após concluir, o status atualiza automaticamente.</div>
+           <div style="display:flex;gap:10px;">
+             <button id="brl-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
+             <button id="brl-pay-mp" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💳 Continuar</button>
+           </div>`;
       modal.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--gold-border);border-radius:18px;padding:28px 24px;width:90%;max-width:340px;text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">💳</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Confirmar Compra</div>
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">${product.name}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:16px;">${priceFmt}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Você será redirecionado para o pagamento. Após concluir, o status atualiza automaticamente.</div>
-        <div style="display:flex;gap:10px;">
-          <button id="brl-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
-          <button id="brl-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💳 Continuar</button>
-        </div>
+        ${paymentButtons}
       </div>`;
       document.body.appendChild(modal);
-      modal.querySelector('#brl-confirm').onclick = ()=>{ document.body.removeChild(modal); resolve(true); };
-      modal.querySelector('#brl-cancel').onclick  = ()=>{ document.body.removeChild(modal); resolve(false); };
-      modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
+      const payBalanceBtn = modal.querySelector('#brl-pay-balance');
+      if(payBalanceBtn) payBalanceBtn.onclick = ()=>{ document.body.removeChild(modal); resolve('balance'); };
+      modal.querySelector('#brl-pay-mp').onclick = ()=>{ document.body.removeChild(modal); resolve('mp'); };
+      modal.querySelector('#brl-cancel').onclick  = ()=>{ document.body.removeChild(modal); resolve(null); };
+      modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(null); } };
     });
-    if(!confirmed) return;
+    if(!choice) return;
+    if(choice === 'balance'){
+      await executeBalancePayment(product);
+      return;
+    }
 
     // Mostrar loading enquanto cria preferência no MP
     const loadingEl = document.createElement('div');
@@ -4792,8 +4802,47 @@ let rankingUnsubscribe = null;
     }
   };
 
+  // Debita o produto direto do saldo R$ já depositado na carteira (sem confirmação
+  // própria — quem chama já confirmou a escolha antes, ex: o modal do redeemProductBrl).
+  async function executeBalancePayment(product){
+    try {
+      const digits = loggedPhone.replace(/\D/g,'');
+      // Registra o pedido (mesma coleção usada para os resgates com GB$, para
+      // aparecer junto na tela de pedidos do admin)
+      await setDoc(doc(db,'redemptions', digits+'_'+product.id+'_'+Date.now()),{
+        clientPhone:    loggedPhone,
+        clientName:     loggedName||'—',
+        digits,
+        productId:      product.id,
+        productName:    product.name||'—',
+        productCostBrl: product.priceBrl||0,
+        paidWith:       'balance_brl',
+        category:       product.category||'Geral',
+        redeemedAt:     new Date().toISOString(),
+        status:         'pending',
+      });
+
+      // Debita do saldo R$ no Firestore (campo 'balanceBrl')
+      const walletRef = doc(db,'wallets',digits);
+      const ws = await getDoc(walletRef);
+      const currentBrl = ws.exists() ? (ws.data().balanceBrl||0) : 0;
+      const newBrl = Math.max(0, currentBrl - (product.priceBrl||0));
+      await setDoc(walletRef, { balanceBrl: newBrl, updatedAt: new Date().toISOString() }, {merge:true});
+
+      gbBalanceBrl = newBrl;
+      const brlEl = document.getElementById('wallet-balance-brl');
+      if(brlEl) brlEl.textContent = 'R$ ' + gbBalanceBrl.toFixed(2).replace('.',',');
+      renderStoreGrid();
+      showToast(`"${product.name}" comprado com saldo! O Gabriel vai confirmar em breve. 🎉`,'success');
+    } catch(e){
+      console.error('pay with balance error:', e);
+      showToast('Erro ao comprar: '+e.message,'error');
+    }
+  }
+
   // Paga um produto em R$ instantaneamente usando o saldo já depositado na carteira
-  // (sem precisar abrir um novo checkout do Mercado Pago).
+  // (com sua própria confirmação — mantido para uso direto/independente do modal
+  // principal de redeemProductBrl).
   window.payProductWithBalance = async function(productId){
     const product = storeProducts.find(p=>p.id===productId);
     if(!product){ showToast('Produto não encontrado.','error'); return; }
@@ -4820,40 +4869,7 @@ let rankingUnsubscribe = null;
       modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
     });
     if(!confirmed) return;
-
-    try {
-      const digits = loggedPhone.replace(/\D/g,'');
-      // Registra o pedido (mesma coleção usada para os resgates com GB$, para
-      // aparecer junto na tela de pedidos do admin)
-      await setDoc(doc(db,'redemptions', digits+'_'+productId+'_'+Date.now()),{
-        clientPhone:    loggedPhone,
-        clientName:     loggedName||'—',
-        digits,
-        productId,
-        productName:    product.name||'—',
-        productCostBrl: product.priceBrl||0,
-        paidWith:       'balance_brl',
-        category:       product.category||'Geral',
-        redeemedAt:     new Date().toISOString(),
-        status:         'pending',
-      });
-
-      // Debita do saldo R$ no Firestore (campo 'balanceBrl')
-      const walletRef = doc(db,'wallets',digits);
-      const ws = await getDoc(walletRef);
-      const currentBrl = ws.exists() ? (ws.data().balanceBrl||0) : 0;
-      const newBrl = Math.max(0, currentBrl - (product.priceBrl||0));
-      await setDoc(walletRef, { balanceBrl: newBrl, updatedAt: new Date().toISOString() }, {merge:true});
-
-      gbBalanceBrl = newBrl;
-      const brlEl = document.getElementById('wallet-balance-brl');
-      if(brlEl) brlEl.textContent = 'R$ ' + gbBalanceBrl.toFixed(2).replace('.',',');
-      renderStoreGrid();
-      showToast(`"${product.name}" comprado com saldo! O Gabriel vai confirmar em breve. 🎉`,'success');
-    } catch(e){
-      console.error('pay with balance error:', e);
-      showToast('Erro ao comprar: '+e.message,'error');
-    }
+    await executeBalancePayment(product);
   };
 
   window.flipCard = function(e, id){
@@ -5164,12 +5180,10 @@ let rankingUnsubscribe = null;
       <div id="buy-gbs-packages" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
         <div style="text-align:center;padding:20px;color:var(--text-dim);">Carregando...</div>
       </div>
-      <!-- Email input -->
-      <div id="buy-gbs-email-section" style="display:none;">
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Informe seu e-mail para confirmar a compra:</div>
-        <input type="email" id="buy-gbs-email" placeholder="seu@email.com" style="width:100%;padding:11px 14px;border-radius:10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
-        <button onclick="confirmBuyGBs()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">Continuar para pagamento →</button>
-        <button onclick="document.getElementById('buy-gbs-email-section').style.display='none';selectedGBPackage=null;" style="width:100%;padding:8px;border-radius:10px;border:none;background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:6px;">← Voltar</button>
+      <!-- Confirmação (sem e-mail) -->
+      <div id="buy-gbs-confirm-section" style="display:none;">
+        <button id="buy-gbs-confirm-btn" onclick="confirmBuyGBs()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;">Continuar para pagamento →</button>
+        <button onclick="document.getElementById('buy-gbs-confirm-section').style.display='none';selectedGBPackage=null;" style="width:100%;padding:8px;border-radius:10px;border:none;background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-top:6px;">← Voltar</button>
       </div>
       <!-- Aguardando -->
       <div id="buy-gbs-waiting" style="display:none;text-align:center;padding:16px 0;">
