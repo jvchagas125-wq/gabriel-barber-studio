@@ -1394,37 +1394,38 @@
 <div class="section" id="sec-store">
   <div class="page" style="max-width:900px;">
     <h2 class="section-title gold-gradient">🛍️ Produtos & Cupons</h2>
+    <p class="wallet-sub" id="wallet-sub-text" style="font-size:13px;line-height:1.55;color:var(--text-muted);text-align:center;max-width:560px;margin:0 auto 18px;">Sempre que agendar e concluir um serviço, você receberá +GB$ no saldo de sua carteira. Acumule, aproveite e troque seus créditos por brindes! 🪙→🎁</p>
 
     <!-- Carteira -->
-    <div class="wallet-card" id="store-wallet" style="align-items:center;">
-      <div class="wallet-icon">
-        <img id="gb-coin-img" src="https://i.imgur.com/FzLPpDt.jpeg" alt="GB$" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.4);">
-      </div>
-      <!-- Saldo -->
-      <div class="wallet-info" style="flex:0 0 auto;">
-        <div class="wallet-label">Seu saldo</div>
-        <div class="wallet-balance" id="wallet-balance">0</div>
-      </div>
-      <!-- Divisor -->
-      <div class="wallet-divider" style="width:1px;background:rgba(255,255,255,0.08);align-self:stretch;margin:0 6px;flex-shrink:0;"></div>
-      <!-- Frase ao lado + saldo R$ -->
-      <div class="wallet-side-text" style="flex:1;min-width:0;">
-        <div class="wallet-sub" id="wallet-sub-text" style="font-size:13px;line-height:1.55;color:var(--text-muted);">Acumule, aproveite e gaste seus créditos com nossos produtos ou cupons! 🪙→🎁</div>
-        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">💰 Saldo R$</span>
-          <span id="wallet-balance-brl" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#4ade80;">R$ 0,00</span>
+    <div class="wallet-card" id="store-wallet" style="flex-direction:column;align-items:stretch;gap:0;">
+      <!-- Saldos lado a lado -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img id="gb-coin-img" src="https://i.imgur.com/FzLPpDt.jpeg" alt="GB$" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.4);flex-shrink:0;">
+          <div>
+            <div class="wallet-label">Saldo GB$</div>
+            <div class="wallet-balance" id="wallet-balance" style="font-size:36px;">0</div>
+          </div>
+        </div>
+        <div class="wallet-divider" style="width:1px;background:rgba(255,255,255,0.1);align-self:stretch;flex-shrink:0;"></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:46px;height:46px;border-radius:50%;background:rgba(74,222,128,0.12);border:2px solid rgba(74,222,128,0.5);box-shadow:0 0 12px rgba(74,222,128,0.25);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">💰</div>
+          <div>
+            <div class="wallet-label">Saldo R$</div>
+            <div class="wallet-balance" id="wallet-balance-brl" style="font-size:36px;color:#4ade80;">R$ 0,00</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Botões comprar GB$ / depositar R$ -->
-    <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="buy-gbs-btn" onclick="openBuyGBsModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
-        🛒 Compre +GB$
-      </button>
-      <button id="deposit-brl-btn" onclick="openDepositBrlModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(74,222,128,0.35);background:rgba(22,163,74,0.1);color:#4ade80;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
-        💰 Depositar R$
-      </button>
+      <!-- Botões comprar GB$ / depositar R$ -->
+      <div style="display:flex;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
+        <button id="buy-gbs-btn" onclick="openBuyGBsModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+          🛒 Compre +GB$
+        </button>
+        <button id="deposit-brl-btn" onclick="openDepositBrlModal()" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(74,222,128,0.35);background:rgba(22,163,74,0.1);color:#4ade80;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+          💰 Depositar R$
+        </button>
+      </div>
     </div>
 
     <!-- Filtros -->
