@@ -1,6 +1,7 @@
 // api/mp-webhook.js
 // Recebe notificações do Mercado Pago e processa:
 // - Compra de GB$: credita GB$ na carteira do cliente
+// - Depósito em R$ (type 'brl_deposit'): credita balanceBrl na carteira do cliente
 // - Produto em R$: registra pedido como aprovado
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
@@ -88,6 +89,49 @@ export default async function handler(req, res) {
         console.log(`✅ GB$ creditados: +${totalCoins} para ${clientPhone}`);
       }
 
+      // ── DEPÓSITO DE SALDO EM R$ ────────────────────────────────────
+      else if (paymentType === 'brl_deposit') {
+        const digits    = clientPhone.replace(/\D/g, '');
+        // Valor realmente pago, vindo do Mercado Pago (não do cliente)
+        const amountBrl = Math.round((Number(payment.transaction_amount) || 0) * 100) / 100;
+        const depRef    = db.collection('brl_deposits').doc(productId); // productId = depositId
+        const walRef    = db.collection('wallets').doc(digits);
+
+        // Transação: o MP pode notificar o mesmo pagamento mais de uma vez,
+        // então só credita se este paymentId ainda não foi processado.
+        const credited = await db.runTransaction(async (tx) => {
+          const depSnap = await tx.get(depRef);
+          if (depSnap.exists && depSnap.data().status === 'approved' && depSnap.data().paymentId === paymentId) {
+            return false; // já creditado
+          }
+          if (amountBrl <= 0) return false;
+
+          tx.set(walRef, {
+            balanceBrl: FieldValue.increment(amountBrl),
+            updatedAt:  FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          tx.set(depRef, {
+            status:     'approved',
+            paymentId,
+            amount:     amountBrl,
+            approvedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          tx.set(walRef.collection('transactions').doc('brl_' + paymentId), {
+            type:      'brl_deposit',
+            amount:    amountBrl,
+            paymentId,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+          return true;
+        });
+
+        console.log(credited
+          ? `✅ Depósito R$ creditado: +${amountBrl} para ${clientPhone}`
+          : `ℹ️ Depósito ${paymentId} já processado (ou valor inválido), ignorando`);
+      }
+
       // ── PRODUTO EM R$ ──────────────────────────────────────────────
       else {
         // Registrar pagamento aprovado
@@ -122,6 +166,13 @@ export default async function handler(req, res) {
           status:    status,
           paymentId,
         }, { merge: true });
+      } else if (paymentType === 'brl_deposit') {
+        // Não rebaixa um depósito que já foi aprovado
+        const depRef  = db.collection('brl_deposits').doc(productId);
+        const depSnap = await depRef.get();
+        if (!(depSnap.exists && depSnap.data().status === 'approved')) {
+          await depRef.set({ status, paymentId }, { merge: true });
+        }
       }
       console.log(`ℹ️ Pagamento ${status}: ${paymentId}`);
     }
