@@ -986,6 +986,35 @@
     .maps-review-btn-wrap-bottom { text-align:center; margin-top:28px; }
     @media(max-width:640px){ .review-grid { grid-template-columns:1fr 1fr; gap:10px; } }
 
+    /* ===== CARROSSEL DE COMENTÁRIOS ===== */
+    @property --rev-ang { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+    .rev-carousel { position:relative; width:100%; max-width:540px; margin:22px auto 0; padding:0 4px; }
+    .rev-viewport { position:relative; overflow:hidden; height:260px; transition:height .5s ease; padding:0; border-radius:22px; }
+    .rev-slide { position:absolute; left:0; top:0; width:100%; padding:14px 16px; box-sizing:border-box; opacity:0; pointer-events:none; transform:translateX(60%) scale(.94);
+      transition:transform .75s cubic-bezier(.22,.8,.24,1), opacity .6s ease; will-change:transform,opacity; }
+    .rev-slide.prev { transform:translateX(-60%) scale(.94); }
+    .rev-slide.active { opacity:1; pointer-events:auto; transform:none; z-index:2; }
+    .rev-card { padding:3px; border-radius:18px; cursor:pointer;
+      background:linear-gradient(135deg,#8a6d1f,#f0d78c,#c9a84c,#8a6d1f);
+      background:conic-gradient(from var(--rev-ang),#8a6d1f,#f0d78c,#c9a84c,#fff3c4,#c9a84c,#8a6d1f);
+      animation:revSpin 6s linear infinite, revGlow 3.2s ease-in-out infinite; }
+    .rev-slide.active .rev-card { animation:revIn .8s cubic-bezier(.22,.8,.24,1) both, revSpin 6s linear infinite, revGlow 3.2s ease-in-out infinite; }
+    .rev-card-inner { border-radius:15px; overflow:hidden; background:#fff; line-height:0; }
+    .rev-card-inner img { width:100%; display:block; height:auto; }
+    @keyframes revSpin { to { --rev-ang:360deg; } }
+    @keyframes revGlow { 0%,100% { box-shadow:0 0 8px rgba(201,168,76,.22), 0 4px 12px rgba(0,0,0,.4); } 50% { box-shadow:0 0 14px rgba(240,215,140,.5), 0 4px 12px rgba(0,0,0,.4); } }
+    @keyframes revIn { from { opacity:0; transform:translateY(14px) scale(.95); } to { opacity:1; transform:none; } }
+    .rev-nav { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:38px; height:38px; border-radius:50%; border:1px solid var(--gold-border);
+      background:rgba(20,18,16,.78); color:var(--gold-light); font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(4px); transition:background .2s, transform .2s, border-color .2s; font-family:inherit; padding:0; }
+    .rev-nav:hover { background:var(--gold); color:#111; border-color:var(--gold); transform:translateY(-50%) scale(1.08); }
+    .rev-nav.rev-prev { left:-6px; } .rev-nav.rev-next { right:-6px; }
+    .rev-dots { display:flex; justify-content:center; gap:8px; margin-top:14px; }
+    .rev-dot { width:9px; height:9px; border-radius:999px; border:none; padding:0; cursor:pointer; background:rgba(255,255,255,.22); transition:all .35s ease; }
+    .rev-dot.active { width:26px; background:linear-gradient(90deg,#c9a84c,#f0d78c); box-shadow:0 0 10px rgba(201,168,76,.55); }
+    @media(max-width:640px){ .rev-nav.rev-prev { left:2px; } .rev-nav.rev-next { right:2px; } .rev-nav { width:34px; height:34px; background:rgba(20,18,16,.6); } }
+    @media(prefers-reduced-motion:reduce){ .rev-card, .rev-slide.active .rev-card { animation:none; } .rev-slide { transition:opacity .3s; transform:none !important; } }
+
     /* ===== SINO DE NOTIFICAÇÕES ===== */
     .bell-btn { position:relative; background:none; border:none; cursor:pointer; padding:8px; border-radius:50%; transition:background .15s; display:none; align-items:center; justify-content:center; }
     .bell-btn:hover { background:rgba(255,255,255,0.06); }
@@ -3853,19 +3882,88 @@
 
 
   // ===== COMENTÁRIOS / AVALIAÇÕES =====
+  let reviewsUnsub = null, revTimer = null;
+  function buildReviewCarousel(grid, items){
+    if(revTimer){ clearInterval(revTimer); revTimer = null; }
+    grid.className = 'rev-carousel';
+    grid.innerHTML = '';
+    const n = items.length;
+    const viewport = document.createElement('div'); viewport.className = 'rev-viewport';
+    const slides = items.map(r=>{
+      const sl = document.createElement('div'); sl.className = 'rev-slide';
+      const card = document.createElement('div'); card.className = 'rev-card';
+      card.addEventListener('click', ()=>window.openReviewLightbox(r.url));
+      const inner = document.createElement('div'); inner.className = 'rev-card-inner';
+      const img = document.createElement('img'); img.alt = 'Avaliação'; img.src = r.url; img.draggable = false;
+      img.addEventListener('load', ()=>fit());
+      inner.appendChild(img); card.appendChild(inner); sl.appendChild(card); viewport.appendChild(sl);
+      return sl;
+    });
+    grid.appendChild(viewport);
+    let cur = 0, paused = false, dots = [];
+    function fit(){
+      const a = slides[cur]; if(!a) return;
+      const h = a.offsetHeight; if(h > 40) viewport.style.height = h + 'px';
+    }
+    function render(){
+      slides.forEach((sl, i)=>{
+        const d = (i - cur + n) % n;
+        sl.classList.toggle('active', d === 0);
+        sl.classList.toggle('prev', d !== 0 && d === n - 1);
+      });
+      dots.forEach((dt, i)=>dt.classList.toggle('active', i === cur));
+      fit();
+    }
+    function go(i){ cur = (i + n) % n; render(); }
+    function restart(){
+      if(revTimer) clearInterval(revTimer);
+      if(n < 2) return;
+      revTimer = setInterval(()=>{
+        if(paused || document.hidden || !grid.isConnected || grid.offsetParent === null) return;
+        go(cur + 1);
+      }, 4500);
+    }
+    if(n > 1){
+      const prev = document.createElement('button'); prev.className = 'rev-nav rev-prev'; prev.type = 'button'; prev.setAttribute('aria-label','Anterior'); prev.textContent = '‹';
+      const next = document.createElement('button'); next.className = 'rev-nav rev-next'; next.type = 'button'; next.setAttribute('aria-label','Próximo'); next.textContent = '›';
+      prev.addEventListener('click', ()=>{ go(cur - 1); restart(); });
+      next.addEventListener('click', ()=>{ go(cur + 1); restart(); });
+      grid.appendChild(prev); grid.appendChild(next);
+      const dotsEl = document.createElement('div'); dotsEl.className = 'rev-dots';
+      dots = items.map((_, i)=>{
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'rev-dot'; b.setAttribute('aria-label','Avaliação '+(i+1));
+        b.addEventListener('click', ()=>{ go(i); restart(); });
+        dotsEl.appendChild(b); return b;
+      });
+      grid.appendChild(dotsEl);
+      grid.addEventListener('mouseenter', ()=>{ paused = true; });
+      grid.addEventListener('mouseleave', ()=>{ paused = false; });
+      let sx = 0, sy = 0;
+      viewport.addEventListener('touchstart', e=>{ sx = e.touches[0].clientX; sy = e.touches[0].clientY; paused = true; }, {passive:true});
+      viewport.addEventListener('touchend', e=>{
+        const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+        if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)){ go(cur + (dx < 0 ? 1 : -1)); }
+        paused = false; restart();
+      }, {passive:true});
+    }
+    window.addEventListener('resize', fit);
+    render(); restart();
+    setTimeout(fit, 150); setTimeout(fit, 700);
+  }
+
   function loadReviews(){
     const grid = document.getElementById('reviews-grid');
-    if(!grid) return;
-    onSnapshot(doc(db,'config','reviews'), snap=>{
+    if(!grid || reviewsUnsub) return;
+    reviewsUnsub = onSnapshot(doc(db,'config','reviews'), snap=>{
       const list = snap.exists() ? (snap.data().list||[]) : [];
-      if(!list.length){
+      const items = list.filter(r=>r && r.url);
+      if(!items.length){
+        if(revTimer){ clearInterval(revTimer); revTimer = null; }
+        grid.className = 'review-grid';
         grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-dim);">Nenhuma avaliação adicionada ainda.</div>';
         return;
       }
-      grid.innerHTML = list.filter(r=>r.url).map(r=>`
-        <div class="review-img-card" onclick="openReviewLightbox('${r.url}')">
-          <img src="${r.url}" alt="Avaliação" loading="lazy">
-        </div>`).join('');
+      buildReviewCarousel(grid, items);
     }, e=>console.warn('reviews:',e));
   }
 
