@@ -1046,7 +1046,7 @@
     <div class="login-subtitle">Entre com seu número de telefone para agendar</div>
     <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
     <label class="login-label" for="login-name">Nome completo</label>
-    <input class="login-input" type="text" id="login-name" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
+    <input class="login-input" type="text" id="login-name" onblur="this.value=formatName(this.value)" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
 
     <label class="login-label" for="login-phone">Número de telefone</label>
     <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
@@ -1894,6 +1894,56 @@
     return all.slice(idx+1, idx+extraCount+1);
   }
 
+  // ═══ Correção automática de nomes (Maiúsculas, acentos, conectivos) ═══
+// ═══ Correção automática de nomes ═══
+  // Primeira letra de cada nome em maiúscula, "de/da/do/das/dos/e" em minúscula,
+  // espaços sobrando removidos e acentos corrigidos nos nomes mais comuns.
+  // Nomes escritos com maiúsculas no meio (ex.: McDonald) são preservados.
+  const NAME_CONNECTORS = new Set(['de','da','do','das','dos','e']);
+  const NAME_ACCENTS = {
+    andre:'andré', joao:'joão', jose:'josé', antonio:'antônio', sergio:'sérgio', julio:'júlio', marcio:'márcio',
+    claudio:'cláudio', fabio:'fábio', flavio:'flávio', otavio:'otávio', octavio:'octávio', tulio:'túlio',
+    vinicius:'vinícius', lucio:'lúcio', mario:'mário', rogerio:'rogério', cesar:'césar', hercules:'hércules',
+    valerio:'valério', caue:'cauê', caua:'cauã', kaue:'kauê', kaua:'kauã', lazaro:'lázaro', mauricio:'maurício',
+    lourenco:'lourenço', goncalo:'gonçalo', venancio:'venâncio', emilio:'emílio', italo:'ítalo', icaro:'ícaro',
+    isaias:'isaías', benicio:'benício', patricio:'patrício', tercio:'tércio', candido:'cândido', ezequias:'ezequias',
+    jessica:'jéssica', monica:'mônica', patricia:'patrícia', vitoria:'vitória', ines:'inês', julia:'júlia',
+    livia:'lívia', claudia:'cláudia', gloria:'glória', barbara:'bárbara', debora:'débora', elisangela:'elisângela',
+    fabiola:'fabíola', flavia:'flávia', leticia:'letícia', lidia:'lídia', marcia:'márcia', natalia:'natália',
+    nathalia:'nathália', rosangela:'rosângela', sonia:'sônia', tais:'taís', thais:'thaís', valeria:'valéria',
+    veronica:'verônica', angela:'ângela', cecilia:'cecília', cintia:'cíntia', erica:'érica', fatima:'fátima',
+    lais:'laís', marilia:'marília', nubia:'núbia', olivia:'olívia', silvia:'sílvia', eloisa:'eloísa', heloisa:'heloísa',
+    goncalves:'gonçalves', conceicao:'conceição', araujo:'araújo', magalhaes:'magalhães', guimaraes:'guimarães',
+    simoes:'simões', mendonca:'mendonça', braganca:'bragança', franca:'frança', assuncao:'assunção',
+    estevao:'estevão', nobrega:'nóbrega', brandao:'brandão', valadao:'valadão', galvao:'galvão', paixao:'paixão',
+    serrao:'serrão', camara:'câmara', correa:'corrêa', goes:'góes', simao:'simão', leao:'leão', baiao:'baião',
+    ze:'zé'
+  };
+  const NAME_STRIP = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'');
+  function formatNameSeg(seg, forceCap){
+    const lower = seg.toLowerCase();
+    if(!forceCap && NAME_CONNECTORS.has(lower)) return lower;
+    const tail = seg.slice(1);
+    // mistura de maiúsculas e minúsculas (McDonald, DeSouza): mantém como o cliente escreveu
+    if(/[A-ZÀ-ÖØ-Þ]/.test(tail) && /[a-zß-öø-ÿ]/.test(seg)) return seg.charAt(0).toUpperCase()+tail;
+    let w = lower;
+    // só mexe em acentos se a palavra veio sem nenhum acento
+    if(NAME_STRIP(w) === w){
+      if(NAME_ACCENTS[w]) w = NAME_ACCENTS[w];
+      else if(w.length > 4) w = w.replace(/cao$/,'ção').replace(/coes$/,'ções');
+    }
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  }
+  function formatName(raw){
+    const s = String(raw == null ? '' : raw).replace(/\s+/g,' ').trim();
+    if(!s) return '';
+    return s.split(' ').map((word, i)=>{
+      let first = (i === 0);
+      return word.replace(/[^\-'’]+/g, seg=>{ const r = formatNameSeg(seg, first); first = false; return r; });
+    }).join(' ');
+  }
+  window.formatName = formatName;
+
   let loggedPhone = null;
   let loggedName = null;
   let allAppointments = [];
@@ -2294,7 +2344,7 @@
   document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
 
   window.doLogin = async function(){
-    const rawName=document.getElementById("login-name").value.trim();
+    const rawName=formatName(document.getElementById("login-name").value);
     const raw=document.getElementById("login-phone").value;
     const digits=raw.replace(/\D/g,"");
     const errEl=document.getElementById("login-error");
@@ -2946,7 +2996,8 @@
 
     onAuthStateChanged(auth, user => {
       const saved = localStorage.getItem("gbs_phone");
-      const savedName = localStorage.getItem("gbs_name");
+      const savedName = formatName(localStorage.getItem("gbs_name"));
+      if(savedName) localStorage.setItem("gbs_name",savedName);
       if(user && saved){
         loggedPhone = saved;
         loggedName = savedName||'';        
@@ -4483,7 +4534,7 @@ let rankingUnsubscribe = null;
       return '<div style="background:var(--bg2);border:1px solid rgba('+
         (isFirst?'201,168,76':'255,255,255')+',0.'+(isFirst?'3':'08')+');border-radius:14px;padding:18px 12px;text-align:center;'+(isFirst?'transform:translateY(-8px);':'')+'">'
         +'<div style="font-size:'+(isFirst?'40':'32')+'px;margin-bottom:8px;">'+medals[i]+'</div>'
-        +'<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text);">'+maskName(p.name)+'</div>'
+        +'<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text);">'+maskName(formatName(p.name))+'</div>'
         +'<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:'+colors[i]+';">'+p.count+'</div>'
         +'<div style="font-size:10px;color:var(--text-dim);">'+(p.count===1?'visita':'visitas')+'</div>'
         +'</div>';
@@ -4512,7 +4563,7 @@ let rankingUnsubscribe = null;
           const hl = pos<=3 ? 'background:rgba(201,168,76,0.05);' : '';
           return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);'+hl+'">'
             +'<td style="padding:11px 14px;font-size:13px;color:var(--text-muted);">'+( medal||pos+'º')+'</td>'
-            +'<td style="padding:11px 14px;font-weight:600;font-size:13px;">'+maskName(p.name)+'</td>'
+            +'<td style="padding:11px 14px;font-weight:600;font-size:13px;">'+maskName(formatName(p.name))+'</td>'
             +'<td style="padding:11px 14px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--gold);">'+p.count+'</td>'
             +'</tr>';
         }).join('')
