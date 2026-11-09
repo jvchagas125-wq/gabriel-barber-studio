@@ -110,6 +110,23 @@
     .profile-dd-btn:hover{background:rgba(255,255,255,.05);color:var(--text);}
     .profile-dd-btn.danger{color:#f87171;}
     .profile-dd-btn.danger:hover{background:rgba(220,38,38,.1);color:#f87171;}
+    /* ── Cupons ── */
+    .cp-badge{display:inline-block;background:rgba(22,163,74,.18);color:#4ade80;border:1px solid rgba(22,163,74,.4);border-radius:20px;font-size:.55em;font-weight:700;padding:1px 7px;margin-left:6px;vertical-align:middle;font-family:"DM Sans",sans-serif;letter-spacing:.3px;}
+    .cp-tabs{display:flex;gap:8px;margin-bottom:18px;}
+    .cp-tab{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:none;color:var(--text-muted);font-family:"DM Sans",sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s;}
+    .cp-tab.active{background:var(--gold-dim);border-color:var(--gold-border);color:var(--gold);}
+    .cp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+    .cp-card{background:#1a1a1a;border:1px solid var(--gold-border);border-radius:14px;padding:18px 16px;display:flex;flex-direction:column;gap:8px;}
+    .cp-card.used{opacity:.55;}
+    .cp-pct{font-family:"Bebas Neue",sans-serif;font-size:40px;line-height:1;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+    .cp-title{font-size:15px;font-weight:700;color:var(--text);}
+    .cp-desc{font-size:12px;color:var(--text-muted);line-height:1.5;}
+    .cp-meta{font-size:11px;color:var(--text-dim);line-height:1.6;}
+    .cp-status{font-size:12px;font-weight:700;padding:8px 10px;border-radius:9px;text-align:center;}
+    .cp-status.ok{background:rgba(22,163,74,.12);color:#4ade80;border:1px solid rgba(22,163,74,.3);}
+    .cp-status.used{background:rgba(255,255,255,.05);color:var(--text-dim);border:1px solid rgba(255,255,255,.1);}
+    .cp-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .cp-actions button{flex:1;min-width:110px;padding:8px 10px;border-radius:9px;border:1px solid var(--gold-border);background:var(--gold-dim);color:var(--gold);font-family:"DM Sans",sans-serif;font-weight:700;font-size:12px;cursor:pointer;}
     .nav-user{display:none;} /* esconde o antigo */
     .nav-user-dot{display:none;}
     .logout-btn{display:none;}
@@ -1106,6 +1123,9 @@
     <button class="mob-menu-item" data-sec="store" onclick="mobNav('store')">
       <span class="mob-icon">🛍️</span> GB Market
     </button>
+    <button class="mob-menu-item" data-sec="coupons" onclick="mobNav('coupons')">
+      <span class="mob-icon">🎟️</span> Cupons
+    </button>
     <button class="mob-menu-item" data-sec="ranking" onclick="mobNav('ranking')">
       <span class="mob-icon">🏆</span> Ranking
     </button>
@@ -1134,6 +1154,7 @@
       <button class="nav-btn" data-sec="appointments" onclick="showSection('appointments')">Meus Agendamentos</button>
       <button class="nav-btn" id="nav-plans-btn" data-sec="plans" onclick="showSection('plans')">Planos</button>
       <button class="nav-btn" data-sec="store" onclick="showSection('store')">GB Market</button>
+      <button class="nav-btn" data-sec="coupons" onclick="showSection('coupons')">Cupons</button>
       <button class="nav-btn" data-sec="ranking" onclick="showSection('ranking')">Ranking</button>
       <button class="nav-btn" data-sec="reviews" onclick="showSection('reviews')">Comentários</button>
       <button class="nav-btn" data-sec="contact" onclick="showSection('contact')">Contato</button>
@@ -1187,6 +1208,9 @@
         </button>
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('appointments')">
           🗓️ Meus Agendamentos
+        </button>
+        <button class="profile-dd-btn" onclick="closeProfileMenu();openMyCoupons()">
+          🎟️ Meus Cupons
         </button>
 
         <button class="profile-dd-btn" onclick="closeProfileMenu();showSection('contact')">
@@ -1420,6 +1444,17 @@
 <!-- Home VIP -->
 
 <!-- ===== SEÇÃO LOJA / PRODUTOS ===== -->
+<div class="section" id="sec-coupons">
+  <div class="page" style="max-width:900px;">
+    <h2 class="section-title gold-gradient">🎟️ Cupons</h2>
+    <div class="cp-tabs">
+      <button class="cp-tab active" id="cp-tab-available" onclick="setCouponsTab('available')">Disponíveis</button>
+      <button class="cp-tab" id="cp-tab-mine" onclick="setCouponsTab('mine')">Meus Cupons <span id="cp-mine-count"></span></button>
+    </div>
+    <div class="cp-grid" id="coupons-list"></div>
+  </div>
+</div>
+
 <div class="section" id="sec-store">
   <div class="page" style="max-width:900px;">
     <h2 class="section-title gold-gradient">🛍️ Nossa Loja</h2>
@@ -1576,18 +1611,12 @@
   const COL = "appointments";
 
   // ===== HORÁRIOS — carregados do Firestore =====
+  // Enquanto a agenda do Gabriel não carregar do Firestore, NENHUM dia fica aberto
+  // (antes existia uma agenda padrão com quarta aberta, e era ela que "vazava" para os clientes)
+  let scheduleLoaded = false;
   let SCHEDULE = {
-    days: {
-      tue: {open:true,  start:'10:00', end:'21:00'},
-      wed: {open:true,  start:'10:00', end:'15:00'},
-      thu: {open:true,  start:'10:00', end:'21:00'},
-      fri: {open:true,  start:'10:00', end:'21:00'},
-      sat: {open:true,  start:'10:00', end:'21:00'},
-    },
-    breaks: [
-      {days:['tue','thu','sat'], start:'12:00', end:'14:00'},
-      {days:['fri'],             start:'12:00', end:'18:00'},
-    ],
+    days: {},
+    breaks: [],
     services: {
       'Cabelo':        {duration:45},
       'Barba':         {duration:15},
@@ -1599,9 +1628,13 @@
     buffer: 5,
   };
 
+  let scheduleListening = false;
   function loadSchedule(){
+    if(scheduleListening) return;
+    scheduleListening = true;
     // Listener em tempo real — atualiza automaticamente quando Gabriel salva no admin
     onSnapshot(doc(db,'config','schedule'), snap=>{
+      scheduleLoaded = true;
       if(snap.exists()){
         SCHEDULE = snap.data();
         // Restore services durations from SERVICES_DATA (they're stored separately)
@@ -1609,6 +1642,16 @@
         SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
       }
       renderHoursDisplay();
+      // Se o dia já escolhido deixou de estar aberto (Gabriel alterou os dias), limpa a seleção
+      [['f-date','f-date-btn','f-date-label','f-time'],['vip-f-date','vip-f-date-btn','vip-f-date-label','vip-f-time']].forEach(([id,btn,lbl,tm])=>{
+        const inp = document.getElementById(id);
+        if(inp && inp.value && !isDayOpen(new Date(inp.value+'T12:00:00'))){
+          inp.value='';
+          const t = document.getElementById(tm); if(t) t.value='';
+          try{ onDateChange(id,btn,lbl); }catch(e){}
+          showToast('O dia escolhido não está mais disponível. Selecione outra data.','error');
+        }
+      });
       // Re-renderiza slots se já tiver data selecionada
       if(document.getElementById('f-date')?.value) renderSlots();
       if(document.getElementById('vip-f-date')?.value) renderSlotsVip();
@@ -1674,7 +1717,7 @@
     updateBookingSelects();
   }
 
-  function renderServicesGrid(){
+  function renderServicesGrid(noAnim){
     const grid = document.getElementById('services-grid');
     if(!grid) return;
     const btnStyle = 'background:none;border:none;color:#c9a84c;font-size:10px;font-weight:700;cursor:pointer;padding:2px 0;letter-spacing:.3px;';
@@ -1713,20 +1756,24 @@
       const safeName = (s.name || '').replace(/'/g, "\\'");
       const btnHtml = '<button type="button" class="service-btn" onclick="bookThisService(\'' + safeName + '\', ' + (s.duration || 15) + ', ' + priceNum + ')">Agendar</button>';
 
+      const cpSvc = serviceCoupon(s.name);
+      const priceHtml = cpSvc
+        ? '<div class="service-price"><span style="text-decoration:line-through;opacity:.5;font-size:.7em;margin-right:6px;">R$ ' + s.price + '</span>R$ ' + fmtBRL(applyPct(parseBRL(s.price), cpSvc.discountPct)) + '<span class="cp-badge">-' + cpSvc.discountPct + '%</span></div>'
+        : '<div class="service-price">R$ ' + s.price + '</div>';
       return '<div class="service-card">'
         + '<div class="service-card-header">'
         + imgHtml
         + '<div class="service-card-header-info">'
         + '<h3>' + s.name + '</h3>'
-        + '<div class="service-price">R$ ' + s.price + '</div>'
+        + priceHtml
         + '</div>'
         + '</div>'
         + '<div class="svc-feats-desktop"><div class="service-divider"></div>' + featsFull + btnHtml + '</div>'
         + '<div class="svc-feats-mobile">'  + featsMobile + '</div>'
         + '</div>';
     }).join('');
-    // Animar cards com delay escalonado
-    requestAnimationFrame(()=>{
+    // Animar cards com delay escalonado (não reanima quando só os descontos mudam)
+    if(!noAnim) requestAnimationFrame(()=>{
       grid.querySelectorAll('.service-card').forEach((card, i)=>{
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
@@ -1878,6 +1925,7 @@
 
   function getSlotsForDate(dateStr){
     if(!dateStr) return [];
+    if(!scheduleLoaded) return [];
     const dow = new Date(dateStr+'T12:00:00').getDay();
     const key = DOW_KEY[dow];
     if(!key) return [];
@@ -2351,6 +2399,7 @@
     if(name === 'ranking') loadRanking();
 
     if(name === 'store') loadStore();
+    if(name === 'coupons') renderCouponsPage();
     if(name === 'home' || name === 'contact') loadContactNotices();
     if(name === 'reviews') loadReviews();
     if(name === 'appointments') checkShowReviewPrompt();
@@ -2403,6 +2452,8 @@
       document.getElementById("f-phone").value=formatted;
       document.getElementById("f-name").value=rawName;
       const _vipName=document.getElementById("vip-f-name"); if(_vipName) _vipName.value=rawName;
+      startCouponsSession(digits);
+      loadSchedule();
       subscribeAll();
       initPushNotifications(digits);
       checkFillDataBtnVisibility();
@@ -2518,7 +2569,7 @@
         <div class="svc-picker-check">${isSel?'✓':''}</div>
         <div class="svc-picker-name">${svc.name}</div>
         <div class="svc-picker-info">
-          <span>R$ ${(svc.price||'0,00')}</span>
+          <span>${(()=>{ const cp = hiddenId==='f-service' ? serviceCoupon(svc.name) : null; return cp ? '<s style="opacity:.5">R$ '+(svc.price||'0,00')+'</s> R$ '+fmtBRL(applyPct(parseBRL(svc.price),cp.discountPct))+' <span class="cp-badge">-'+cp.discountPct+'%</span>' : 'R$ '+(svc.price||'0,00'); })()}</span>
           <span>${svc.duration||15}min</span>
         </div>
       </div>`;
@@ -2530,7 +2581,8 @@
     const isVip = hiddenId !== 'f-service';
     const selected = isVip ? selectedServicesVip : selectedServices;
     const totalDur = selected.reduce((s,x)=>s+(x.duration||0),0);
-    const totalPrice = selected.reduce((s,x)=>s+(x.price||0),0);
+    const totalOriginal = selected.reduce((s,x)=>s+(x.price||0),0);
+    const totalPrice = isVip ? totalOriginal : selected.reduce((s,x)=>{ const cp = serviceCoupon(x.name); return s + (cp ? applyPct(x.price||0, cp.discountPct) : (x.price||0)); },0);
 
     // Update hidden input with comma-separated names
     const hid = document.getElementById(hiddenId);
@@ -2545,7 +2597,7 @@
     if(sumEl){
       if(selected.length){
         sumEl.classList.add('show');
-        sumEl.innerHTML = `<span>⏱ ${totalDur} min total</span><span>R$ ${totalPrice.toFixed(2).replace('.',',')}</span>`;
+        sumEl.innerHTML = `<span>⏱ ${totalDur} min total</span><span>${totalPrice < totalOriginal ? '<s style="opacity:.5;font-size:.85em;">R$ '+fmtBRL(totalOriginal)+'</s> 🎟️ ' : ''}R$ ${fmtBRL(totalPrice)}</span>`;
       } else {
         sumEl.classList.remove('show');
       }
@@ -2595,6 +2647,7 @@
   window.doLogout = async function(){
     if(!confirm("Deseja sair da sua conta?")) return;
     loggedPhone=null; localStorage.removeItem("gbs_phone");
+    resetCouponsSession();
     document.getElementById("login-phone").value="";
     document.getElementById("login-screen").style.display="flex";
     try { await auth.signOut(); } catch(e){}
@@ -2744,13 +2797,39 @@
   // Armazena os dados do agendamento pendente enquanto aguarda confirmação
   let pendingBooking = null;
 
+  // Revalida, direto do Firestore, se o dia/horário ainda está aberto (evita gravar com dados antigos em tela)
+  async function verifyBookingSlot(date, time){
+    try{
+      const snap = await getDoc(doc(db,'config','schedule'));
+      if(snap.exists()){
+        SCHEDULE = snap.data();
+        if(!SCHEDULE.services) SCHEDULE.services = {};
+        SERVICES_DATA.forEach(s=>{ SCHEDULE.services[s.name]={duration:s.duration}; });
+        scheduleLoaded = true;
+      }
+    }catch(e){ console.warn('verifyBookingSlot:',e); }
+    if(!scheduleLoaded) return false;
+    if(!isDayOpen(new Date(date+'T12:00:00'))) return false;
+    return getSlotsForDate(date).includes(time);
+  }
+
   async function doSaveBooking(name, phone, service, date, time, justification, extraSlots){
     const btn=document.getElementById("submit-btn");
     btn.disabled=true; btn.textContent="Confirmando...";
     try {
+      if(!(await verifyBookingSlot(date, time))){
+        showToast("Esse dia/horário não está mais disponível. Escolha outra data.","error");
+        document.getElementById("f-date").value=""; document.getElementById("f-time").value="";
+        try{ onDateChange('f-date','f-date-btn','f-date-label'); }catch(e){}
+        renderSlots();
+        return;
+      }
       const data = { name, phone, service, date, time, status:"Confirmado", createdAt:new Date().toISOString() };
       if(justification) data.justification = justification;
       if(extraSlots&&extraSlots.length>0) data.extraSlots = extraSlots;
+      // Cupom de desconto (se houver): registra no agendamento para o Gabriel saber o valor a cobrar
+      const cpInfo = bookingCouponInfo(selectedServices);
+      if(cpInfo){ data.couponCode = cpInfo.codes.join(','); data.couponDiscounts = cpInfo.discounts; data.priceOriginal = cpInfo.priceOriginal; data.priceFinal = cpInfo.priceFinal; }
       await addDoc(collection(db,COL), data);
 
       // Salva slots extras como agendamentos bloqueados (mesmo nome, marcados como bloqueio)
@@ -2758,12 +2837,13 @@
         await addDoc(collection(db,COL),{ name, phone, service, date, time:extra, status:'Bloqueado', blockedBy:time, createdAt:new Date().toISOString() });
       }
 
+      if(cpInfo) await consumeCoupons(cpInfo.codes);
       const fmtDate=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
       document.getElementById("confirmDetails").textContent=service+" - "+fmtDate+" as "+time;
       document.getElementById("confirmBox").classList.add("show");
       document.getElementById("f-name").value=""; document.getElementById("f-service").value=""; document.getElementById("f-date").value=""; document.getElementById("f-time").value=""; selectedServices=[]; updateBookingSelects(); ['specific-breaks-notice-regular','specific-breaks-notice-vip'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
       renderSlots(); showToast("Agendamento confirmado!","success");
-      notifyGabriel("📅 <b>Novo agendamento!</b>\n👤 "+esc(name)+"\n📞 "+esc(loggedPhone||"")+"\n✂️ "+esc(service)+"\n📆 "+new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})+" às "+esc(time));
+      notifyGabriel("📅 <b>Novo agendamento!</b>\n👤 "+esc(name)+"\n📞 "+esc(loggedPhone||"")+"\n✂️ "+esc(service)+(cpInfo?"\n🎟️ Cupom "+esc(cpInfo.codes.join(", "))+" — cobrar R$ "+fmtBRL(cpInfo.priceFinal):"")+"\n📆 "+new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})+" às "+esc(time));
       setTimeout(()=>showSection("appointments"),2200);
     } catch(err){ console.error(err); showToast("Erro ao confirmar. Tente novamente.","error"); }
     finally { btn.disabled=false; btn.textContent="Confirmar Agendamento"; }
@@ -3004,6 +3084,13 @@
     const btn = document.getElementById('vip-submit-btn');
     btn.disabled=true; btn.textContent='Confirmando...';
     try {
+      if(!(await verifyBookingSlot(date, time))){
+        showToast('Esse dia/horário não está mais disponível. Escolha outra data.','error');
+        document.getElementById('vip-f-date').value=''; document.getElementById('vip-f-time').value='';
+        try{ onDateChange('vip-f-date','vip-f-date-btn','vip-f-date-label'); }catch(e){}
+        renderSlotsVip();
+        return;
+      }
       await addDoc(collection(db,COL),{ name,phone,service,date,time,status:'Confirmado',vip:true,createdAt:new Date().toISOString() });
       const fmtDate=new Date(date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
       document.getElementById('confirmDetails-vip').textContent=service+' - '+fmtDate+' as '+time;
@@ -3052,6 +3139,7 @@
 
         // Restáura listener de assinatura VIP em tempo real ao voltar ao site
         listenSubscription(saved);
+        startCouponsSession(saved.replace(/\D/g,''));
         // Atualiza saldo GB$ sempre que agendamentos mudarem
         onSnapshot(collection(db,'appointments'), ()=>{ updateGBBalanceFromAppointments(); });
 
@@ -4278,6 +4366,231 @@
   };
 
 
+  // ═══════════════════════════════════════
+  // CUPONS DE DESCONTO
+  // config/coupons  → { list:[{id,code,title,description,discountPct,allServices,serviceNames,
+  //                            allProducts,productIds,productNames,expiresAt,maxUsesPerClient,
+  //                            showPublic,active}] }
+  // clients/{digits}.coupons → { CODIGO:{claimedAt, uses, lastUsedAt} }
+  // ═══════════════════════════════════════
+  let COUPONS = [];
+  let couponsLoaded = false;
+  let MY_COUPONS = {};
+  let myCouponsLoaded = false;
+  let couponsUnsub = null, myCouponsUnsub = null;
+  let couponsTab = 'available';
+  let claimingPending = false;
+
+  // Captura ?cupom=CODIGO do link que o Gabriel publicou (fica guardado até o cliente estar logado)
+  (function captureCouponFromUrl(){
+    try{
+      const q = new URLSearchParams(location.search);
+      const raw = q.get('cupom');
+      if(raw){
+        const code = raw.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+        if(code) localStorage.setItem('gbs_pending_coupon', code);
+        q.delete('cupom');
+        const qs = q.toString();
+        history.replaceState({}, '', location.pathname + (qs ? '?'+qs : '') + location.hash);
+      }
+    }catch(e){}
+  })();
+
+  function fmtBRL(n){ return (Number(n)||0).toFixed(2).replace('.',','); }
+  function parseBRL(v){ return parseFloat(String(v||'0').replace(',','.')) || 0; }
+  function applyPct(v, pct){ return Math.round((Number(v)||0)*100*(100-(pct||0))/100)/100; }
+  function discountedGbCost(cost, pct){ return Math.max(1, Math.round((Number(cost)||0)*(100-(pct||0))/100)); }
+
+  function couponMaxUses(c){ return c.maxUsesPerClient === undefined ? 1 : (parseInt(c.maxUsesPerClient)||0); } // 0 = ilimitado
+  function couponIsValid(c){
+    if(!c || c.active === false) return false;
+    if(c.expiresAt && c.expiresAt < getTodayStr()) return false;   // vale até o fim do dia da validade
+    return true;
+  }
+  function couponUsesLeft(c){
+    const max = couponMaxUses(c);
+    if(max <= 0) return Infinity;
+    const used = (MY_COUPONS[c.code] && MY_COUPONS[c.code].uses) || 0;
+    return Math.max(0, max - used);
+  }
+  function couponDaysLeft(c){
+    if(!c.expiresAt) return null;
+    return Math.round((new Date(c.expiresAt+'T12:00:00') - new Date(getTodayStr()+'T12:00:00'))/86400000);
+  }
+  // Cupons que o cliente resgatou, ainda válidos e com usos restantes
+  function claimedActiveCoupons(){
+    return COUPONS.filter(c=> MY_COUPONS[c.code] && couponIsValid(c) && couponUsesLeft(c) > 0);
+  }
+  function bestCoupon(list){ return list.sort((a,b)=>(b.discountPct||0)-(a.discountPct||0))[0] || null; }
+  function serviceCoupon(name){
+    return bestCoupon(claimedActiveCoupons().filter(c=> c.allServices || (c.serviceNames||[]).includes(name)));
+  }
+  // Desconto em produtos vendidos em R$ fica DESLIGADO até a API (mp-checkout) validar o cupom no servidor.
+  // Para ligar depois: BRL_COUPONS_ENABLED = true (junto com a atualização de mp-checkout.js/mp-webhook.js).
+  const BRL_COUPONS_ENABLED = false;
+  function productCoupon(id){
+    const pr = storeProducts.find(p=>p.id===id);
+    if(pr && pr.costType === 'brl' && !BRL_COUPONS_ENABLED) return null;
+    return bestCoupon(claimedActiveCoupons().filter(c=> c.allProducts || (c.productIds||[]).includes(id)));
+  }
+
+  // Calcula o desconto do agendamento (um cupom por serviço — o de maior desconto)
+  function bookingCouponInfo(selected){
+    if(!selected || !selected.length) return null;
+    let original = 0, final = 0; const used = {};
+    selected.forEach(sv=>{
+      const price = Number(sv.price)||0; original += price;
+      const cp = serviceCoupon(sv.name);
+      if(cp){ final += applyPct(price, cp.discountPct); used[cp.code] = cp.discountPct; }
+      else final += price;
+    });
+    const codes = Object.keys(used);
+    if(!codes.length) return null;
+    return { codes, discounts: used, priceOriginal: +original.toFixed(2), priceFinal: +final.toFixed(2) };
+  }
+
+  // Marca +1 uso em cada cupom aplicado
+  async function consumeCoupons(codes){
+    if(!loggedPhone || !codes || !codes.length) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    const patch = {};
+    codes.forEach(code=>{ patch[code] = { uses: ((MY_COUPONS[code] && MY_COUPONS[code].uses) || 0) + 1, lastUsedAt: new Date().toISOString() }; });
+    try{
+      await setDoc(doc(db,'clients',digits), { coupons: patch }, { merge:true });
+      codes.forEach(code=>{ MY_COUPONS[code] = { ...(MY_COUPONS[code]||{}), ...patch[code] }; });
+      refreshCouponViews();
+    }catch(e){ console.warn('consumeCoupons:', e); }
+  }
+
+  window.claimCoupon = async function(code){
+    code = String(code||'').trim().toUpperCase();
+    if(!loggedPhone){
+      localStorage.setItem('gbs_pending_coupon', code);
+      showToast('Faça login para resgatar o cupom.','error'); return false;
+    }
+    const c = COUPONS.find(x=>x.code===code);
+    if(!c || !couponIsValid(c)){ showToast('Cupom inválido ou expirado.','error'); return false; }
+    if(MY_COUPONS[code]){
+      showToast(couponUsesLeft(c) > 0 ? 'Você já resgatou este cupom.' : 'Você já utilizou este cupom.','info'); return false;
+    }
+    const digits = loggedPhone.replace(/\D/g,'');
+    try{
+      const entry = { claimedAt: new Date().toISOString(), uses: 0 };
+      await setDoc(doc(db,'clients',digits), { coupons: { [code]: entry } }, { merge:true });
+      MY_COUPONS[code] = entry;
+      refreshCouponViews();
+      showToast('🎟️ Cupom resgatado! O desconto já está aplicado.','success');
+      return true;
+    }catch(e){ showToast('Erro ao resgatar cupom: '+e.message,'error'); return false; }
+  };
+
+  async function tryClaimPendingCoupon(){
+    const code = localStorage.getItem('gbs_pending_coupon');
+    if(!code || !loggedPhone || !couponsLoaded || !myCouponsLoaded || claimingPending) return;
+    claimingPending = true;
+    localStorage.removeItem('gbs_pending_coupon');
+    try{
+      const c = COUPONS.find(x=>x.code===code);
+      if(!c || !couponIsValid(c)){ showToast('Este cupom não está mais disponível.','error'); }
+      else if(MY_COUPONS[code]){
+        showToast(couponUsesLeft(c) > 0 ? 'Você já tem este cupom — ele está em "Meus Cupons".' : 'Você já utilizou este cupom.','info');
+        openMyCoupons();
+      } else if(await claimCoupon(code)){ openMyCoupons(); }
+    } finally { claimingPending = false; }
+  }
+
+  function loadCoupons(){
+    if(couponsUnsub) couponsUnsub();
+    couponsUnsub = onSnapshot(doc(db,'config','coupons'), snap=>{
+      COUPONS = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      couponsLoaded = true;
+      refreshCouponViews();
+      tryClaimPendingCoupon();
+    }, e=>{ console.warn('coupons:', e); couponsLoaded = true; refreshCouponViews(); });
+  }
+  function startMyCoupons(digits){
+    if(myCouponsUnsub) myCouponsUnsub();
+    myCouponsUnsub = onSnapshot(doc(db,'clients',digits), snap=>{
+      MY_COUPONS = (snap.exists() && snap.data().coupons) || {};
+      myCouponsLoaded = true;
+      refreshCouponViews();
+      tryClaimPendingCoupon();
+    }, e=>console.warn('my coupons:', e));
+  }
+  function startCouponsSession(digits){ loadCoupons(); startMyCoupons(digits); }
+  function resetCouponsSession(){
+    if(couponsUnsub){ couponsUnsub(); couponsUnsub = null; }
+    if(myCouponsUnsub){ myCouponsUnsub(); myCouponsUnsub = null; }
+    COUPONS = []; MY_COUPONS = {}; couponsLoaded = false; myCouponsLoaded = false;
+    refreshCouponViews();
+  }
+
+  // Atualiza tudo que mostra preço (serviços, seletor de agendamento, loja, página de cupons)
+  function refreshCouponViews(){
+    try{ renderServicesGrid(true); }catch(e){}
+    try{ updateBookingSelects(); }catch(e){}
+    try{ if(storeProducts && storeProducts.length) renderStoreGrid(); }catch(e){}
+    try{ if(document.getElementById('sec-coupons')?.classList.contains('active')) renderCouponsPage(); }catch(e){}
+  }
+
+  window.openMyCoupons = function(){ couponsTab = 'mine'; showSection('coupons'); };
+  window.setCouponsTab = function(t){ couponsTab = t; renderCouponsPage(); };
+
+  function couponAppliesText(c){
+    const parts = [];
+    if(c.allServices) parts.push('Todos os serviços');
+    else if((c.serviceNames||[]).length) parts.push('Serviços: '+c.serviceNames.join(', '));
+    if(c.allProducts) parts.push('Todos os produtos da loja');
+    else if((c.productNames||[]).length) parts.push('Produtos: '+c.productNames.join(', '));
+    return parts.join(' • ') || '—';
+  }
+
+  function couponCardHtml(c){
+    const claimed = !!MY_COUPONS[c.code];
+    const left = couponUsesLeft(c);
+    const used = claimed && left <= 0;
+    const dl = couponDaysLeft(c);
+    const exp = c.expiresAt
+      ? 'Válido até '+c.expiresAt.split('-').reverse().join('/') + ((dl!==null && dl<=3) ? ' · ⏳ '+(dl<=0 ? 'expira hoje' : 'expira em '+dl+' dia'+(dl>1?'s':'')) : '')
+      : 'Sem prazo de validade';
+    const m = couponMaxUses(c);
+    const usesTxt = m > 0 ? (m === 1 ? 'Uso único' : m+' usos') : 'Uso ilimitado';
+    let action;
+    if(!claimed){
+      action = '<button class="store-redeem-btn" onclick="claimCoupon(\''+c.code+'\')">🎟️ Resgatar</button>';
+    } else if(used){
+      action = '<div class="cp-status used">✔ Cupom já utilizado</div>';
+    } else {
+      const btns = [];
+      if(c.allServices || (c.serviceNames||[]).length) btns.push('<button onclick="showSection(\'booking\')">✂️ Agendar com desconto</button>');
+      if(c.allProducts || (c.productIds||[]).length) btns.push('<button onclick="showSection(\'store\')">🛍️ Ir para a loja</button>');
+      action = '<div class="cp-status ok">✓ Ativo — desconto aplicado automaticamente</div>' + (btns.length ? '<div class="cp-actions">'+btns.join('')+'</div>' : '');
+    }
+    return '<div class="cp-card'+(used?' used':'')+'">'
+      + '<div class="cp-pct">'+(c.discountPct||0)+'% OFF</div>'
+      + '<div class="cp-title">'+esc(c.title||c.code)+'</div>'
+      + (c.description ? '<div class="cp-desc">'+esc(c.description)+'</div>' : '')
+      + '<div class="cp-meta">'+esc(couponAppliesText(c))+'<br>'+exp+' · '+usesTxt+'</div>'
+      + action + '</div>';
+  }
+
+  function renderCouponsPage(){
+    const el = document.getElementById('coupons-list');
+    if(!el) return;
+    document.getElementById('cp-tab-available')?.classList.toggle('active', couponsTab === 'available');
+    document.getElementById('cp-tab-mine')?.classList.toggle('active', couponsTab === 'mine');
+    const mineCount = claimedActiveCoupons().length;
+    const cnt = document.getElementById('cp-mine-count'); if(cnt) cnt.textContent = mineCount ? '('+mineCount+')' : '';
+    const empty = t => '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-dim);">'+t+'</div>';
+    if(!couponsLoaded){ el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;"><div class="spinner" style="margin:0 auto;"></div></div>'; return; }
+    const list = couponsTab === 'available'
+      ? COUPONS.filter(c=> c.showPublic && couponIsValid(c))
+      : COUPONS.filter(c=> MY_COUPONS[c.code] && couponIsValid(c));
+    el.innerHTML = list.length
+      ? list.map(couponCardHtml).join('')
+      : empty(couponsTab === 'available' ? 'Nenhum cupom disponível no momento.' : 'Você ainda não resgatou nenhum cupom.');
+  }
+
   // ===== CALENDÁRIO CUSTOMIZADO =====
   let calCurrentDate = new Date();
   let calTargetInputId = '';
@@ -4289,10 +4602,11 @@
   const CAL_DOW_KEY = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
 
   function isDayOpen(date){
+    if(!scheduleLoaded) return false;
     const dow = date.getDay();
     const key = CAL_DOW_KEY[dow];
     const cfg = SCHEDULE.days && SCHEDULE.days[key];
-    return cfg && cfg.open === true;
+    return !!(cfg && cfg.open === true);
   }
 
   function renderCustomCal(){
@@ -4790,19 +5104,24 @@ let rankingUnsubscribe = null;
     }
 
     grid.innerHTML = filtered.map(p=>{
-      const canAfford = gbBalance >= (p.cost||0);
+      const cpn = productCoupon(p.id);
+      const isBrl0 = p.costType === 'brl';
+      const effCost = (cpn && !isBrl0) ? discountedGbCost(p.cost||0, cpn.discountPct) : (p.cost||0);
+      const effBrl  = (cpn && isBrl0)  ? applyPct(p.priceBrl||0, cpn.discountPct) : (p.priceBrl||0);
+      const cpBadge = cpn ? ('<span class="cp-badge">-'+cpn.discountPct+'%</span>') : '';
+      const canAfford = gbBalance >= effCost;
       const hasDesc = !!(p.description||'').trim();
       const imgHtml = p.imageUrl
         ? `<img class="store-card-img" src="${p.imageUrl}" alt="${p.name||''}" onerror="this.style.display='none'">`
         : `<div class="store-card-img-placeholder">${p.emoji||'🎁'}</div>`;
       const isBrl = p.costType === 'brl';
       const costLabel = isBrl
-        ? `R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')} <span>💳</span>`
-        : `${p.cost||0} <span>GB$</span>`;
+        ? (cpn ? `<s style="opacity:.5;font-size:.7em;">R$ ${(p.priceBrl||0).toFixed(2).replace('.',',')}</s> ` : '') + `R$ ${effBrl.toFixed(2).replace('.',',')} <span>💳</span>${cpBadge}`
+        : (cpn ? `<s style="opacity:.5;font-size:.7em;">${p.cost||0}</s> ` : '') + `${effCost} <span>GB$</span>${cpBadge}`;
       const redeemBtn = isBrl
         ? `<button class="store-redeem-btn store-redeem-btn-brl" onclick="redeemProductBrl('${p.id}')">💳 Comprar</button>`
         : `<button class="store-redeem-btn" ${canAfford?`onclick="redeemProduct('${p.id}')"`:' disabled'}>
-            ${canAfford?'🎁 Resgatar':'🔒 '+(p.cost-gbBalance)+' GB$ faltam'}
+            ${canAfford?'🎁 Resgatar':'🔒 '+(effCost-gbBalance)+' GB$ faltam'}
           </button>`;
       const front = `
         ${imgHtml}
@@ -5033,7 +5352,9 @@ let rankingUnsubscribe = null;
     if(!loggedPhone) return;
     const product = storeProducts.find(p=>p.id===productId);
     if(!product) return;
-    if(gbBalance < product.cost){
+    const usedCp = productCoupon(product.id);
+    const eff = usedCp ? discountedGbCost(product.cost||0, usedCp.discountPct) : (product.cost||0);
+    if(gbBalance < eff){
       showToast('GB$ insuficiente para resgatar!','error'); return;
     }
     // Modal personalizado de confirmação
@@ -5046,8 +5367,8 @@ let rankingUnsubscribe = null;
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,#c9a84c,#f0d78c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Confirmar Resgate</div>
         <div style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:6px;">Você está prestes a resgatar:</div>
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">${product.name}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:16px;">${product.cost} GB$</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;">Seu saldo após o resgate: <strong style="color:var(--gold);">${gbBalance - product.cost} GB$</strong></div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:16px;">${eff} GB$${usedCp ? ' <span class="cp-badge">-'+usedCp.discountPct+'%</span>' : ''}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;">Seu saldo após o resgate: <strong style="color:var(--gold);">${gbBalance - eff} GB$</strong></div>
         <div style="display:flex;gap:10px;">
           <button id="rdm-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
           <button id="rdm-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--gold);color:#111;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">🎁 Resgatar</button>
@@ -5069,7 +5390,9 @@ let rankingUnsubscribe = null;
         digits,
         productId,
         productName:  product.name||'—',
-        productCost:  product.cost||0,
+        productCost:  eff,
+        productCostOriginal: product.cost||0,
+        couponCode:   usedCp ? usedCp.code : '',
         category:     product.category||'Geral',
         redeemedAt:   new Date().toISOString(),
         status:       'pending',
@@ -5079,8 +5402,9 @@ let rankingUnsubscribe = null;
       const walletRef = doc(db,'wallets',digits);
       const ws = await getDoc(walletRef);
       const currentBalance = ws.exists() ? (ws.data().balance||0) : 0;
-      const newBalance = Math.max(0, currentBalance - product.cost);
+      const newBalance = Math.max(0, currentBalance - eff);
       await setDoc(walletRef, { balance: newBalance, updatedAt: new Date().toISOString() }, {merge:true});
+      if(usedCp) await consumeCoupons([usedCp.code]);
 
       gbBalance = newBalance;
       const balEl = document.getElementById('wallet-balance');
