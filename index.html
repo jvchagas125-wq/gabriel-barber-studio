@@ -1756,10 +1756,7 @@
       const safeName = (s.name || '').replace(/'/g, "\\'");
       const btnHtml = '<button type="button" class="service-btn" onclick="bookThisService(\'' + safeName + '\', ' + (s.duration || 15) + ', ' + priceNum + ')">Agendar</button>';
 
-      const cpSvc = serviceCoupon(s.name);
-      const priceHtml = cpSvc
-        ? '<div class="service-price"><span style="text-decoration:line-through;opacity:.5;font-size:.7em;margin-right:6px;">R$ ' + s.price + '</span>R$ ' + fmtBRL(applyPct(parseBRL(s.price), cpSvc.discountPct)) + '<span class="cp-badge">-' + cpSvc.discountPct + '%</span></div>'
-        : '<div class="service-price">R$ ' + s.price + '</div>';
+      const priceHtml = '<div class="service-price">' + svcPriceInnerHtml(s) + '</div>';
       return '<div class="service-card">'
         + '<div class="service-card-header">'
         + imgHtml
@@ -4525,9 +4522,30 @@
     refreshCouponViews();
   }
 
+  // Conteúdo do preço de um serviço (com ou sem cupom) — usado ao desenhar o card e ao atualizar no lugar
+  function svcPriceInnerHtml(s){
+    const cp = serviceCoupon(s.name);
+    return cp
+      ? '<span style="text-decoration:line-through;opacity:.5;font-size:.7em;margin-right:6px;">R$ ' + s.price + '</span>R$ ' + fmtBRL(applyPct(parseBRL(s.price), cp.discountPct)) + '<span class="cp-badge">-' + cp.discountPct + '%</span>'
+      : 'R$ ' + s.price;
+  }
+  // Atualiza SÓ o preço dentro dos cards que já existem (originais E as cópias do carrossel),
+  // sem recriar o grid: assim o carrossel automático continua funcionando.
+  function updateServicePricesInPlace(){
+    const grid = document.getElementById('services-grid');
+    if(!grid) return;
+    grid.querySelectorAll('.service-card').forEach(card=>{
+      const nameEl = card.querySelector('h3');
+      const priceEl = card.querySelector('.service-price');
+      if(!nameEl || !priceEl) return;
+      const svc = SERVICES_DATA.find(x=>x.name === nameEl.textContent);
+      if(svc) priceEl.innerHTML = svcPriceInnerHtml(svc);
+    });
+  }
+
   // Atualiza tudo que mostra preço (serviços, seletor de agendamento, loja, página de cupons)
   function refreshCouponViews(){
-    try{ renderServicesGrid(true); }catch(e){}
+    try{ updateServicePricesInPlace(); }catch(e){}
     try{ updateBookingSelects(); }catch(e){}
     try{ if(storeProducts && storeProducts.length) renderStoreGrid(); }catch(e){}
     try{ if(document.getElementById('sec-coupons')?.classList.contains('active')) renderCouponsPage(); }catch(e){}
