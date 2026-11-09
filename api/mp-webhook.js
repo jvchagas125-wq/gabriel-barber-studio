@@ -1,8 +1,10 @@
 // api/mp-webhook.js
-// Recebe notificações do Mercado Pago e processa:
-// - Compra de GB$: credita GB$ na carteira do cliente
-// - Depósito em R$ (type 'brl_deposit'): credita balanceBrl na carteira do cliente
-// - Produto em R$: registra pedido como aprovado
+// Recebe as notificações do Mercado Pago e, quando o pagamento é APROVADO:
+//  - Compra de GB$   → credita os GB$ na carteira do cliente
+//  - Produto em R$   → registra o pedido em "Resgates de clientes" (painel admin) e consome o cupom
+//
+// Idempotente: o MP reenvia notificações; cada pagamento é processado UMA vez só
+// (marcador mp_processed/{paymentId} gravado no mesmo batch atômico do crédito).
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue }     from 'firebase-admin/firestore';
@@ -20,32 +22,32 @@ function initFirebase() {
   return getFirestore();
 }
 
+const isAlreadyExists = e => e?.code === 6 || /ALREADY_EXISTS/i.test(String(e?.message || ''));
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { type, data } = req.body || {};
-  if (type !== 'payment' || !data?.id) {
-    return res.status(200).json({ ok: true, skipped: true });
-  }
+  const body  = req.body || {};
+  const topic = body.type || req.query?.type || req.query?.topic;
+  const mpId  = body.data?.id || req.query?.['data.id'] || req.query?.id;
+  if (topic !== 'payment' || !mpId) return res.status(200).json({ ok: true, skipped: true });
 
   const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
 
   try {
-    // Buscar detalhes do pagamento na API do MP
-    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
+    // Sempre confirma o pagamento direto na API do MP (não confia no corpo da notificação)
+    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${mpId}`, {
       headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` },
     });
     if (!mpRes.ok) throw new Error('MP API error: ' + mpRes.status);
     const payment = await mpRes.json();
 
-    const status      = payment.status; // approved, rejected, pending
+    const status      = payment.status; // approved | pending | rejected | ...
     const meta        = payment.metadata || {};
     const paymentType = meta.type || 'product';
     const productId   = meta.product_id;
-    const clientPhone = meta.client_phone;
-    const clientName  = meta.client_name;
-    const coins       = parseInt(meta.coins)  || 0;
-    const bonus       = parseInt(meta.bonus)  || 0;
+    const clientPhone = (meta.client_phone || '').replace(/\D/g, '');
+    const clientName  = meta.client_name || '';
     const paymentId   = String(payment.id);
 
     if (!productId || !clientPhone) {
@@ -53,130 +55,82 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    const db = initFirebase();
+    const db  = initFirebase();
+    const now = new Date().toISOString();
 
+    // ── Pagamento aprovado ───────────────────────────────────────────
     if (status === 'approved') {
+      const batch = db.batch();
 
-      // ── COMPRA DE GB$ ──────────────────────────────────────────────
+      // Marcador de idempotência: se já existir, o batch inteiro falha e nada é creditado de novo
+      batch.create(db.collection('mp_processed').doc(paymentId), {
+        paymentId, type: paymentType, productId, clientPhone,
+        amount: payment.transaction_amount, processedAt: FieldValue.serverTimestamp(),
+      });
+
       if (paymentType === 'gbs') {
-        const totalCoins = coins + bonus;
-        const digits = clientPhone.replace(/\D/g, '');
+        const coins = parseInt(meta.coins) || 0;
+        const bonus = parseInt(meta.bonus) || 0;
+        const total = coins + bonus;
+        const walletRef = db.collection('wallets').doc(clientPhone);
 
-        // Creditar GB$ na carteira do cliente
-        const walletRef = db.collection('wallets').doc(digits);
-        await walletRef.set({
-          balance:   FieldValue.increment(totalCoins),
-          updatedAt: FieldValue.serverTimestamp(),
+        batch.set(walletRef, {
+          balance: FieldValue.increment(total), digits: clientPhone, updatedAt: now,
+        }, { merge: true });
+        batch.set(db.collection('gb_purchases').doc(productId), {
+          status: 'approved', paymentId, coins, bonus, approvedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        batch.set(walletRef.collection('transactions').doc(paymentId), {
+          type: 'purchase', amount: total, coins, bonus, paymentId, createdAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        const orderId    = meta.order_id || '';
+        const couponCode = meta.coupon_code || '';
+
+        batch.set(db.collection('store_payments').doc(paymentId), {
+          paymentId, orderId, productId, clientPhone, clientName,
+          amount: payment.transaction_amount, status: 'approved',
+          couponCode, createdAt: FieldValue.serverTimestamp(),
         }, { merge: true });
 
-        // Atualizar o pedido para approved
-        await db.collection('gb_purchases').doc(productId).set({
-          status:     'approved',
-          paymentId,
-          approvedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
-
-        // Registrar transação no histórico
-        await db.collection('wallets').doc(digits).collection('transactions').add({
-          type:      'purchase',
-          amount:    totalCoins,
-          coins,
-          bonus,
-          paymentId,
-          createdAt: FieldValue.serverTimestamp(),
+        // Aparece em "Resgates de clientes" no painel admin (mesmo formato dos resgates em GB$)
+        batch.set(db.collection('redemptions').doc(paymentId), {
+          clientPhone, clientName, digits: clientPhone,
+          productId, productName: meta.product_name || 'Produto',
+          productCost: 0,                       // pago em R$, não debitou GB$
+          paidBrl: payment.transaction_amount,
+          category: meta.category || 'Geral',
+          couponCode, paymentId,
+          redeemedAt: now, status: 'pending',
         });
 
-        console.log(`✅ GB$ creditados: +${totalCoins} para ${clientPhone}`);
-      }
-
-      // ── DEPÓSITO DE SALDO EM R$ ────────────────────────────────────
-      else if (paymentType === 'brl_deposit') {
-        const digits    = clientPhone.replace(/\D/g, '');
-        // Valor realmente pago, vindo do Mercado Pago (não do cliente)
-        const amountBrl = Math.round((Number(payment.transaction_amount) || 0) * 100) / 100;
-        const depRef    = db.collection('brl_deposits').doc(productId); // productId = depositId
-        const walRef    = db.collection('wallets').doc(digits);
-
-        // Transação: o MP pode notificar o mesmo pagamento mais de uma vez,
-        // então só credita se este paymentId ainda não foi processado.
-        const credited = await db.runTransaction(async (tx) => {
-          const depSnap = await tx.get(depRef);
-          if (depSnap.exists && depSnap.data().status === 'approved' && depSnap.data().paymentId === paymentId) {
-            return false; // já creditado
-          }
-          if (amountBrl <= 0) return false;
-
-          tx.set(walRef, {
-            balanceBrl: FieldValue.increment(amountBrl),
-            updatedAt:  FieldValue.serverTimestamp(),
+        if (couponCode) {
+          batch.set(db.collection('clients').doc(clientPhone), {
+            coupons: { [couponCode]: { uses: FieldValue.increment(1), lastUsedAt: now } },
           }, { merge: true });
-
-          tx.set(depRef, {
-            status:     'approved',
-            paymentId,
-            amount:     amountBrl,
-            approvedAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
-
-          tx.set(walRef.collection('transactions').doc('brl_' + paymentId), {
-            type:      'brl_deposit',
-            amount:    amountBrl,
-            paymentId,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-          return true;
-        });
-
-        console.log(credited
-          ? `✅ Depósito R$ creditado: +${amountBrl} para ${clientPhone}`
-          : `ℹ️ Depósito ${paymentId} já processado (ou valor inválido), ignorando`);
-      }
-
-      // ── PRODUTO EM R$ ──────────────────────────────────────────────
-      else {
-        // Registrar pagamento aprovado
-        await db.collection('store_payments').doc(paymentId).set({
-          paymentId,
-          productId,
-          clientPhone,
-          clientName,
-          amount:     payment.transaction_amount,
-          status:     'approved',
-          createdAt:  FieldValue.serverTimestamp(),
-        }, { merge: true });
-
-        // Registrar resgate pendente de entrega
-        await db.collection('store_redeems').add({
-          productId,
-          clientPhone,
-          clientName,
-          paymentId,
-          paymentStatus: 'approved',
-          status:        'pending_delivery',
-          createdAt:     FieldValue.serverTimestamp(),
-        });
-
-        console.log(`✅ Produto aprovado: ${productId} | cliente: ${clientPhone}`);
-      }
-
-    } else {
-      // Pagamento recusado/pendente — atualizar status
-      if (paymentType === 'gbs') {
-        await db.collection('gb_purchases').doc(productId).set({
-          status:    status,
-          paymentId,
-        }, { merge: true });
-      } else if (paymentType === 'brl_deposit') {
-        // Não rebaixa um depósito que já foi aprovado
-        const depRef  = db.collection('brl_deposits').doc(productId);
-        const depSnap = await depRef.get();
-        if (!(depSnap.exists && depSnap.data().status === 'approved')) {
-          await depRef.set({ status, paymentId }, { merge: true });
         }
       }
-      console.log(`ℹ️ Pagamento ${status}: ${paymentId}`);
+
+      try {
+        await batch.commit();
+      } catch (e) {
+        if (isAlreadyExists(e)) return res.status(200).json({ ok: true, duplicate: true });
+        throw e;
+      }
+      console.log(`✅ Pagamento aprovado (${paymentType}): ${paymentId} | ${clientPhone}`);
+      return res.status(200).json({ ok: true, status, type: paymentType });
     }
 
+    // ── Outros status (pending/rejected...) ──────────────────────────
+    // Atualiza o pedido de GB$ sem nunca rebaixar um pedido que já foi aprovado
+    if (paymentType === 'gbs') {
+      const ref  = db.collection('gb_purchases').doc(productId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().status !== 'approved') {
+        await ref.set({ status, paymentId }, { merge: true });
+      }
+    }
+    console.log(`ℹ️ Pagamento ${status}: ${paymentId}`);
     return res.status(200).json({ ok: true, status, type: paymentType });
 
   } catch (err) {
