@@ -4421,7 +4421,8 @@
   // Limite de pessoas que podem resgatar (0 = sem limite)
   function couponLimit(c){ return Math.max(0, parseInt(c.maxRedemptions)||0); }
   function couponClaimCount(c){
-    const st = (COUPON_STATS[c.code] && Number(COUPON_STATS[c.code].count)) || 0;
+    const S = COUPON_STATS[c.code] || {};
+    const st = Math.max(Number(S.count)||0, Object.keys(S.claimers||{}).length);
     const cl = Number(COUPON_CLAIMS[c.code]) || 0;
     return Math.max(st, cl);
   }
@@ -4511,10 +4512,11 @@
       await runTransaction(db, async tx=>{
         const sRef = doc(db,'coupon_stats',code);
         const sSnap = await tx.get(sRef);
-        const n = sSnap.exists() ? (Number(sSnap.data().count)||0) : 0;
+        const sd = sSnap.exists() ? sSnap.data() : {};
+        const n = Math.max(Number(sd.count)||0, Object.keys(sd.claimers||{}).length, Number(COUPON_CLAIMS[code])||0);
         const lim = couponLimit(c);
         if(lim > 0 && n >= lim) throw new Error('SOLD_OUT');
-        tx.set(sRef, { code, count: n+1, lastClaimAt: entry.claimedAt }, { merge:true });
+        tx.set(sRef, { code, count: n+1, lastClaimAt: entry.claimedAt, claimers: { [digits]: entry.claimedAt } }, { merge:true });
         tx.set(doc(db,'clients',digits), { coupons: { [code]: entry } }, { merge:true });
       });
     }catch(e){
@@ -4563,10 +4565,28 @@
     couponStatsUnsub = onSnapshot(collection(db,'coupon_stats'), snap=>{
       const st = {}; snap.docs.forEach(d=>{ st[d.id] = d.data(); });
       COUPON_STATS = st; couponStatsLoaded = true;
+      healMyCouponClaims();
       refreshCouponViews();
       tryClaimPendingCoupon();
     }, e=>{ console.warn('coupon_stats:', e); couponStatsLoaded = true; tryClaimPendingCoupon(); });
   }
+  // Registra no contador os cupons que este cliente já resgatou (inclusive antes do contador existir)
+  const healedClaims = new Set();
+  function healMyCouponClaims(){
+    if(!loggedPhone || !couponStatsLoaded || !myCouponsLoaded) return;
+    const digits = loggedPhone.replace(/\D/g,'');
+    Object.keys(MY_COUPONS||{}).forEach(code=>{
+      const at = (MY_COUPONS[code] && MY_COUPONS[code].claimedAt) || '';
+      if(!at || healedClaims.has(code)) return;
+      const S = COUPON_STATS[code] || {};
+      if(S.resetAt && at <= S.resetAt) return;          // resgate anterior ao "Zerar contador"
+      if(S.claimers && S.claimers[digits]) return;      // já está contado
+      healedClaims.add(code);
+      setDoc(doc(db,'coupon_stats',code), { code, claimers: { [digits]: at } }, { merge:true })
+        .catch(e=>{ healedClaims.delete(code); console.warn('heal coupon claim:', e); });
+    });
+  }
+
   // Grava a data de criação da conta (clientes antigos sem o campo: usa o 1º agendamento como estimativa)
   async function ensureClientCreatedAt(digits){
     try{
@@ -4592,6 +4612,7 @@
       MY_COUPONS = (snap.exists() && snap.data().coupons) || {};
       MY_CREATED_AT = (snap.exists() && snap.data().createdAt) || '';
       myCouponsLoaded = true;
+      healMyCouponClaims();
       refreshCouponViews();
       tryClaimPendingCoupon();
     }, e=>console.warn('my coupons:', e));
