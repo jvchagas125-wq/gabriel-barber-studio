@@ -4375,6 +4375,7 @@
   let MY_COUPONS = {};
   let myCouponsLoaded = false;
   let couponsUnsub = null, myCouponsUnsub = null, couponStatsUnsub = null;
+  let COUPON_CLAIMS = {};       // config/coupons.claims → contagem real publicada pelo painel admin
   let COUPON_STATS = {};        // coupon_stats/{CODIGO} → { count } (quantas pessoas já resgataram)
   let MY_CREATED_AT = '';       // clients/{digits}.createdAt (data de criação da conta)
   let couponsTab = 'available';
@@ -4419,7 +4420,11 @@
   }
   // Limite de pessoas que podem resgatar (0 = sem limite)
   function couponLimit(c){ return Math.max(0, parseInt(c.maxRedemptions)||0); }
-  function couponClaimCount(c){ return (COUPON_STATS[c.code] && Number(COUPON_STATS[c.code].count)) || 0; }
+  function couponClaimCount(c){
+    const st = (COUPON_STATS[c.code] && Number(COUPON_STATS[c.code].count)) || 0;
+    const cl = Number(COUPON_CLAIMS[c.code]) || 0;
+    return Math.max(st, cl);
+  }
   function couponSoldOut(c){ const l = couponLimit(c); return l > 0 && couponClaimCount(c) >= l; }
   // Dias desde a criação da conta do cliente (null = desconhecido)
   function myAccountAgeDays(){
@@ -4547,6 +4552,7 @@
     if(couponsUnsub) couponsUnsub();
     couponsUnsub = onSnapshot(doc(db,'config','coupons'), snap=>{
       COUPONS = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      COUPON_CLAIMS = (snap.exists() && snap.data().claims) || {};
       couponsLoaded = true;
       refreshCouponViews();
       tryClaimPendingCoupon();
