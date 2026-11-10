@@ -1060,6 +1060,16 @@
     .notif-dd-item-time { font-size:10px; color:var(--text-dim); margin-top:4px; }
     .notif-dd-empty { padding:24px 16px; text-align:center; font-size:13px; color:var(--text-dim); }
 
+    /* ── Rodapé do desenvolvedor (página Comentários) ── */
+    .dev-footer{max-width:560px;margin:56px auto 24px;padding:0 16px;text-align:center}
+    .dev-footer-line{height:1px;margin:0 auto 26px;max-width:320px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+    .dev-footer-kicker{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);font-weight:700}
+    .dev-footer-name{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1.5px;line-height:1.1;margin-top:4px;background:linear-gradient(135deg,#c9a84c,#f0d78c,#c9a84c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .dev-footer-desc{font-size:12.5px;line-height:1.65;color:var(--text-muted);margin:10px auto 18px;max-width:480px}
+    .dev-footer-links{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+    .dev-footer-links a{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:24px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.08);color:var(--gold);font-size:13px;font-weight:700;text-decoration:none;transition:background .2s,color .2s,transform .2s}
+    .dev-footer-links a:hover{background:var(--gold);color:#111;transform:translateY(-2px)}
+    .dev-footer-copy{font-size:11px;color:var(--text-dim);margin-top:14px}
   </style>
 
   <script>
@@ -1359,6 +1369,25 @@
     <button class="mob-nav-btn prev" onclick="showSection('ranking')" title="Ranking">← Ranking</button>
     <button class="mob-nav-btn next" onclick="showSection('contact')">📞 Contato →</button>
   </div>
+
+  <!-- Rodapé: créditos do desenvolvedor -->
+  <footer class="dev-footer">
+    <div class="dev-footer-line"></div>
+    <div class="dev-footer-kicker">Site desenvolvido por</div>
+    <div class="dev-footer-name">João Victor</div>
+    <p class="dev-footer-desc">Criado sob medida do zero com HTML, CSS e JavaScript, banco de dados em tempo real no Firebase, pagamentos pelo Mercado Pago e hospedagem na Vercel. Funciona como aplicativo (PWA) no celular, com agendamento online, notificações, loja GB$ e cupons.</p>
+    <div class="dev-footer-links">
+      <a href="https://www.instagram.com/jv.dev2026" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        @jv.dev2026
+      </a>
+      <a href="https://jv-dev2026.vercel.app/" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Ver portfólio
+      </a>
+    </div>
+    <div class="dev-footer-copy">Quer um site assim para o seu negócio? Fale comigo!</div>
+  </footer>
 </div>
 
 <div class="section" id="sec-contact">
