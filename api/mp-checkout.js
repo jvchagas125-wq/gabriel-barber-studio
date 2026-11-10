@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     clientPhone, clientName,
     type,       // 'gbs' ou 'product'
     packageId, coins, bonus,
+    couponCode, priceOriginal,   // cupom de desconto aplicado (produtos em R$)
   } = req.body || {};
 
   if (!productId || !productName || !price) {
@@ -60,6 +61,8 @@ export default async function handler(req, res) {
           bonus:        bonus     || 0,
           client_phone: phone,
           client_name:  clientName || '',
+          coupon_code:  String(couponCode || '').toUpperCase().replace(/[^A-Z0-9_-]/g, ''),
+          price_original: parseFloat(priceOriginal) || 0,
         },
         statement_descriptor: 'GABRIEL BARBER',
       }),

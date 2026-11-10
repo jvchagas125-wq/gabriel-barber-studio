@@ -47,6 +47,7 @@ export default async function handler(req, res) {
     const coins       = parseInt(meta.coins)  || 0;
     const bonus       = parseInt(meta.bonus)  || 0;
     const paymentId   = String(payment.id);
+    const couponCode  = String(meta.coupon_code || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
 
     if (!productId || !clientPhone) {
       console.log('Webhook sem productId/clientPhone, ignorando');
@@ -134,16 +135,28 @@ export default async function handler(req, res) {
 
       // ── PRODUTO EM R$ ──────────────────────────────────────────────
       else {
-        // Registrar pagamento aprovado
-        await db.collection('store_payments').doc(paymentId).set({
+        // Registrar pagamento aprovado (só conta o uso do cupom na 1ª notificação deste pagamento)
+        const payRef  = db.collection('store_payments').doc(paymentId);
+        const already = (await payRef.get()).exists;
+        await payRef.set({
           paymentId,
           productId,
           clientPhone,
           clientName,
           amount:     payment.transaction_amount,
+          couponCode: couponCode || '',
+          priceOriginal: Number(meta.price_original) || null,
           status:     'approved',
           createdAt:  FieldValue.serverTimestamp(),
         }, { merge: true });
+
+        // Cupom usado: marca +1 uso no cliente
+        if (couponCode && !already) {
+          const digits = clientPhone.replace(/\D/g, '');
+          await db.collection('clients').doc(digits).set({
+            coupons: { [couponCode]: { uses: FieldValue.increment(1), lastUsedAt: new Date().toISOString() } },
+          }, { merge: true });
+        }
 
         // Registrar resgate pendente de entrega
         await db.collection('store_redeems').add({

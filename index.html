@@ -1101,11 +1101,12 @@
     <div class="login-title gold-gradient">Gabriel Barber Studio</div>
     <div class="login-subtitle">Entre com seu número de telefone para agendar</div>
     <div id="login-error" style="color:#f87171;font-size:13px;margin-bottom:12px;display:none;"></div>
-    <label class="login-label" for="login-name">Nome completo</label>
+    <label class="login-label" for="login-name">Nome e sobrenome</label>
     <input class="login-input" type="text" id="login-name" onblur="this.value=formatName(this.value)" placeholder="João Silva" autocomplete="name" style="margin-bottom:14px;">
 
     <label class="login-label" for="login-phone">Número de telefone</label>
-    <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="16" inputmode="numeric">
+    <input class="login-input" type="tel" id="login-phone" placeholder="(22) 99999-9999" maxlength="15" inputmode="numeric" autocomplete="tel-national">
+    <div style="font-size:11px;color:var(--text-dim);margin:6px 0 14px;text-align:left;">Celular com DDD no formato (XX) XXXXX-XXXX</div>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <p class="login-notice">Seus agendamentos ficam salvos no seu número</p>
   </div>
@@ -2440,10 +2441,39 @@
   };
 
   document.getElementById("login-phone").addEventListener("input",function(){
+    // Máscara fixa de celular: (XX) XXXXX-XXXX
     let v=this.value.replace(/\D/g,""); if(v.length>11) v=v.slice(0,11);
-    let out=""; if(v.length>0) out="("+v.slice(0,2); if(v.length>=3) out+=") "+v.slice(2,v.length<=10?6:7); if(v.length>=7) out+="-"+v.slice(v.length<=10?6:7);
+    let out=""; if(v.length>0) out="("+v.slice(0,2); if(v.length>=3) out+=") "+v.slice(2,7); if(v.length>=8) out+="-"+v.slice(7);
     this.value=out;
   });
+
+  // ── Validação do cadastro ──
+  // Nome: obrigatório nome + sobrenome (cada um com 2+ letras), só letras, espaços, hífen e apóstrofo
+  function validateFullName(name){
+    const n = String(name||'').trim();
+    if(!n) return "Digite seu nome e sobrenome.";
+    if(n.length > 60) return "Nome muito longo.";
+    if(!/^[A-Za-zÀ-ÖØ-öø-ÿ' ’-]+$/.test(n)) return "Use apenas letras no nome (sem números ou símbolos).";
+    const words = n.split(/\s+/).filter(Boolean);
+    const real = words.filter(w=>!NAME_CONNECTORS.has(w.toLowerCase()));
+    if(real.length < 2) return "Digite seu nome e sobrenome (ex.: João Silva).";
+    for(const w of real){
+      const letters = w.replace(/[-'’]/g,'');
+      if(letters.length < 2) return "Escreva o nome e o sobrenome completos, sem abreviações.";
+      if(/^(.)\1+$/i.test(letters)) return "Digite um nome e sobrenome válidos.";
+    }
+    return "";
+  }
+  // Telefone: celular com DDD, 11 dígitos → (XX) XXXXX-XXXX
+  const VALID_DDDS = new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
+  function validateMobilePhone(digits){
+    const d = String(digits||'').replace(/\D/g,'');
+    if(d.length !== 11) return "Digite o celular completo com DDD: (XX) XXXXX-XXXX.";
+    if(!VALID_DDDS.has(parseInt(d.slice(0,2)))) return "DDD inválido. Confira os 2 primeiros números.";
+    if(d[2] !== '9') return "O celular deve começar com 9 depois do DDD: (XX) 9XXXX-XXXX.";
+    if(/^(\d)\1+$/.test(d.slice(2))) return "Digite um número de celular válido.";
+    return "";
+  }
   document.getElementById("login-name").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("login-phone").focus(); });
   document.getElementById("login-phone").addEventListener("keydown",e=>{ if(e.key==="Enter") window.doLogin(); });
 
@@ -2452,8 +2482,10 @@
     const raw=document.getElementById("login-phone").value;
     const digits=raw.replace(/\D/g,"");
     const errEl=document.getElementById("login-error");
-    if(!rawName){ errEl.textContent="Digite seu nome completo."; errEl.style.display="block"; return; }
-    if(digits.length<10){ errEl.textContent="Digite um número válido com DDD."; errEl.style.display="block"; return; }
+    const nameErr = validateFullName(rawName);
+    if(nameErr){ errEl.textContent=nameErr; errEl.style.display="block"; document.getElementById("login-name").focus(); return; }
+    const phoneErr = validateMobilePhone(digits);
+    if(phoneErr){ errEl.textContent=phoneErr; errEl.style.display="block"; document.getElementById("login-phone").focus(); return; }
     errEl.style.display="none";
     const formatted=formatPhone(raw);
     try {
@@ -4484,9 +4516,8 @@
   function serviceCoupon(name){
     return bestCoupon(claimedActiveCoupons().filter(c=> c.allServices || (c.serviceNames||[]).includes(name)));
   }
-  // Desconto em produtos vendidos em R$ fica DESLIGADO até a API (mp-checkout) validar o cupom no servidor.
-  // Para ligar depois: BRL_COUPONS_ENABLED = true (junto com a atualização de mp-checkout.js/mp-webhook.js).
-  const BRL_COUPONS_ENABLED = false;
+  // Desconto de cupom em produtos vendidos em R$ (saldo da carteira ou Mercado Pago)
+  const BRL_COUPONS_ENABLED = true;
   function productCoupon(id){
     const pr = storeProducts.find(p=>p.id===id);
     if(pr && pr.costType === 'brl' && !BRL_COUPONS_ENABLED) return null;
@@ -5310,8 +5341,11 @@ let rankingUnsubscribe = null;
     const product = storeProducts.find(p=>p.id===productId);
     if(!product){ showToast('Produto não encontrado.','error'); return; }
 
-    const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
-    const canPayBalance = gbBalanceBrl >= (product.priceBrl||0);
+    const usedCp   = productCoupon(product.id);
+    const effPrice = usedCp ? applyPct(product.priceBrl||0, usedCp.discountPct) : (product.priceBrl||0);
+    const priceFmt = (usedCp ? '<s style="opacity:.5;font-size:.65em;">R$ '+(product.priceBrl||0).toFixed(2).replace('.',',')+'</s> ' : '')
+      + 'R$ '+effPrice.toFixed(2).replace('.',',') + (usedCp ? ' <span class="cp-badge">-'+usedCp.discountPct+'%</span>' : '');
+    const canPayBalance = gbBalanceBrl >= effPrice;
 
     // Modal de confirmação — quando o cliente tem saldo R$ suficiente, oferece a
     // escolha entre pagar com o saldo (instantâneo) ou abrir um novo checkout do
@@ -5349,7 +5383,7 @@ let rankingUnsubscribe = null;
     });
     if(!choice) return;
     if(choice === 'balance'){
-      await executeBalancePayment(product);
+      await executeBalancePayment(product, effPrice, usedCp);
       return;
     }
 
@@ -5371,9 +5405,11 @@ let rankingUnsubscribe = null;
         body: JSON.stringify({
           productId:   product.id,
           productName: product.name,
-          price:       product.priceBrl || 0,
+          price:       effPrice,
           clientPhone: loggedPhone || '',
           clientName:  loggedName  || '',
+          couponCode:  usedCp ? usedCp.code : '',
+          priceOriginal: product.priceBrl || 0,
         }),
       });
       const result = await resp.json();
@@ -5431,7 +5467,8 @@ let rankingUnsubscribe = null;
 
   // Debita o produto direto do saldo R$ já depositado na carteira (sem confirmação
   // própria — quem chama já confirmou a escolha antes, ex: o modal do redeemProductBrl).
-  async function executeBalancePayment(product){
+  async function executeBalancePayment(product, effPrice, usedCp){
+    if(effPrice === undefined){ usedCp = productCoupon(product.id); effPrice = usedCp ? applyPct(product.priceBrl||0, usedCp.discountPct) : (product.priceBrl||0); }
     try {
       const digits = loggedPhone.replace(/\D/g,'');
       // Registra o pedido (mesma coleção usada para os resgates com GB$, para
@@ -5442,7 +5479,9 @@ let rankingUnsubscribe = null;
         digits,
         productId:      product.id,
         productName:    product.name||'—',
-        productCostBrl: product.priceBrl||0,
+        productCostBrl: effPrice,
+        productCostBrlOriginal: product.priceBrl||0,
+        couponCode:     usedCp ? usedCp.code : '',
         paidWith:       'balance_brl',
         category:       product.category||'Geral',
         redeemedAt:     new Date().toISOString(),
@@ -5453,8 +5492,9 @@ let rankingUnsubscribe = null;
       const walletRef = doc(db,'wallets',digits);
       const ws = await getDoc(walletRef);
       const currentBrl = ws.exists() ? (ws.data().balanceBrl||0) : 0;
-      const newBrl = Math.max(0, currentBrl - (product.priceBrl||0));
+      const newBrl = Math.max(0, Math.round((currentBrl - effPrice)*100)/100);
       await setDoc(walletRef, { balanceBrl: newBrl, updatedAt: new Date().toISOString() }, {merge:true});
+      if(usedCp) await consumeCoupons([usedCp.code]);
 
       gbBalanceBrl = newBrl;
       const brlEl = document.getElementById('wallet-balance-brl');
@@ -5473,8 +5513,10 @@ let rankingUnsubscribe = null;
   window.payProductWithBalance = async function(productId){
     const product = storeProducts.find(p=>p.id===productId);
     if(!product){ showToast('Produto não encontrado.','error'); return; }
-    if(gbBalanceBrl < (product.priceBrl||0)){ showToast('Saldo R$ insuficiente.','error'); return; }
-    const priceFmt = 'R$ '+(product.priceBrl||0).toFixed(2).replace('.',',');
+    const pwbCp = productCoupon(product.id);
+    const pwbPrice = pwbCp ? applyPct(product.priceBrl||0, pwbCp.discountPct) : (product.priceBrl||0);
+    if(gbBalanceBrl < pwbPrice){ showToast('Saldo R$ insuficiente.','error'); return; }
+    const priceFmt = 'R$ '+pwbPrice.toFixed(2).replace('.',',');
 
     const confirmed = await new Promise(resolve=>{
       const modal = document.createElement('div');
@@ -5484,7 +5526,7 @@ let rankingUnsubscribe = null;
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;margin-bottom:8px;">Confirmar Compra</div>
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">${product.name}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#4ade80;margin-bottom:16px;">${priceFmt}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Pagamento com o seu saldo R$. Saldo após a compra: <strong style="color:#4ade80;">R$ ${(gbBalanceBrl-(product.priceBrl||0)).toFixed(2).replace('.',',')}</strong></div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">Pagamento com o seu saldo R$. Saldo após a compra: <strong style="color:#4ade80;">R$ ${(gbBalanceBrl-pwbPrice).toFixed(2).replace('.',',')}</strong></div>
         <div style="display:flex;gap:10px;">
           <button id="pwb-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">Cancelar</button>
           <button id="pwb-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">💰 Comprar</button>
@@ -5496,7 +5538,7 @@ let rankingUnsubscribe = null;
       modal.onclick = e=>{ if(e.target===modal){ document.body.removeChild(modal); resolve(false); } };
     });
     if(!confirmed) return;
-    await executeBalancePayment(product);
+    await executeBalancePayment(product, pwbPrice, pwbCp);
   };
 
   window.flipCard = function(e, id){
