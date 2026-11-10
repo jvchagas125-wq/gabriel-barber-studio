@@ -953,6 +953,16 @@
     .store-redeem-btn.store-redeem-btn-brl { background: var(--green); color: #111; }
     @media (max-width: 640px) { .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .wallet-balance { font-size: 40px; } .wallet-card { flex-wrap: wrap; } .wallet-divider { display: none !important; } .wallet-side-text { flex: 1 1 100% !important; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: 4px; } }
     @media (max-width: 380px) { .store-grid { grid-template-columns: 1fr; } }
+    /* Cards da loja com altura automática: frente e verso ficam empilhados na mesma célula,
+       o card cresce para caber todo o conteúdo (preço com desconto, nomes longos…) sem cortar
+       e todos os cards da mesma linha ficam com a mesma altura. */
+    .store-card { display: flex; }
+    .store-card-inner { display: grid; flex: 1; height: auto; min-height: 300px; }
+    .store-card-front, .store-card-back { position: relative; inset: auto; grid-area: 1 / 1; min-height: 0; }
+    .store-card-back-desc { max-height: 170px; }
+    .store-card-cost { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; line-height: 1.15; }
+    .store-card-cost s { font-family: "Bebas Neue", sans-serif; }
+    .store-card-cost .cp-badge { margin-left: 0; font-size: 11px; color: #4ade80; font-weight: 700; }
 
     /* ===== SELEÇÃO MÚLTIPLA DE SERVIÇOS ===== */
     .svc-picker { display:flex; flex-direction:column; gap:0; border:1px solid rgba(255,255,255,0.1); border-radius:10px; overflow:hidden; background:var(--bg3); }
