@@ -1585,7 +1585,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   // Firebase messaging carregado sob demanda (não bloqueia primeiro carregamento)
 
@@ -4374,9 +4374,12 @@
   let couponsLoaded = false;
   let MY_COUPONS = {};
   let myCouponsLoaded = false;
-  let couponsUnsub = null, myCouponsUnsub = null;
+  let couponsUnsub = null, myCouponsUnsub = null, couponStatsUnsub = null;
+  let COUPON_STATS = {};        // coupon_stats/{CODIGO} → { count } (quantas pessoas já resgataram)
+  let MY_CREATED_AT = '';       // clients/{digits}.createdAt (data de criação da conta)
   let couponsTab = 'available';
   let claimingPending = false;
+  let couponStatsLoaded = false;
 
   // Captura ?cupom=CODIGO do link que o Gabriel publicou (fica guardado até o cliente estar logado)
   (function captureCouponFromUrl(){
@@ -4414,6 +4417,30 @@
     if(!c.expiresAt) return null;
     return Math.round((new Date(c.expiresAt+'T12:00:00') - new Date(getTodayStr()+'T12:00:00'))/86400000);
   }
+  // Limite de pessoas que podem resgatar (0 = sem limite)
+  function couponLimit(c){ return Math.max(0, parseInt(c.maxRedemptions)||0); }
+  function couponClaimCount(c){ return (COUPON_STATS[c.code] && Number(COUPON_STATS[c.code].count)) || 0; }
+  function couponSoldOut(c){ const l = couponLimit(c); return l > 0 && couponClaimCount(c) >= l; }
+  // Dias desde a criação da conta do cliente (null = desconhecido)
+  function myAccountAgeDays(){
+    if(!MY_CREATED_AT) return null;
+    const d = new Date(MY_CREATED_AT); if(isNaN(d)) return null;
+    return Math.max(0, Math.floor((new Date(getTodayStr()+'T12:00:00') - new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12))/86400000));
+  }
+  // Público do cupom: todos / só clientes novos (conta com até X dias) / só antigos (conta com X+ dias)
+  function couponAudienceOk(c){
+    const aud = c.audience || 'all';
+    if(aud === 'all') return true;
+    const age = myAccountAgeDays();
+    if(age === null) return false;
+    if(aud === 'new') return age <= (parseInt(c.audienceNewDays)||7);
+    if(aud === 'old') return age >= (parseInt(c.audienceOldDays)||30);
+    return true;
+  }
+  function couponAudienceMsg(c){
+    return c.audience === 'new' ? 'Este cupom é exclusivo para clientes novos.' : 'Este cupom é exclusivo para clientes mais antigos.';
+  }
+
   // Cupons que o cliente resgatou, ainda válidos e com usos restantes
   function claimedActiveCoupons(){
     return COUPONS.filter(c=> MY_COUPONS[c.code] && couponIsValid(c) && couponUsesLeft(c) > 0);
@@ -4470,25 +4497,45 @@
     if(MY_COUPONS[code]){
       showToast(couponUsesLeft(c) > 0 ? 'Você já resgatou este cupom.' : 'Você já utilizou este cupom.','info'); return false;
     }
+    if(!couponAudienceOk(c)){ showToast(couponAudienceMsg(c),'error'); return false; }
+    if(couponSoldOut(c)){ showToast('Cupom indisponível — o limite de resgates foi atingido.','error'); return false; }
     const digits = loggedPhone.replace(/\D/g,'');
+    const entry = { claimedAt: new Date().toISOString(), uses: 0 };
     try{
-      const entry = { claimedAt: new Date().toISOString(), uses: 0 };
-      await setDoc(doc(db,'clients',digits), { coupons: { [code]: entry } }, { merge:true });
-      MY_COUPONS[code] = entry;
-      refreshCouponViews();
-      showToast('🎟️ Cupom resgatado! O desconto já está aplicado.','success');
-      return true;
-    }catch(e){ showToast('Erro ao resgatar cupom: '+e.message,'error'); return false; }
+      // Transação: conta +1 resgate e guarda o cupom no cliente ao mesmo tempo (respeita o limite de pessoas)
+      await runTransaction(db, async tx=>{
+        const sRef = doc(db,'coupon_stats',code);
+        const sSnap = await tx.get(sRef);
+        const n = sSnap.exists() ? (Number(sSnap.data().count)||0) : 0;
+        const lim = couponLimit(c);
+        if(lim > 0 && n >= lim) throw new Error('SOLD_OUT');
+        tx.set(sRef, { code, count: n+1, lastClaimAt: entry.claimedAt }, { merge:true });
+        tx.set(doc(db,'clients',digits), { coupons: { [code]: entry } }, { merge:true });
+      });
+    }catch(e){
+      if(e && e.message === 'SOLD_OUT'){ showToast('Cupom indisponível — o limite de resgates foi atingido.','error'); return false; }
+      // Sem permissão para o contador: cupons SEM limite ainda podem ser resgatados do jeito antigo
+      if(couponLimit(c) === 0){
+        try{ await setDoc(doc(db,'clients',digits), { coupons: { [code]: entry } }, { merge:true }); }
+        catch(e2){ showToast('Erro ao resgatar cupom: '+e2.message,'error'); return false; }
+      } else { console.warn('claimCoupon:', e); showToast('Erro ao resgatar cupom. Tente novamente.','error'); return false; }
+    }
+    MY_COUPONS[code] = entry;
+    refreshCouponViews();
+    showToast('🎟️ Cupom resgatado! O desconto já está aplicado.','success');
+    return true;
   };
 
   async function tryClaimPendingCoupon(){
     const code = localStorage.getItem('gbs_pending_coupon');
-    if(!code || !loggedPhone || !couponsLoaded || !myCouponsLoaded || claimingPending) return;
+    if(!code || !loggedPhone || !couponsLoaded || !myCouponsLoaded || !couponStatsLoaded || claimingPending) return;
     claimingPending = true;
     localStorage.removeItem('gbs_pending_coupon');
     try{
       const c = COUPONS.find(x=>x.code===code);
       if(!c || !couponIsValid(c)){ showToast('Este cupom não está mais disponível.','error'); }
+      else if(!MY_COUPONS[code] && couponSoldOut(c)){ showToast('Cupom indisponível — o limite de resgates foi atingido.','error'); showSection('coupons'); }
+      else if(!MY_COUPONS[code] && !couponAudienceOk(c)){ showToast(couponAudienceMsg(c),'error'); }
       else if(MY_COUPONS[code]){
         showToast(couponUsesLeft(c) > 0 ? 'Você já tem este cupom — ele está em "Meus Cupons".' : 'Você já utilizou este cupom.','info');
         openMyCoupons();
@@ -4505,20 +4552,51 @@
       tryClaimPendingCoupon();
     }, e=>{ console.warn('coupons:', e); couponsLoaded = true; refreshCouponViews(); });
   }
+  function loadCouponStats(){
+    if(couponStatsUnsub) couponStatsUnsub();
+    couponStatsUnsub = onSnapshot(collection(db,'coupon_stats'), snap=>{
+      const st = {}; snap.docs.forEach(d=>{ st[d.id] = d.data(); });
+      COUPON_STATS = st; couponStatsLoaded = true;
+      refreshCouponViews();
+      tryClaimPendingCoupon();
+    }, e=>{ console.warn('coupon_stats:', e); couponStatsLoaded = true; tryClaimPendingCoupon(); });
+  }
+  // Grava a data de criação da conta (clientes antigos sem o campo: usa o 1º agendamento como estimativa)
+  async function ensureClientCreatedAt(digits){
+    try{
+      const ref = doc(db,'clients',digits);
+      const snap = await getDoc(ref);
+      if(snap.exists() && snap.data().createdAt) return;
+      const cands = [new Date().toISOString()];
+      if(snap.exists() && snap.data().lastSeen) cands.push(snap.data().lastSeen);
+      const phone = (snap.exists() && snap.data().phone) || loggedPhone;
+      if(phone){
+        try{
+          const ap = await getDocs(query(collection(db,COL), where('phone','==',phone)));
+          ap.forEach(d=>{ const a = d.data(); if(a.createdAt) cands.push(a.createdAt); else if(a.date) cands.push(a.date+'T12:00:00'); });
+        }catch(e){}
+      }
+      const first = cands.filter(x=>!isNaN(new Date(x))).sort((a,b)=>new Date(a)-new Date(b))[0];
+      await setDoc(ref, { createdAt: new Date(first).toISOString() }, { merge:true });
+    }catch(e){ console.warn('ensureClientCreatedAt:', e); }
+  }
   function startMyCoupons(digits){
     if(myCouponsUnsub) myCouponsUnsub();
     myCouponsUnsub = onSnapshot(doc(db,'clients',digits), snap=>{
       MY_COUPONS = (snap.exists() && snap.data().coupons) || {};
+      MY_CREATED_AT = (snap.exists() && snap.data().createdAt) || '';
       myCouponsLoaded = true;
       refreshCouponViews();
       tryClaimPendingCoupon();
     }, e=>console.warn('my coupons:', e));
   }
-  function startCouponsSession(digits){ loadCoupons(); startMyCoupons(digits); }
+  function startCouponsSession(digits){ loadCoupons(); loadCouponStats(); startMyCoupons(digits); ensureClientCreatedAt(digits); }
   function resetCouponsSession(){
     if(couponsUnsub){ couponsUnsub(); couponsUnsub = null; }
     if(myCouponsUnsub){ myCouponsUnsub(); myCouponsUnsub = null; }
-    COUPONS = []; MY_COUPONS = {}; couponsLoaded = false; myCouponsLoaded = false;
+    if(couponStatsUnsub){ couponStatsUnsub(); couponStatsUnsub = null; }
+    COUPONS = []; MY_COUPONS = {}; COUPON_STATS = {}; MY_CREATED_AT = '';
+    couponsLoaded = false; myCouponsLoaded = false; couponStatsLoaded = false;
     refreshCouponViews();
   }
 
@@ -4573,8 +4651,13 @@
       : 'Sem prazo de validade';
     const m = couponMaxUses(c);
     const usesTxt = m > 0 ? (m === 1 ? 'Uso único' : m+' usos') : 'Uso ilimitado';
+    const lim = couponLimit(c);
+    const soldOut = !claimed && couponSoldOut(c);
+    const limTxt = lim > 0 ? '<br>👥 '+Math.min(couponClaimCount(c), lim)+'/'+lim+' resgatados' : '';
     let action;
-    if(!claimed){
+    if(soldOut){
+      action = '<div class="cp-status used">🚫 Cupom indisponível — limite de resgates atingido</div>';
+    } else if(!claimed){
       action = '<button class="store-redeem-btn" onclick="claimCoupon(\''+c.code+'\')">🎟️ Resgatar</button>';
     } else if(used){
       action = '<div class="cp-status used">✔ Cupom já utilizado</div>';
@@ -4584,11 +4667,11 @@
       if(c.allProducts || (c.productIds||[]).length) btns.push('<button onclick="showSection(\'store\')">🛍️ Ir para a loja</button>');
       action = '<div class="cp-status ok">✓ Ativo — desconto aplicado automaticamente</div>' + (btns.length ? '<div class="cp-actions">'+btns.join('')+'</div>' : '');
     }
-    return '<div class="cp-card'+(used?' used':'')+'">'
+    return '<div class="cp-card'+((used||soldOut)?' used':'')+'">'
       + '<div class="cp-pct">'+(c.discountPct||0)+'% OFF</div>'
       + '<div class="cp-title">'+esc(c.title||c.code)+'</div>'
       + (c.description ? '<div class="cp-desc">'+esc(c.description)+'</div>' : '')
-      + '<div class="cp-meta">'+esc(couponAppliesText(c))+'<br>'+exp+' · '+usesTxt+'</div>'
+      + '<div class="cp-meta">'+esc(couponAppliesText(c))+'<br>'+exp+' · '+usesTxt+limTxt+'</div>'
       + action + '</div>';
   }
 
@@ -4602,7 +4685,7 @@
     const empty = t => '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-dim);">'+t+'</div>';
     if(!couponsLoaded){ el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;"><div class="spinner" style="margin:0 auto;"></div></div>'; return; }
     const list = couponsTab === 'available'
-      ? COUPONS.filter(c=> c.showPublic && couponIsValid(c))
+      ? COUPONS.filter(c=> c.showPublic && couponIsValid(c) && (MY_COUPONS[c.code] || couponAudienceOk(c)))
       : COUPONS.filter(c=> MY_COUPONS[c.code] && couponIsValid(c));
     el.innerHTML = list.length
       ? list.map(couponCardHtml).join('')
